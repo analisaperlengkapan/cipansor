@@ -343,24 +343,29 @@ async function createRegistrantOnce(data: CreateRegistrantExtendedInput) {
     const parentEmail = data.fatherEmail && data.fatherEmail !== '' ? data.fatherEmail : undefined;
     const parentOccupation = data.fatherOccupation || data.motherOccupation;
 
-    // Look up all open waves for the period ordered by waveNumber asc
-    // to atomically claim a slot in the first wave that has capacity.
-    const now = new Date();
-    const candidateWaves = tx.admissionWave
-      ? await tx.admissionWave.findMany({
-          where: {
-            periodId: data.admissionPeriodId,
-            status: 'OPEN',
-            startDate: { lte: now },
-            endDate: { gte: now },
-          },
-          orderBy: { waveNumber: 'asc' },
-        })
-      : [];
+    // Check if the admission period defines any waves.
+    const totalWaves = tx.admissionWave
+      ? await tx.admissionWave.count({ where: { periodId: data.admissionPeriodId } })
+      : 0;
 
     let waveId: string | undefined = undefined;
 
-    if (candidateWaves.length > 0) {
+    if (totalWaves > 0) {
+      // Look up all open waves for the period ordered by waveNumber asc
+      // to atomically claim a slot in the first wave that has capacity.
+      const now = new Date();
+      const candidateWaves = tx.admissionWave
+        ? await tx.admissionWave.findMany({
+            where: {
+              periodId: data.admissionPeriodId,
+              status: 'OPEN',
+              startDate: { lte: now },
+              endDate: { gte: now },
+            },
+            orderBy: { waveNumber: 'asc' },
+          })
+        : [];
+
       let waveClaimed = false;
       for (const wave of candidateWaves) {
         if (wave.registeredCount >= wave.quota) {
@@ -383,7 +388,7 @@ async function createRegistrantOnce(data: CreateRegistrantExtendedInput) {
       }
 
       if (!waveClaimed) {
-        throw Errors.badRequest('Semua gelombang pendaftaran pada periode ini telah penuh (kuota habis)');
+        throw Errors.badRequest('Semua gelombang pendaftaran pada periode ini telah penuh atau ditutup');
       }
     }
 
@@ -809,11 +814,34 @@ export async function createPublicRegistrantDocumentService(data: {
     throw Errors.notFound('Registrant');
   }
 
-  // Token / Proof of Ownership Check
-  const crypto = await import('crypto');
-  const expectedToken = crypto.createHmac('sha256', config.jwt.secret).update(registrant.id).digest('hex').slice(0, 16);
+  // Token / Proof of Ownership & Expiry Check (max 2 hours valid)
+  if (!registrationToken) {
+    throw Errors.forbidden('Invalid registration token for document upload');
+  }
 
-  if (!registrationToken || (registrationToken !== registrant.id && registrationToken !== expectedToken)) {
+  const crypto = await import('crypto');
+  const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+  let isTokenValid = false;
+
+  if (registrationToken.includes('.')) {
+    const [tsHex, hmacHex] = registrationToken.split('.');
+    const timestamp = parseInt(tsHex, 16);
+    if (!isNaN(timestamp)) {
+      const now = Date.now();
+      const expectedHmac = crypto.createHmac('sha256', config.jwt.secret).update(`${registrant.id}:${tsHex}`).digest('hex').slice(0, 16);
+      if (hmacHex === expectedHmac && now >= timestamp && (now - timestamp) <= TWO_HOURS_MS) {
+        isTokenValid = true;
+      }
+    }
+  } else {
+    // Fallback for simple legacy token
+    const expectedToken = crypto.createHmac('sha256', config.jwt.secret).update(registrant.id).digest('hex').slice(0, 16);
+    if (registrationToken === registrant.id || registrationToken === expectedToken) {
+      isTokenValid = true;
+    }
+  }
+
+  if (!isTokenValid) {
     throw Errors.forbidden('Invalid registration token for document upload');
   }
 
@@ -822,23 +850,15 @@ export async function createPublicRegistrantDocumentService(data: {
     throw Errors.badRequest('Dokumen url/base64 wajib diisi');
   }
 
-  // Validate base64 length & MIME
+  // Validate base64 length & MIME (max ~2MB)
   if (base64) {
-    if (base64.length > 4000000) { // ~3MB
-      throw Errors.badRequest('Ukuran berkas melebihi batas maksimum (3MB)');
+    if (base64.length > 2800000) {
+      throw Errors.badRequest('Ukuran berkas melebihi batas maksimum (2MB)');
     }
-    const mimeMatch = base64.match(/^data:(image\/\w+|application\/pdf);base64,/);
+    const mimeMatch = base64.match(/^data:(image\/(jpeg|jpg|png|webp)|application\/pdf);base64,/i);
     if (!mimeMatch) {
       throw Errors.badRequest('Tipe berkas tidak didukung. Hanya gambar (JPEG/PNG/WebP) dan PDF yang diperbolehkan');
     }
-  }
-
-  // Cap document count (max 10 documents per registrant)
-  const existingDocCount = await prisma.registrantDocument.count({
-    where: { registrantId },
-  });
-  if (existingDocCount >= 10) {
-    throw Errors.badRequest('Jumlah dokumen pendaftar telah mencapai batas maksimum (10 dokumen)');
   }
 
   let schemaType: 'akta' | 'ijazah' | 'kk' | 'foto' | 'rapor' | 'lainnya' = 'lainnya';
@@ -863,7 +883,22 @@ export async function createPublicRegistrantDocumentService(data: {
     fileUrl: docUrl,
   });
 
-  return createRegistrantDocument(docData);
+  // Execute count check and document creation within a row-locked transaction to prevent race conditions
+  return prisma.$transaction(async (tx) => {
+    if ((tx as any).$executeRaw) {
+      await (tx as any).$executeRaw`SELECT id FROM "registrants" WHERE id = ${registrantId} FOR UPDATE`;
+    }
+
+    const existingDocCount = await tx.registrantDocument.count({
+      where: { registrantId },
+    });
+
+    if (existingDocCount >= 10) {
+      throw Errors.badRequest('Jumlah dokumen pendaftar telah mencapai batas maksimum (10 dokumen)');
+    }
+
+    return tx.registrantDocument.create({ data: docData as any });
+  });
 }
 
 export async function verifyDocument(id: string, isVerified: boolean, notes?: string) {

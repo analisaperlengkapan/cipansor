@@ -1,58 +1,27 @@
-/**
- * Document OCR & AI Cross-Verification Service
- * Extracts NIK, No. KK, Name, and Birth Date from uploaded document images/base64
- * and cross-checks data against user inputs for SPMB registration validation.
- */
+import { DocumentParseRequest, DocumentOcrResult } from '@cipansor/shared';
 
-export interface DocumentParseRequest {
-  imageBase64?: string;
-  documentType: 'ktp' | 'kk' | 'akta' | 'foto' | 'lainnya';
-  userInputData?: {
-    fullName?: string;
-    nationalId?: string;
-    familyCardNumber?: string;
-    birthDate?: string;
-  };
-}
-
-export interface DocumentParseResult {
-  success: boolean;
-  documentType: string;
-  extractedData: {
-    nationalId?: string;
-    familyCardNumber?: string;
-    fullName?: string;
-    birthPlace?: string;
-    birthDate?: string;
-  };
-  validation: {
-    nationalIdMatch?: boolean;
-    familyCardMatch?: boolean;
-    fullNameMatch?: boolean;
-    matchScore: number; // 0 to 100
-    status: 'VALID' | 'WARNING' | 'MISMATCH';
-    notes: string[];
-  };
-}
+export type DocumentParseResult = DocumentOcrResult;
 
 /**
- * Parses uploaded document data/image base64 to extract structured fields
- * and cross-verify against provided user inputs.
+ * Document Verification Service
+ * Note: Raw binary base64 image data does not execute visual optical character recognition (OCR)
+ * without an external visual OCR engine. All uploaded document images require manual officer verification.
+ * This service safely extracts plain text ASCII metadata if present and flags all image uploads
+ * for officer review, ensuring no compressed image bytes produce false 'VALID' visual matches.
  */
 export async function parseAndVerifyDocument(
   payload: DocumentParseRequest
-): Promise<DocumentParseResult> {
+): Promise<DocumentOcrResult> {
   const { imageBase64, documentType, userInputData } = payload;
-  const extractedData: DocumentParseResult['extractedData'] = {};
+  const extractedData: DocumentOcrResult['extractedData'] = {};
   const notes: string[] = [];
 
   let extractedCount = 0;
 
   if (imageBase64) {
-    // Decode base64 header if present (e.g. data:image/png;base64,...)
     const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
 
-    // 1. Extract 16-digit numbers (NIK / No KK) from binary text content if ascii printable
+    // Extract ASCII text metadata if present
     const textContent = Buffer.from(cleanBase64, 'base64').toString('utf8');
     const digitsMatches = textContent.match(/\b\d{16}\b/g) || [];
 
@@ -70,7 +39,6 @@ export async function parseAndVerifyDocument(
       }
     }
 
-    // 2. Extract full name if text contains name indicators
     const lines = textContent.split(/\r?\n/);
     for (const line of lines) {
       const trimmed = line.trim();
@@ -83,47 +51,37 @@ export async function parseAndVerifyDocument(
     }
   }
 
-  // 2. Perform Cross-Matching against User Input Data
-  let score = 100;
   let nationalIdMatch: boolean | undefined = undefined;
   let familyCardMatch: boolean | undefined = undefined;
   let fullNameMatch: boolean | undefined = undefined;
-
-  const hasExtractedData = extractedCount > 0;
+  let isMismatch = false;
 
   if (userInputData) {
-    // Validate NIK
     if (userInputData.nationalId) {
       if (extractedData.nationalId) {
         nationalIdMatch = extractedData.nationalId === userInputData.nationalId;
         if (nationalIdMatch) {
-          notes.push('NIK KTP/KK sesuai dengan data input pendaftar.');
+          notes.push('NIK sesuai dengan metadata dokumen.');
         } else {
-          score -= 50;
-          notes.push('NIK pada dokumen tidak sesuai dengan NIK yang diinput.');
+          isMismatch = true;
+          notes.push('NIK pada dokumen tidak sesuai dengan data input.');
         }
       } else {
-        // NIK not extracted from image
-        nationalIdMatch = false;
-        score -= 50;
-        notes.push('Teks NIK tidak dapat terbaca otomatis dari dokumen. Perlu verifikasi manual oleh petugas.');
+        notes.push('Teks NIK memerlukan verifikasi manual oleh petugas.');
       }
     }
 
-    // Validate Family Card No (KK)
     if (userInputData.familyCardNumber) {
       if (extractedData.familyCardNumber) {
         familyCardMatch = extractedData.familyCardNumber === userInputData.familyCardNumber;
         if (familyCardMatch) {
-          notes.push('Nomor KK sesuai dengan data input pendaftar.');
+          notes.push('Nomor KK sesuai dengan metadata dokumen.');
         } else {
-          score -= 50;
-          notes.push('Nomor KK pada dokumen tidak sesuai dengan nomor KK yang diinput.');
+          isMismatch = true;
+          notes.push('Nomor KK pada dokumen tidak sesuai dengan data input.');
         }
       } else {
-        familyCardMatch = false;
-        score -= 50;
-        notes.push('Teks Nomor KK tidak dapat terbaca otomatis dari dokumen. Perlu verifikasi manual oleh petugas.');
+        notes.push('Teks Nomor KK memerlukan verifikasi manual oleh petugas.');
       }
     }
 
@@ -133,32 +91,17 @@ export async function parseAndVerifyDocument(
         const normExtracted = extractedData.fullName.toLowerCase().replace(/[^a-z0-9]/g, '');
         fullNameMatch = normInput.includes(normExtracted) || normExtracted.includes(normInput);
         if (!fullNameMatch) {
-          score -= 30;
-          notes.push('Nama pada dokumen tidak sesuai dengan nama yang diinput.');
+          isMismatch = true;
+          notes.push('Nama pada dokumen tidak sesuai dengan data input.');
         }
-      } else {
-        fullNameMatch = undefined; // Unknown / Not extracted from document image
       }
     }
   }
 
-  if (!hasExtractedData) {
-    if (documentType === 'ktp' || documentType === 'kk') {
-      score = 0;
-      notes.push('Teks dokumen tidak dapat terbaca otomatis. Perlu verifikasi manual oleh petugas.');
-    } else {
-      score = 50;
-      notes.push('Dokumen telah diterima dan memerlukan verifikasi manual oleh petugas.');
-    }
-  }
+  notes.push('Dokumen telah diterima dan memerlukan verifikasi manual oleh petugas panitia SPMB.');
 
-  const finalScore = Math.max(0, score);
-  let status: DocumentParseResult['validation']['status'] = 'VALID';
-  if (nationalIdMatch === false || familyCardMatch === false || fullNameMatch === false || finalScore < 50) {
-    status = 'MISMATCH';
-  } else if (finalScore < 100 || !hasExtractedData) {
-    status = 'WARNING';
-  }
+  const status: DocumentOcrResult['validation']['status'] = isMismatch ? 'MISMATCH' : 'WARNING';
+  const matchScore = isMismatch ? 0 : 50;
 
   return {
     success: true,
@@ -168,9 +111,9 @@ export async function parseAndVerifyDocument(
       nationalIdMatch,
       familyCardMatch,
       fullNameMatch,
-      matchScore: finalScore,
+      matchScore,
       status,
-      notes: notes.length > 0 ? notes : ['Dokumen terverifikasi secara otomatis.'],
+      notes,
     },
   };
 }

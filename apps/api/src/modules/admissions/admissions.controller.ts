@@ -37,10 +37,8 @@ export async function getAdmissionPeriods(req: Request, res: Response, next: Nex
  */
 export async function parsePublicDocument(req: Request, res: Response, next: NextFunction) {
   try {
-    const { parseDocumentSchema } = await import('@cipansor/shared');
-    const data = parseDocumentSchema.parse(req.body);
     const { parseAndVerifyDocument } = await import('./document-ocr.service');
-    const result = await parseAndVerifyDocument(data);
+    const result = await parseAndVerifyDocument(req.body);
     res.json({ success: true, data: result });
   } catch (error) {
     next(error);
@@ -376,7 +374,9 @@ export async function createPublicRegistrant(req: Request, res: Response, next: 
 
     const registrant = await service.createRegistrant(data);
     const crypto = await import('crypto');
-    const registrationToken = crypto.createHmac('sha256', config.jwt.secret).update(registrant.id).digest('hex').slice(0, 16);
+    const timestampHex = Date.now().toString(16);
+    const hmacHex = crypto.createHmac('sha256', config.jwt.secret).update(`${registrant.id}:${timestampHex}`).digest('hex').slice(0, 16);
+    const registrationToken = `${timestampHex}.${hmacHex}`;
 
     res.status(201).json({
       success: true,

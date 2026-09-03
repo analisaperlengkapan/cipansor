@@ -16,6 +16,7 @@ vi.mock('@/lib/prisma', () => ({
       findFirst: vi.fn(),
     },
     admissionWave: {
+      count: vi.fn(),
       findMany: vi.fn(),
       updateMany: vi.fn(),
     },
@@ -168,6 +169,7 @@ describe('Student Onboarding & Wave Quota Unit Tests', () => {
       const wave2Open = { id: 'w-2', waveNumber: 2, registeredCount: 10, quota: 50 };
 
       vi.mocked(prisma.admissionPeriod.findUnique).mockResolvedValue(mockPeriod as any);
+      vi.mocked(prisma.admissionWave.count).mockResolvedValue(2);
       vi.mocked(prisma.admissionWave.findMany).mockResolvedValue([wave1Full, wave2Open] as any);
 
       // Wave 2 increment claim returns count = 1

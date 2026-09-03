@@ -47,7 +47,12 @@ export class StudentOnboardingOrchestrator {
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Get registrant data
+      // 1. Lock registrant row for concurrency protection
+      if ((tx as any).$executeRaw) {
+        await (tx as any).$executeRaw`SELECT id FROM "registrants" WHERE id = ${registrantId} FOR UPDATE`;
+      }
+
+      // Get registrant data
       const registrant = await tx.registrant.findUnique({
         where: { id: registrantId },
         include: { admissionPeriod: true },
@@ -57,8 +62,12 @@ export class StudentOnboardingOrchestrator {
         throw Errors.notFound('Registrant');
       }
 
+      if (registrant.status === 'ENROLLED' || (registrant as any).studentId) {
+        throw Errors.conflict('Pendaftar ini telah terdaftar sebagai santri (enrolled)');
+      }
+
       if (registrant.status !== 'ACCEPTED') {
-        throw Errors.badRequest('Only ACCEPTED registrants can be enrolled');
+        throw Errors.badRequest('Hanya pendaftar dengan status ACCEPTED yang dapat di-onboard');
       }
 
       // Being accepted is an academic decision; it is not daftar ulang. The

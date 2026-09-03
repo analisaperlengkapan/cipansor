@@ -26,9 +26,21 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+import { useRegistrants, useAdmissionPeriods } from "@/hooks/use-admissions";
+
 export default function SPMBPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("overview");
+
+  const { data: registrantsData } = useRegistrants();
+  const { data: acceptedData } = useRegistrants({ status: "ACCEPTED" });
+  const { data: pendingData } = useRegistrants({ status: "DOCUMENT_CHECK" });
+  const { data: periodsData } = useAdmissionPeriods();
+
+  const totalRegistrants = registrantsData?.meta?.total ?? registrantsData?.data?.length ?? 0;
+  const acceptedCount = acceptedData?.meta?.total ?? acceptedData?.data?.length ?? 0;
+  const pendingCount = pendingData?.meta?.total ?? pendingData?.data?.length ?? 0;
+  const totalPeriods = periodsData?.meta?.total ?? periodsData?.data?.length ?? 0;
 
   const menuItems = [
     {
@@ -38,7 +50,7 @@ export default function SPMBPage() {
       href: "/spmb/waves",
       color: "text-blue-600",
       bgColor: "bg-blue-50",
-      count: "0",
+      count: String(totalPeriods),
     },
     {
       title: "Pendaftar",
@@ -47,7 +59,7 @@ export default function SPMBPage() {
       href: "/spmb/registrations",
       color: "text-green-600",
       bgColor: "bg-green-50",
-      count: "0",
+      count: String(totalRegistrants),
     },
     {
       title: "Seleksi",
@@ -56,7 +68,7 @@ export default function SPMBPage() {
       href: "/spmb/selections",
       color: "text-purple-600",
       bgColor: "bg-purple-50",
-      count: "0",
+      count: String(pendingCount),
     },
     {
       title: "Diterima",
@@ -65,35 +77,35 @@ export default function SPMBPage() {
       href: "/spmb/registrations?status=ACCEPTED",
       color: "text-emerald-600",
       bgColor: "bg-emerald-50",
-      count: "0",
+      count: String(acceptedCount),
     },
   ];
 
   const stats = [
     {
       title: "Total Pendaftar",
-      value: "0",
+      value: String(totalRegistrants),
       icon: UserPlus,
       color: "text-blue-600",
       description: "Calon santri",
     },
     {
       title: "Menunggu Verifikasi",
-      value: "0",
+      value: String(pendingCount),
       icon: Clock,
       color: "text-yellow-600",
       description: "Berkas pending",
     },
     {
       title: "Lulus Seleksi",
-      value: "0",
+      value: String(acceptedCount),
       icon: CheckCircle,
       color: "text-green-600",
       description: "Diterima",
     },
     {
       title: "Gelombang Aktif",
-      value: "0",
+      value: String(totalPeriods),
       icon: Calendar,
       color: "text-purple-600",
       description: "Periode berjalan",

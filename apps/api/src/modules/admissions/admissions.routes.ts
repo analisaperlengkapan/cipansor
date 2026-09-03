@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { UserRole, RoleCode } from '@prisma/client';
+import { RoleCode } from '@prisma/client';
+import { parseDocumentSchema } from '@cipansor/shared';
 import { config } from '../../config';
 import * as controller from './admissions.controller';
 import { authenticate, authorize } from '../../middleware/auth';
 import { validateQuery } from '../../middleware/error';
+import { validate } from '../../middleware/validate';
 import { queryAdmissionPeriodSchema, queryRegistrantSchema } from './admissions.schema';
 import waveRoutes from './ppdb-wave.routes';
 
@@ -34,6 +36,21 @@ const publicRegistrantLimiter = rateLimit({
   skip: () => config.env === 'test' || config.env === 'development',
 });
 
+const documentUploadLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5, // 5 document uploads per minute per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Batas unggah dokumen terlampaui. Silakan tunggu 1 menit.',
+    },
+  },
+  skip: () => config.env === 'test' || config.env === 'development',
+});
+
 // Mount wave sub-router. `ppdb-wave.routes.ts` applies its own `authenticate`
 // middleware (and exposes a public `/active/:periodId` route), so we mount it
 // BEFORE the admissions-wide `authenticate` below.
@@ -54,7 +71,7 @@ router.post(
 );
 router.post(
   '/public/registrants/:registrantId/documents',
-  publicRegistrantLimiter,
+  documentUploadLimiter,
   controller.createPublicRegistrantDocument
 );
 router.get(
@@ -65,6 +82,7 @@ router.get(
 router.post(
   '/public/parse-document',
   publicRegistrantLimiter,
+  validate(parseDocumentSchema),
   controller.parsePublicDocument
 );
 
@@ -78,9 +96,9 @@ router.use(authenticate);
 router.get(
   '/leads/priority',
   authorize(
-    UserRole.SUPER_ADMIN,
-    UserRole.UNIT_ADMIN,
-    UserRole.STAFF
+    RoleCode.SUPER_ADMIN,
+    'UNIT_ADMIN',
+    'STAFF'
   ),
   controller.getPriorityLeads
 );
@@ -123,7 +141,7 @@ router.get(
 // expected to read but not directly mutate admissions records.
 router.get(
   '/periods',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(RoleCode.SUPER_ADMIN, 'UNIT_ADMIN'),
   validateQuery(queryAdmissionPeriodSchema),
   controller.getAdmissionPeriods
 );
@@ -166,7 +184,7 @@ router.get(
  */
 router.post(
   '/periods',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(RoleCode.SUPER_ADMIN, 'UNIT_ADMIN'),
   controller.createAdmissionPeriod
 );
 
@@ -190,7 +208,7 @@ router.post(
  */
 router.get(
   '/periods/:id',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(RoleCode.SUPER_ADMIN, 'UNIT_ADMIN'),
   controller.getAdmissionPeriodById
 );
 
@@ -214,7 +232,7 @@ router.get(
  */
 router.get(
   '/periods/:id/stats',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(RoleCode.SUPER_ADMIN, 'UNIT_ADMIN'),
   controller.getAdmissionPeriodStats
 );
 
@@ -238,7 +256,7 @@ router.get(
  */
 router.put(
   '/periods/:id',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(RoleCode.SUPER_ADMIN, 'UNIT_ADMIN'),
   controller.updateAdmissionPeriod
 );
 
@@ -262,7 +280,7 @@ router.put(
  */
 router.delete(
   '/periods/:id',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(RoleCode.SUPER_ADMIN, 'UNIT_ADMIN'),
   controller.deleteAdmissionPeriod
 );
 
@@ -301,9 +319,9 @@ router.delete(
 router.get(
   '/registrants',
   authorize(
-    UserRole.SUPER_ADMIN,
-    UserRole.UNIT_ADMIN,
-    UserRole.STAFF
+    RoleCode.SUPER_ADMIN,
+    'UNIT_ADMIN',
+    'STAFF'
   ),
   validateQuery(queryRegistrantSchema),
   controller.getRegistrants
@@ -351,7 +369,7 @@ router.get(
  */
 router.post(
   '/registrants',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(RoleCode.SUPER_ADMIN, 'UNIT_ADMIN', 'STAFF'),
   controller.createRegistrant
 );
 
@@ -376,9 +394,9 @@ router.post(
 router.get(
   '/registrants/:id',
   authorize(
-    UserRole.SUPER_ADMIN,
-    UserRole.UNIT_ADMIN,
-    UserRole.STAFF
+    RoleCode.SUPER_ADMIN,
+    'UNIT_ADMIN',
+    'STAFF'
   ),
   controller.getRegistrantById
 );
@@ -403,7 +421,7 @@ router.get(
  */
 router.put(
   '/registrants/:id',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(RoleCode.SUPER_ADMIN, 'UNIT_ADMIN', 'STAFF'),
   controller.updateRegistrant
 );
 
@@ -440,7 +458,7 @@ router.put(
  */
 router.patch(
   '/registrants/:id/score',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(RoleCode.SUPER_ADMIN, 'UNIT_ADMIN'),
   controller.updateRegistrantScore
 );
 
@@ -476,7 +494,7 @@ router.patch(
  */
 router.patch(
   '/registrants/:id/status',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(RoleCode.SUPER_ADMIN, 'UNIT_ADMIN'),
   controller.updateRegistrantStatus
 );
 
@@ -496,7 +514,7 @@ router.patch(
  */
 router.patch(
   '/registrants/:id/registration-fee',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(RoleCode.SUPER_ADMIN, 'UNIT_ADMIN', 'STAFF'),
   controller.recordRegistrationFee
 );
 
@@ -528,7 +546,7 @@ router.patch(
  */
 router.post(
   '/registrants/:id/enroll',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(RoleCode.SUPER_ADMIN, 'UNIT_ADMIN'),
   controller.enrollRegistrant
 );
 
@@ -552,7 +570,7 @@ router.post(
  */
 router.delete(
   '/registrants/:id',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(RoleCode.SUPER_ADMIN, 'UNIT_ADMIN'),
   controller.deleteRegistrant
 );
 
@@ -579,9 +597,9 @@ router.delete(
 router.get(
   '/registrants/:registrantId/documents',
   authorize(
-    UserRole.SUPER_ADMIN,
-    UserRole.UNIT_ADMIN,
-    UserRole.STAFF
+    RoleCode.SUPER_ADMIN,
+    'UNIT_ADMIN',
+    'STAFF'
   ),
   controller.getRegistrantDocuments
 );
@@ -621,7 +639,7 @@ router.get(
  */
 router.post(
   '/registrants/:registrantId/documents',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN, UserRole.STAFF),
+  authorize(RoleCode.SUPER_ADMIN, 'UNIT_ADMIN', 'STAFF'),
   controller.createRegistrantDocument
 );
 
@@ -658,7 +676,7 @@ router.post(
  */
 router.patch(
   '/documents/:id/verify',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(RoleCode.SUPER_ADMIN, 'UNIT_ADMIN'),
   controller.verifyDocument
 );
 
@@ -682,7 +700,7 @@ router.patch(
  */
 router.delete(
   '/documents/:id',
-  authorize(UserRole.SUPER_ADMIN, UserRole.UNIT_ADMIN),
+  authorize(RoleCode.SUPER_ADMIN, 'UNIT_ADMIN'),
   controller.deleteRegistrantDocument
 );
 

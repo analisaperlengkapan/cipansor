@@ -276,14 +276,17 @@ export function SpmbForm({
   };
 
   const uploadSelectedDocuments = async (registrantId: string, registrationToken?: string) => {
-    const fileEntries: { file: File | null; type: string }[] = [
-      { file: files.photo, type: "PHOTO" },
-      { file: files.ktp, type: "ID_CARD" },
-      { file: files.familyCard, type: "FAMILY_CARD" },
-      { file: files.birthCertificate, type: "BIRTH_CERTIFICATE" },
+    const fileEntries: { key: keyof typeof files; file: File | null; type: string; label: string }[] = [
+      { key: "photo", file: files.photo, type: "PHOTO", label: "Pas Foto" },
+      { key: "ktp", file: files.ktp, type: "ID_CARD", label: "KTP Orang Tua" },
+      { key: "familyCard", file: files.familyCard, type: "FAMILY_CARD", label: "Kartu Keluarga" },
+      { key: "birthCertificate", file: files.birthCertificate, type: "BIRTH_CERTIFICATE", label: "Akte Kelahiran" },
     ];
 
-    for (const { file, type } of fileEntries) {
+    const failedKeys: (keyof typeof files)[] = [];
+    const failedLabels: string[] = [];
+
+    for (const { key, file, type, label } of fileEntries) {
       if (!file) continue;
 
       try {
@@ -301,11 +304,13 @@ export function SpmbForm({
           registrationToken,
         });
       } catch (err: any) {
-        const errorMsg = err?.response?.data?.message || err?.message || "Gagal mengunggah berkas";
-        toast.error(`Gagal mengunggah ${type}: ${errorMsg}`);
+        failedKeys.push(key);
+        failedLabels.push(label);
         console.error(`Failed to upload ${type} document:`, err);
       }
     }
+
+    return { failedKeys, failedLabels };
   };
 
   const handleSubmit = async () => {
@@ -366,7 +371,21 @@ export function SpmbForm({
       const registrationToken = result?.registrationToken || result?.data?.registrationToken;
 
       if (createdRegistrantId) {
-        await uploadSelectedDocuments(createdRegistrantId, registrationToken);
+        const { failedKeys, failedLabels } = await uploadSelectedDocuments(createdRegistrantId, registrationToken);
+
+        if (failedLabels.length > 0) {
+          toast.error(`Pendaftaran tersimpan, tetapi berkas gagal diunggah: ${failedLabels.join(", ")}`);
+        }
+
+        // Only clear successfully uploaded files
+        setFiles((prev) => {
+          const next = { ...prev };
+          if (!failedKeys.includes("photo")) next.photo = null;
+          if (!failedKeys.includes("ktp")) next.ktp = null;
+          if (!failedKeys.includes("familyCard")) next.familyCard = null;
+          if (!failedKeys.includes("birthCertificate")) next.birthCertificate = null;
+          return next;
+        });
       }
 
       setSuccessData({
@@ -377,12 +396,12 @@ export function SpmbForm({
         name: formData.fullName,
       });
 
-      // Reset form
+      // Reset text form inputs
       setFormData(initialFormData);
-      setFiles({ photo: null, birthCertificate: null, familyCard: null, ktp: null });
       setCurrentStep(0);
-    } catch (error) {
-      toast.error("Gagal mengirim pendaftaran. Silakan coba lagi.");
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || "Gagal mengirim pendaftaran. Silakan coba lagi.";
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -1055,14 +1074,8 @@ export function SpmbForm({
                             file={files.ktp}
                             userInputData={{
                               fullName: formData.fatherName || formData.motherName,
-                              nationalId: formData.nationalId,
                             }}
                             onFileSelect={(f) => setFiles((prev) => ({ ...prev, ktp: f }))}
-                            onOcrExtracted={(ext) => {
-                              if (ext.nationalId && !formData.nationalId) {
-                                setFormData((prev) => ({ ...prev, nationalId: ext.nationalId! }));
-                              }
-                            }}
                           />
 
                           <DocumentCaptureField

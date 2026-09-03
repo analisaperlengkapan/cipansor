@@ -791,13 +791,69 @@ it does **not** require a PSrE:
    step, and recording *that it happened, by whom, and on what evidence* also
    closes the AATL ICA5(a) item already on the backlog.
 
-Two things must be decided before the KTP images are stored, because they are
-the yayasan's calls and not engineering ones: **how long a KTP scan is kept**
-(it should be deleted once the identity has been verified — the verification
-record, not the image, is the durable artefact) and **who may see it** (Super
-Admin only, and the access logged). UU PDP treats NIK and identity documents as
-personal data; collecting them without a retention rule creates a liability the
-system did not have before.
+#### Keeping the KTP: what the standards say, and the one fact that decides it
+
+Asked 2026-09-03, weighing *delete after verification* against *keep for a
+fixed period* against *delete immediately and re-check against the real KTP if
+questioned*.
+
+**The instinct to keep it matches the standard.** eIDAS Art. 24.2(h) obliges a
+qualified trust service provider to *"record and keep accessible for an
+appropriate period of time … all relevant information concerning data issued and
+received … in particular, for the purpose of providing evidence in legal
+proceedings"*. ETSI EN 319 412-5 goes further and lets a certificate **declare**
+its retention period, expressed as a number of years after the certificate
+expires. So "kalau nanti dipertanyakan, ada dasarnya" is not a hunch — it is the
+codified reason registration evidence is retained at all. Note what the standards
+do *not* do: they fix no number. Each provider states its own period in its
+practice statement, which means we have to choose ours and write it down.
+
+**The flaw in deleting immediately.** Re-checking against the signer's KTP today
+proves the person exists and their data matches. It does not prove what was
+presented at enrolment, which is the question actually in dispute when someone
+claims a key was issued to an impostor.
+
+**But one fact settles the shape of any answer.** `/uploads` is served by
+`uploadsAuth`, which is **authentication, not authorisation** — the middleware's
+own comment says so: *"any valid access token, including a santri's or a
+parent's, opens every file in the directory."* Filenames are crypto-random and
+that is the only separation. So *"only Super Admin may see it"* **cannot be
+implemented by putting a KTP through the existing upload endpoint.** A KTP image
+needs storage with per-record authorisation, or it must not be stored at all.
+
+**Recommendation, in the order it should be built:**
+
+1. **Ship the identity gate without the image first.** Required fields (legal
+   name as on the KTP, NIK, place and date of birth), an automatic refusal that
+   names what is missing, and a Super Admin who confirms the data against a KTP
+   *seen* — in person, which for this yayasan is the normal case — and records
+   that they did. That delivers the whole evidentiary benefit and stores no new
+   sensitive image.
+2. **The durable artefact is the verification record, never the image**: who
+   verified, when, which fields were compared, and — if an image was uploaded —
+   its SHA-256. That record is small, carries no personal data beyond what the
+   account already holds, and answers the diligence question permanently. If a
+   copy of the KTP is later produced by anyone, the hash settles whether it is
+   the same file.
+3. **Only then, if the yayasan still wants the image**, build authorised storage
+   for it — outside `/uploads`, read only through an endpoint that checks the
+   caller is Super Admin, with every access logged. Retention **tied to the
+   signing key, not to the calendar**: delete when the key it justified has
+   expired or been revoked, plus a stated tail. A key here already has a short,
+   per-approval validity, so this is naturally much shorter than a guessed
+   "1–2 years", and it is defensible because it is derived from what the
+   evidence is *for*.
+
+**On access, the proposal is right and for the right reason.** The requester
+loses read-back once the decision is made: they already hold their own KTP, so
+denying it costs them nothing, and it removes an exfiltration path from a
+hijacked account — the threat is a leaked *user* session, not the user. Two
+additions: the requester must still be able to see *that* a document is on file
+and *when it will be deleted*, because UU PDP gives a data subject the right to
+the record of processing; and Super Admin access must be logged, since "only
+Super Admin can see it" is a promise that needs a record before anyone can check
+it. NIK and an identity document sit at the sensitive end of UU PDP, so the duty
+of care here is higher than for the rest of the system.
 
 **The seal side — what identifies an organisation.** ETSI EN 319 412-1 gives
 `organizationIdentifier` the same shape: *3-character legal-person identity type
@@ -873,12 +929,12 @@ real backfill.
 6. ~~**Segel elektronik (§5b(c)).**~~ **Answered 2026-09-03: not for now.** The
    yayasan stays on in-house keys. Tier 2, the e-seal and the standard BSrE
    footnote wording all wait on that decision being revisited.
-7. **Retention and access for KTP scans (§PR-5b).** How long an uploaded KTP
-   photograph is kept — it should be deleted once identity is verified, leaving
-   the verification record rather than the image — and who besides Super Admin
-   may see it. UU PDP treats NIK and identity documents as personal data;
-   collecting them without a retention rule creates a liability the system does
-   not have today.
+7. **Whether to store the KTP image at all (§PR-5b).** The analysis is written
+   up there: the identity gate is worth building either way, and it delivers its
+   evidentiary benefit without storing a new sensitive image. Storing the image
+   is only defensible after `/uploads`' authorisation gap is closed — today any
+   signed-in account can read any file in it. If the yayasan wants the image,
+   the question to answer is the retention tail beyond key expiry.
 8. **The yayasan's own identity record (§PR-5b).** Confirm the legal name
    exactly as written in the pengesahan, the NPWP, and the full registered
    address. The letterhead has been printing a fabricated Kemenkumham number

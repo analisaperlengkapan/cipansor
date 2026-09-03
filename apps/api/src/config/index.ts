@@ -108,6 +108,50 @@ export const config = {
     },
   },
 
+  /**
+   * Cloudflare Turnstile — pembuktian "bukan bot" untuk endpoint yang terbuka
+   * bagi siapa pun tanpa kredensial.
+   *
+   * `secretKey` sengaja tidak punya nilai bawaan. Kunci rahasia yang punya
+   * nilai bawaan adalah kunci yang tidak pernah gagal keras ketika lupa
+   * dipasang — ia hanya menolak setiap pengunjung dengan alasan yang
+   * membingungkan, atau lebih buruk, meloloskan semuanya sambil tampak aktif.
+   * Tanpa kunci, `enabled` bernilai false dan gerbangnya melapor "mati" secara
+   * eksplisit; itu keadaan yang dapat dibaca di log dan diuji, bukan ditebak.
+   *
+   * Site key-nya TIDAK ada di sini: ia milik peramban, dibakar ke dalam bundel
+   * web lewat `NEXT_PUBLIC_TURNSTILE_SITE_KEY` pada waktu build. Kedua kunci
+   * ini berpasangan, jadi memasang salah satunya saja menghasilkan kegagalan
+   * yang membingungkan — lihat catatan di `.env.example`.
+   */
+  turnstile: {
+    /**
+     * Keduanya getter, bukan nilai yang dibekukan saat impor.
+     *
+     * `config` dibaca sekali ketika modulnya dimuat, jadi sebuah field biasa
+     * akan memotret `process.env` pada saat itu dan tidak pernah berubah lagi.
+     * Uji yang menyalakan dan mematikan gerbang ini lewat `vi.stubEnv` akan
+     * diam-diam menguji potret yang sama dua kali — hijau, dan tidak
+     * membuktikan apa pun.
+     */
+    get secretKey(): string | undefined {
+      return process.env.TURNSTILE_SECRET_KEY;
+    },
+    get enabled(): boolean {
+      return Boolean(process.env.TURNSTILE_SECRET_KEY);
+    },
+    /**
+     * Batas waktu memanggil siteverify Cloudflare.
+     *
+     * Pendek dengan sengaja: gerbang ini duduk di depan halaman masuk, jadi
+     * setiap milidetiknya dibayar oleh orang yang sedang menunggu. Bila
+     * Cloudflare tidak menjawab dalam tempo ini, permintaannya diteruskan
+     * (lihat `verifyTurnstileToken`) — jadi angka ini membatasi lamanya
+     * menunggu, bukan ketatnya pemeriksaan.
+     */
+    timeoutMs: parseInt(process.env.TURNSTILE_TIMEOUT_MS || '4000', 10),
+  },
+
   log: {
     level: process.env.LOG_LEVEL || 'debug',
   },

@@ -26,36 +26,24 @@ export function useCorrespondenceParticipants(params?: ListParticipantsQueryInpu
   });
 }
 
-export function useCaptchaChallenge() {
-  return useQuery({
-    queryKey: ["captchaChallenge"],
-    queryFn: async () => {
-      const response = await api.get<{
-        success: boolean;
-        data: { token: string; num1: number; num2: number };
-      }>("/esign/captcha");
-      return response.data.data;
-    },
-    staleTime: 0,
-    gcTime: 0,
-  });
-}
-
 export function useVerifyPdfLetter() {
   return useMutation({
     mutationFn: async ({
       file,
-      captchaToken,
-      captchaAnswer,
+      turnstileToken,
     }: {
       file: File;
-      captchaToken: string;
-      captchaAnswer: string;
+      /**
+       * Null ketika gerbang Turnstile dimatikan di build ini (site key kosong).
+       * Field-nya tidak dikirim sama sekali dalam keadaan itu, sehingga
+       * peladen melihat permintaan tanpa token — yang memang jawabannya benar,
+       * karena sisi peladen pun mematikan gerbangnya lewat secret key kosong.
+       */
+      turnstileToken: string | null;
     }) => {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("captchaToken", captchaToken);
-      formData.append("captchaAnswer", captchaAnswer);
+      if (turnstileToken) formData.append("turnstileToken", turnstileToken);
       const response = await api.post<{
         success: boolean;
         data: PublicLetterVerificationResult;

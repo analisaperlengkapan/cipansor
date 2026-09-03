@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { loginAs } from "./helpers/auth-api";
 
 test.describe("E-Office & Public Letter Verification E2E", () => {
-  test("Public Letter Verification page loads and displays PDF upload form and CAPTCHA", async ({ page }) => {
+  test("Public Letter Verification page loads and displays PDF upload form", async ({ page }) => {
     await page.goto("/public/verify-letter");
 
     await expect(page.locator("h1")).toContainText("Verifikasi Tanda Tangan Elektronik");
@@ -34,14 +34,10 @@ test.describe("E-Office & Public Letter Verification E2E", () => {
       buffer,
     });
 
-    const captchaText = await page.textContent("text=/Keamanan Anti-Spam: Berapakah/");
-    if (captchaText) {
-      const match = captchaText.match(/(\d+)\s*\+\s*(\d+)/);
-      if (match) {
-        const sum = parseInt(match[1]) + parseInt(match[2]);
-        await page.getByPlaceholder("Hasil...").fill(sum.toString());
-      }
-    }
+    // Tidak ada langkah captcha di sini lagi. Tantangan aritmetika sudah
+    // diganti Cloudflare Turnstile, dan Turnstile MATI di lingkungan e2e —
+    // NEXT_PUBLIC_TURNSTILE_SITE_KEY kosong, jadi widget-nya tidak dirender
+    // dan peladen (TURNSTILE_SECRET_KEY kosong) tidak menuntut token.
 
     await page.getByRole("button", { name: /verifikasi dokumen/i }).click();
 
@@ -83,14 +79,10 @@ test.describe("E-Office & Public Letter Verification E2E", () => {
       buffer,
     });
 
-    const captchaText = await page.textContent("text=/Keamanan Anti-Spam: Berapakah/");
-    if (captchaText) {
-      const match = captchaText.match(/(\d+)\s*\+\s*(\d+)/);
-      if (match) {
-        const sum = parseInt(match[1]) + parseInt(match[2]);
-        await page.getByPlaceholder("Hasil...").fill(sum.toString());
-      }
-    }
+    // Tidak ada langkah captcha di sini lagi. Tantangan aritmetika sudah
+    // diganti Cloudflare Turnstile, dan Turnstile MATI di lingkungan e2e —
+    // NEXT_PUBLIC_TURNSTILE_SITE_KEY kosong, jadi widget-nya tidak dirender
+    // dan peladen (TURNSTILE_SECRET_KEY kosong) tidak menuntut token.
 
     await page.getByRole("button", { name: /verifikasi dokumen/i }).click();
 
@@ -145,14 +137,10 @@ test.describe("E-Office & Public Letter Verification E2E", () => {
       buffer,
     });
 
-    const captchaText = await page.textContent("text=/Keamanan Anti-Spam: Berapakah/");
-    if (captchaText) {
-      const match = captchaText.match(/(\d+)\s*\+\s*(\d+)/);
-      if (match) {
-        const sum = parseInt(match[1]) + parseInt(match[2]);
-        await page.getByPlaceholder("Hasil...").fill(sum.toString());
-      }
-    }
+    // Tidak ada langkah captcha di sini lagi. Tantangan aritmetika sudah
+    // diganti Cloudflare Turnstile, dan Turnstile MATI di lingkungan e2e —
+    // NEXT_PUBLIC_TURNSTILE_SITE_KEY kosong, jadi widget-nya tidak dirender
+    // dan peladen (TURNSTILE_SECRET_KEY kosong) tidak menuntut token.
 
     await page.getByRole("button", { name: /verifikasi dokumen/i }).click();
 
@@ -185,14 +173,10 @@ test.describe("E-Office & Public Letter Verification E2E", () => {
       buffer,
     });
 
-    const captchaText = await page.textContent("text=/Keamanan Anti-Spam: Berapakah/");
-    if (captchaText) {
-      const match = captchaText.match(/(\d+)\s*\+\s*(\d+)/);
-      if (match) {
-        const sum = parseInt(match[1]) + parseInt(match[2]);
-        await page.getByPlaceholder("Hasil...").fill(sum.toString());
-      }
-    }
+    // Tidak ada langkah captcha di sini lagi. Tantangan aritmetika sudah
+    // diganti Cloudflare Turnstile, dan Turnstile MATI di lingkungan e2e —
+    // NEXT_PUBLIC_TURNSTILE_SITE_KEY kosong, jadi widget-nya tidak dirender
+    // dan peladen (TURNSTILE_SECRET_KEY kosong) tidak menuntut token.
 
     await page.getByRole("button", { name: /verifikasi dokumen/i }).click();
 

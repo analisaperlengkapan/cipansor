@@ -9,6 +9,8 @@ import type { ApiResponse } from "./types";
 export interface LoginCredentials {
   email: string;
   password: string;
+  /** Token Turnstile; tidak ada ketika gerbangnya dimatikan di build ini. */
+  turnstileToken?: string;
 }
 
 export interface RegisterInput {

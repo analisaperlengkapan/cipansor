@@ -4,6 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { MessageCircle, X, Send, Loader2 } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import { useChatbotAvailability, usePublicChat } from "@/hooks/use-chatbot";
+import {
+  TurnstileWidget,
+  isTurnstileEnabled,
+} from "@/components/security/turnstile-widget";
 import type { ChatMessage, PublicChatResponse } from "@/hooks/use-chatbot";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -41,6 +45,21 @@ export function ChatWidget() {
   const [input, setInput] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);
   const chat = usePublicChat();
+
+  /**
+   * Satu token per pertanyaan, dimuat ulang begitu pertanyaan terkirim.
+   *
+   * Endpoint ini membelanjakan uang pada setiap panggilan, jadi ia dijaga
+   * seperti form publik lainnya. Yang membuatnya tetap nyaman: Turnstile
+   * dalam mode terkelola menyelesaikan tantangannya sendiri tanpa klik untuk
+   * hampir semua pengunjung, dan tantangan berikutnya sudah disiapkan selagi
+   * orangnya mengetik pertanyaan berikutnya.
+   */
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
+  const turnstileRequired = isTurnstileEnabled();
+  // Widget tidak dapat dimuat: teruskan, biarkan peladen yang memutuskan.
+  const [turnstileBlocked, setTurnstileBlocked] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -60,6 +79,7 @@ export function ChatWidget() {
   async function send(question: string) {
     const trimmed = question.trim();
     if (trimmed.length < 2 || chat.isPending) return;
+    if (turnstileRequired && !turnstileToken && !turnstileBlocked) return;
 
     // Only the turns already exchanged are sent as history — never the turn
     // being added, and never anything the server did not produce.
@@ -71,7 +91,11 @@ export function ChatWidget() {
     setInput("");
 
     try {
-      const result = await chat.mutateAsync({ message: trimmed, history });
+      const result = await chat.mutateAsync({
+        message: trimmed,
+        history,
+        turnstileToken: turnstileToken ?? undefined,
+      });
       setTurns((prev) => [
         ...prev,
         { role: "assistant", content: result.answer, sources: result.sources },
@@ -87,6 +111,11 @@ export function ChatWidget() {
           content: `Maaf, asisten sedang tidak dapat menjawab. Silakan hubungi kami di ${siteConfig.contact.phone} atau melalui WhatsApp.`,
         },
       ]);
+    } finally {
+      // Tokennya sudah ditukarkan — berhasil atau tidak — jadi pertanyaan
+      // berikutnya membutuhkan tantangan baru.
+      setTurnstileToken(null);
+      setTurnstileResetSignal((n) => n + 1);
     }
   }
 
@@ -177,6 +206,14 @@ export function ChatWidget() {
             )}
           </div>
 
+          <TurnstileWidget
+            action="chatbot-ask"
+            onToken={setTurnstileToken}
+            onUnavailable={() => setTurnstileBlocked(true)}
+            resetSignal={turnstileResetSignal}
+            className="border-t border-border px-3 pt-3"
+          />
+
           <form
             onSubmit={(event) => {
               event.preventDefault();
@@ -196,7 +233,11 @@ export function ChatWidget() {
             <Button
               type="submit"
               size="icon"
-              disabled={chat.isPending || input.trim().length < 2}
+              disabled={
+                chat.isPending ||
+                input.trim().length < 2 ||
+                (turnstileRequired && !turnstileToken && !turnstileBlocked)
+              }
             >
               <Send className="h-4 w-4" />
               <span className="sr-only">Kirim</span>

@@ -26,6 +26,15 @@ export interface PublicChatRequest {
    */
   history?: ChatMessage[];
   /**
+   * Token Cloudflare Turnstile untuk satu pertanyaan.
+   *
+   * Satu token per pesan, bukan satu per percakapan: Cloudflare menolak
+   * penukaran kedua atas token yang sama, sehingga token yang dipakai ulang
+   * akan membuat pertanyaan kedua gagal dan seterusnya. Opsional karena
+   * gerbangnya dapat dimatikan seluruhnya.
+   */
+  turnstileToken?: string;
+  /**
    * Opaque client-generated conversation id, for logging and rate limiting.
    * Carries no authority — it is not a session and grants nothing.
    */

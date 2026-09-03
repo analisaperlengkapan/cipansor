@@ -4,6 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import {
+  TurnstileWidget,
+  isTurnstileEnabled,
+} from "@/components/security/turnstile-widget";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuthStore } from "@/stores/auth";
@@ -127,6 +131,31 @@ function LoginPageContent() {
   const [selectedDemo, setSelectedDemo] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>(DEMO_TABS[0]?.key ?? "");
 
+  /**
+   * Turnstile di halaman masuk.
+   *
+   * `authLimiter` membatasi 5 percobaan per menit **per IP**, dan itu memang
+   * menghentikan satu mesin yang menebak kata sandi. Yang tidak dihentikannya
+   * adalah percobaan yang tersebar di ribuan IP, karena tidak satu pun dari
+   * mereka menyentuh batasnya. Turnstile menaikkan ongkos setiap percobaan,
+   * bukan ongkos setiap alamat.
+   */
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
+  const turnstileRequired = isTurnstileEnabled();
+  /**
+   * Turnstile menyala di build ini, tetapi widget-nya tidak dapat dimuat pada
+   * peramban ini. Tombolnya dibuka kembali dan peladen yang memutuskan — ia
+   * sudah gagal-terbuka ketika Cloudflare tak terjangkau. Mengunci tombolnya
+   * di sini akan membuat pengurus terkurung di luar portalnya sendiri tanpa
+   * satu pun tuas di sisi peladen yang dapat membukanya.
+   */
+  const [turnstileBlocked, setTurnstileBlocked] = useState(false);
+  const refreshTurnstile = () => {
+    setTurnstileToken(null);
+    setTurnstileResetSignal((n) => n + 1);
+  };
+
   const {
     register,
     handleSubmit,
@@ -139,7 +168,7 @@ function LoginPageContent() {
   const onSubmit = async (data: LoginForm) => {
     try {
       clearError();
-      await login(data);
+      await login({ ...data, turnstileToken: turnstileToken ?? undefined });
       const state = useAuthStore.getState();
       if (
         !state.requiresTwoFactor &&
@@ -149,7 +178,10 @@ function LoginPageContent() {
         router.push(landingRouteForCurrentUser());
       }
     } catch {
-      // Error is handled in store
+      // Error is handled in store. Tokennya sudah terpakai apa pun hasilnya —
+      // Cloudflare menolak penukaran kedua — jadi percobaan berikutnya butuh
+      // tantangan baru, bukan token yang sama.
+      refreshTurnstile();
     }
   };
 
@@ -166,7 +198,11 @@ function LoginPageContent() {
       setSelectedDemo(acc.email);
       setValue("email", acc.email);
       setValue("password", acc.password);
-      await login({ email: acc.email, password: acc.password });
+      await login({
+        email: acc.email,
+        password: acc.password,
+        turnstileToken: turnstileToken ?? undefined,
+      });
 
       const state = useAuthStore.getState();
       if (
@@ -406,7 +442,21 @@ function LoginPageContent() {
                 )}
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <TurnstileWidget
+                action="login"
+                onToken={setTurnstileToken}
+                onUnavailable={() => setTurnstileBlocked(true)}
+                resetSignal={turnstileResetSignal}
+              />
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={
+                  isLoading ||
+                  (turnstileRequired && !turnstileToken && !turnstileBlocked)
+                }
+              >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Masuk
               </Button>

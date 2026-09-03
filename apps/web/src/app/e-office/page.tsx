@@ -358,7 +358,7 @@ export default function EOfficeMainPage() {
 
         <Card
           className="cursor-pointer hover:bg-primary/5 transition-colors border-2 border-dashed"
-          onClick={() => router.push("/e-office/archive")}
+          onClick={() => router.push("/e-office/inbox?status=ARCHIVED")}
         >
           <CardContent className="flex flex-col items-center justify-center p-6 gap-2">
             <div className="p-3 bg-purple-100 rounded-full">
@@ -366,7 +366,7 @@ export default function EOfficeMainPage() {
             </div>
             <span className="font-medium">Arsip Surat</span>
             <span className="text-xs text-muted-foreground text-center">
-              Akses arsip surat lama
+              Akses arsip surat terverifikasi
             </span>
           </CardContent>
         </Card>

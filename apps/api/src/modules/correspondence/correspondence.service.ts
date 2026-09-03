@@ -185,9 +185,9 @@ export const CorrespondenceService = {
       }
     }
 
-    // Reject terminal/signed status directly supplied by client
-    if (['SIGNED', 'READY_TO_SIGN', 'ARCHIVED'].includes(data.status)) {
-      throw Errors.badRequest('Status awal surat yang dikirim tidak valid');
+    // Restrict initial status: only DRAFT or PENDING_REVIEW can be set upon creation
+    if (!['DRAFT', 'PENDING_REVIEW'].includes(data.status)) {
+      throw Errors.badRequest('Status awal surat yang dikirim hanya boleh DRAFT atau PENDING_REVIEW');
     }
 
     // Jenis naskah menentukan sifat mana yang sah dan buku nomor mana yang
@@ -247,6 +247,40 @@ export const CorrespondenceService = {
           createdById: userId,
         },
       });
+
+      // Validate eligibility of reviewers and recipients
+      const allParticipantIds = Array.from(new Set([
+        ...(data.reviewerIds ?? []),
+        ...(data.recipientIds ?? []),
+      ]));
+
+      if (allParticipantIds.length > 0) {
+        const eligibleUsers = await tx.user.findMany({
+          where: {
+            id: { in: allParticipantIds },
+            deletedAt: null,
+            userRoles: {
+              some: {
+                isActive: true,
+                roleCode: { notIn: [
+                  'SDIT_SISWA', 'SMPIT_SISWA', 'SMAQ_SISWA', 'TKQ_SISWA',
+                  'SDIT_ORANG_TUA', 'SMPIT_ORANG_TUA', 'SMAQ_ORANG_TUA', 'TKQ_ORANG_TUA',
+                  'SDIT_KOMITE', 'SMPIT_KOMITE', 'SMAQ_KOMITE', 'TKQ_KOMITE',
+                  'ALUMNI'
+                ] },
+              },
+            },
+          },
+          select: { id: true },
+        });
+
+        const eligibleSet = new Set(eligibleUsers.map((u) => u.id));
+        const invalidIds = allParticipantIds.filter((id) => !eligibleSet.has(id));
+
+        if (invalidIds.length > 0) {
+          throw Errors.badRequest(`Satu atau lebih verifikator atau penerima tidak memenuhi syarat kelayakan korespondensi`);
+        }
+      }
 
       // Add Reviewers
       if (data.reviewerIds && data.reviewerIds.length > 0) {

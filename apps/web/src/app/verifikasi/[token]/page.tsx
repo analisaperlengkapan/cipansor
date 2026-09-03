@@ -214,6 +214,13 @@ export default async function VerifikasiPage({
                 membuktikan keasliannya.
               </p>
             )}
+
+            <div className="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-4 text-xs text-blue-900">
+              <p className="font-semibold">Verifikasi Fisik Dokumen Cetak / Berkas PDF</p>
+              <p className="mt-1">
+                Halaman token ini memverifikasi metadata catatan penandatanganan elektronik. Untuk memverifikasi keaslian fisik berkas PDF utuh atau dokumen cetak secara langsung via byte digest SHA-256, gunakan fasilitas unggah dokumen di layanan e-Office.
+              </p>
+            </div>
           </>
         )}
 

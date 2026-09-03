@@ -778,8 +778,43 @@ either is caught without asking anything outside. That check *warns* rather than
 refuses — civil-registry errors exist, and blocking a legitimate official
 because their own NIK is internally inconsistent costs more than reporting it.
 
-Step 3 (the KTP image and OCR) is not built; see the analysis below for why the
-order matters.
+**Step 3 is now built too, and the reasoning changed on the way.** Two
+corrections came out of reviewing the first version:
+
+*The verification methods were mostly unfalsifiable.* Of the three offered —
+card shown in person, scan examined, known personally — two left nothing anyone
+could check. An approver could pick either without doing anything, and the
+record would read "because I said so". A choice that leaves no evidence shrinks
+the whole gate to a click. And requiring a hundred staff across five units to
+visit the Super Admin in person is not a flow anyone can run. There is one path
+now: a KTP photograph uploaded through the system.
+
+*Deleting the image at the decision was an over-correction.* It made
+"show the card you checked" unanswerable — and that is precisely the question
+retention exists for. eIDAS Art. 24.2(h) requires registration information to
+be kept "for the purpose of providing evidence in legal proceedings", and the
+CA/Browser Forum sets the figure at **seven years after the certificate ceases
+to be valid**. A hash does not substitute: it can decide whether a copy is
+identical, it cannot show what was examined. So a rejected request has its image
+deleted immediately — no key was issued, so nothing is being accounted for — and
+an approved one keeps it until `ktpRetainUntil`, computed from the key's expiry
+plus `IDENTITY_DOCUMENT_RETENTION_YEARS` (default 7, lowerable by the yayasan,
+and written down in one place rather than chosen implicitly).
+
+What holds either way: **the applicant loses read access the moment the request
+is decided.** They already hold their own KTP, so closing that path costs them
+nothing and removes an exfiltration route from a hijacked session. Only Super
+Admin can open it, through one endpoint that records every read into
+`AuditLog` — because "only Super Admin can see it" is a promise that needs a
+record before anyone can check it.
+
+The files live in `apps/api/private/identity/`, mode 0600, gitignored, and on
+no static route. Not tidiness: `public/uploads` is served behind `uploadsAuth`,
+which its own comment calls authentication rather than authorisation — any
+valid access token opens every file there. Retention is enforced by
+`pnpm --filter api db:purge-identity-documents`, run periodically, because a
+retention date with nothing to act on it is a date in a database while the file
+stays on disk forever.
 
 #### The original write-up
 

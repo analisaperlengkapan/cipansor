@@ -55,7 +55,8 @@ export function StateBadge({ state }: { state: SigningKeyState }) {
 }
 
 export function EsignPanel() {
-  const { status, saveIdentity, requestKey, activate, changePassphrase } = useEsign();
+  const { status, saveIdentity, uploadKtp, requestKey, activate, changePassphrase } =
+    useEsign();
   const [reason, setReason] = useState("");
   const [identityForm, setIdentityForm] = useState({
     legalName: "",
@@ -96,6 +97,24 @@ export function EsignPanel() {
           e?.response?.data?.message ??
           "Gagal menyimpan data identitas",
       );
+    }
+  }
+
+  async function submitKtp(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      await uploadKtp.mutateAsync(file);
+      toast.success("Foto KTP terunggah, menunggu diperiksa Super Admin.");
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.error?.message ??
+          err?.response?.data?.message ??
+          "Gagal mengunggah foto KTP",
+      );
+    } finally {
+      // Supaya berkas yang sama dapat dipilih lagi setelah gagal.
+      e.target.value = "";
     }
   }
 
@@ -255,6 +274,54 @@ export function EsignPanel() {
               </dl>
             )}
 
+            {/*
+              Foto KTP — satu-satunya jalur pembuktian.
+
+              Dulu penyetuju dapat memilih "kartu ditunjukkan langsung" atau
+              "dikenali pribadi", dan keduanya tidak meninggalkan apa pun yang
+              dapat diperiksa: dapat dipilih tanpa melakukan apa pun, sehingga
+              seluruh pemeriksaan menyusut menjadi sekadar klik. Ditambah lagi,
+              menuntut seratusan staf lintas unit mendatangi Super Admin satu
+              per satu bukan alur yang dapat dijalankan siapa pun.
+            */}
+            {s.identity.missingFields.length === 0 &&
+              !s.identity.verifiedAt &&
+              !identityOpen && (
+                <div className="space-y-2 rounded-md border border-dashed p-3">
+                  <Label htmlFor="ktp-file" className="text-sm">
+                    Foto KTP
+                  </Label>
+                  {s.identity.hasKtpOnFile ? (
+                    <p className="text-sm text-emerald-700">
+                      Sudah diunggah{" "}
+                      {s.identity.ktpUploadedAt
+                        ? fmt(s.identity.ktpUploadedAt)
+                        : ""}
+                      . Hanya Super Admin yang dapat membukanya, dan setiap
+                      pembacaan dicatat.
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Diperlukan agar Super Admin dapat mencocokkan data di atas
+                      dengan kartu identitas Anda.
+                    </p>
+                  )}
+                  <Input
+                    id="ktp-file"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    onChange={submitKtp}
+                    disabled={uploadKtp.isPending}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Setelah pengajuan Anda diputuskan, berkas ini tidak lagi
+                    dapat Anda buka — Anda sudah memegang kartunya, dan menutup
+                    jalur ini menghapus satu jalan yang terbuka bila akun Anda
+                    dibajak.
+                  </p>
+                </div>
+              )}
+
             {identityOpen ? (
               <div className="space-y-3">
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -367,18 +434,29 @@ export function EsignPanel() {
               <p className="text-xs text-muted-foreground">
                 {s.identity?.missingFields.length
                   ? "Lengkapi identitas Anda terlebih dahulu."
-                  : "Menunggu Super Admin memverifikasi identitas Anda."}
+                  : !s.identity?.hasKtpOnFile
+                    ? "Unggah foto KTP Anda terlebih dahulu."
+                    : "Menunggu Super Admin memverifikasi identitas Anda."}
               </p>
             )}
           </div>
         )}
 
         {/*
-          Menetapkan passphrase setelah pengajuan disetujui. Kuncinya baru
-          dibuat pada langkah ini, karena hanya pemiliknya yang boleh tahu
-          passphrase-nya — server pun tidak menyimpannya.
+          Menetapkan passphrase — hanya setelah pengajuan benar-benar disetujui.
+
+          Syaratnya dulu `!hasKey && !pendingRequest`, yang juga benar bagi
+          orang yang belum pernah mengajukan apa pun: kotak ini muncul
+          berdampingan dengan kotak "Ajukan penerbitan", dan menekan tombolnya
+          selalu dijawab server dengan "Belum ada persetujuan penerbitan kunci
+          tanda tangan untuk Anda". Menawarkan langkah yang pasti gagal membuat
+          orang menebak urutannya sendiri.
+
+          Kuncinya memang baru dibuat pada langkah ini, bukan saat disetujui,
+          karena hanya pemiliknya yang boleh tahu passphrase-nya — server pun
+          tidak menyimpannya, dan penyetuju tidak boleh pernah melewatinya.
         */}
-        {!s?.hasKey && !s?.pendingRequest && (
+        {s?.approvedAwaitingActivation && (
           <div className="space-y-2 rounded-lg border p-4">
             <Label htmlFor="esign-new">Tetapkan passphrase (minimal 12 karakter)</Label>
             <Input

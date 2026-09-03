@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { IdentityVerificationMethod, SigningKeyRevocationCode } from '@prisma/client';
+import { SigningKeyRevocationCode } from '@prisma/client';
 import { MIN_PASSPHRASE_LENGTH } from '@/utils/esign';
 import { MAX_VALIDITY_DAYS, MIN_VALIDITY_DAYS } from '@/utils/esign-lifecycle';
 import {
@@ -32,15 +32,17 @@ export const decideRequestSchema = z.object({
   grantedDays: z.number().int().min(MIN_VALIDITY_DAYS).max(MAX_VALIDITY_DAYS).optional(),
   note: z.string().max(1000).optional(),
   /**
-   * Bagaimana identitas pemohon dicocokkan.
+   * Pernyataan bahwa foto KTP pemohon sudah dibuka dan datanya cocok.
    *
    * Wajib bila identitasnya belum pernah diverifikasi — server yang
    * memeriksanya, bukan skema ini, sebab jawabannya bergantung pada keadaan
-   * baris identitas dan bukan pada bentuk permintaan.
+   * baris identitas dan bukan pada bentuk permintaan. Tidak ada lagi pilihan
+   * *cara*: satu-satunya cara adalah foto KTP yang diunggah lewat sistem ini,
+   * karena pilihan yang tidak meninggalkan bukti mengubah verifikasi menjadi
+   * sekadar klik.
    */
   identityVerification: z
     .object({
-      method: z.nativeEnum(IdentityVerificationMethod),
       note: z.string().max(1000).optional(),
     })
     .optional(),

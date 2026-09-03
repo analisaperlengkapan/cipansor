@@ -11,22 +11,12 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from "@/components/ui/card";
-import {
-  useEsignRequests,
-  IDENTITY_VERIFICATION_LABELS,
-  type IdentityVerificationMethod,
-} from "@/hooks/use-esign";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { useEsignRequests } from "@/hooks/use-esign";
+import { authFileUrl } from "@/lib/files";
 import { EsignKeyInventory } from "@/components/settings/esign-key-inventory";
 import { safeFormat } from "@/lib/date";
 import { id as idLocale } from "date-fns/locale";
-import { ShieldCheck, Clock, BadgeCheck, TriangleAlert } from "lucide-react";
+import { ShieldCheck, Clock, BadgeCheck, TriangleAlert, FileImage } from "lucide-react";
 
 /**
  * Antrean persetujuan kunci tanda tangan elektronik — kewenangan Super Admin.
@@ -60,9 +50,6 @@ export default function EsignRequestsPage() {
   const { requests, decide } = useEsignRequests();
   const [days, setDays] = useState<Record<string, number>>({});
   const [note, setNote] = useState<Record<string, string>>({});
-  const [method, setMethod] = useState<
-    Record<string, IdentityVerificationMethod>
-  >({});
   const [idNote, setIdNote] = useState<Record<string, string>>({});
 
   const rows: any[] = requests.data ?? [];
@@ -80,12 +67,7 @@ export default function EsignRequestsPage() {
         // diverifikasi. Menolak tidak menuntut apa pun: yang ditolak tidak
         // menerbitkan kunci.
         identityVerification:
-          approve && needsIdentity
-            ? {
-                method: method[id] ?? "KTP_IN_PERSON",
-                note: idNote[id] || undefined,
-              }
-            : undefined,
+          approve && needsIdentity ? { note: idNote[id] || undefined } : undefined,
       });
       toast.success(approve ? "Pengajuan disetujui." : "Pengajuan ditolak.");
     } catch (e: any) {
@@ -138,7 +120,10 @@ export default function EsignRequestsPage() {
                 .filter(([v]) => !v)
                 .map(([, label]) => label as string);
               const needsIdentity = !identity?.verifiedAt;
-              const canApprove = missing.length === 0;
+              // Tanpa berkasnya, tidak ada yang dapat dicocokkan — dan
+              // menyetujui tanpa mencocokkan bukan verifikasi.
+              const hasKtp = !!identity?.ktpUploadedAt && !identity?.ktpDeletedAt;
+              const canApprove = missing.length === 0 && (!needsIdentity || hasKtp);
 
               return (
               <div key={r.id} className="space-y-3 rounded-lg border p-4">
@@ -225,8 +210,8 @@ export default function EsignRequestsPage() {
                         "dd MMM yyyy",
                         { locale: idLocale },
                       )}
-                      {identity.verificationMethod
-                        ? ` — ${IDENTITY_VERIFICATION_LABELS[identity.verificationMethod as IdentityVerificationMethod] ?? identity.verificationMethod}`
+                      {identity.verificationNote
+                        ? ` — ${identity.verificationNote}`
                         : ""}
                     </p>
                   )}
@@ -238,47 +223,51 @@ export default function EsignRequestsPage() {
                   lestari: ia menjawab "atas dasar apa kunci ini terbit"
                   bertahun-tahun kemudian.
                 */}
-                {canApprove && needsIdentity && (
-                  <div className="grid gap-3 rounded-md border border-amber-300 bg-amber-50 p-3 sm:grid-cols-2">
-                    <div className="space-y-1 sm:col-span-2">
-                      <p className="text-xs font-medium text-amber-900">
-                        Identitas ini belum pernah diverifikasi. Cocokkan datanya
-                        dengan kartu identitas, lalu sebutkan cara pemeriksaannya.
-                      </p>
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor={`method-${r.id}`}>Cara pemeriksaan</Label>
-                      <Select
-                        value={method[r.id] ?? "KTP_IN_PERSON"}
-                        onValueChange={(v) =>
-                          setMethod({
-                            ...method,
-                            [r.id]: v as IdentityVerificationMethod,
-                          })
-                        }
-                      >
-                        <SelectTrigger id={`method-${r.id}`} className="bg-white">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(IDENTITY_VERIFICATION_LABELS).map(
-                            ([value, label]) => (
-                              <SelectItem key={value} value={value}>
-                                {label}
-                              </SelectItem>
-                            ),
+                {/*
+                  Foto KTP-nya, dan pernyataan bahwa ia sudah dibuka.
+
+                  Tidak ada lagi pilihan *cara*: dua dari tiga pilihan lama —
+                  "ditunjukkan langsung" dan "dikenali pribadi" — tidak
+                  meninggalkan apa pun yang dapat diperiksa, sehingga dapat
+                  dipilih tanpa melakukan apa pun. Yang tersisa satu jalur, dan
+                  jalur itu meninggalkan berkas beserta hash-nya.
+                */}
+                {missing.length === 0 && needsIdentity && (
+                  <div className="space-y-3 rounded-md border border-amber-300 bg-amber-50 p-3">
+                    <p className="text-xs font-medium text-amber-900">
+                      Identitas ini belum diverifikasi. Buka foto KTP-nya,
+                      cocokkan dengan data di atas, lalu nyatakan kecocokannya.
+                    </p>
+
+                    {hasKtp ? (
+                      <Button variant="outline" size="sm" asChild>
+                        <a
+                          href={authFileUrl(
+                            `/api/esign/identities/${r.user.id}/ktp`,
                           )}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <FileImage className="mr-2 h-4 w-4" />
+                          Buka Foto KTP
+                        </a>
+                      </Button>
+                    ) : (
+                      <p className="flex items-start gap-2 text-sm text-amber-800">
+                        <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+                        Pemohon belum mengunggah foto KTP, sehingga tidak ada
+                        yang dapat dicocokkan.
+                      </p>
+                    )}
+
                     <div className="space-y-1">
                       <Label htmlFor={`idnote-${r.id}`}>
-                        Keterangan (opsional)
+                        Keterangan pemeriksaan (opsional)
                       </Label>
                       <Input
                         id={`idnote-${r.id}`}
                         className="bg-white"
-                        placeholder="mis. KTP asli ditunjukkan di kantor yayasan"
+                        placeholder="mis. NIK dan nama cocok; foto jelas terbaca"
                         value={idNote[r.id] ?? ""}
                         onChange={(e) =>
                           setIdNote({ ...idNote, [r.id]: e.target.value })
@@ -331,7 +320,9 @@ export default function EsignRequestsPage() {
                   </Button>
                   {!canApprove && (
                     <span className="text-xs text-muted-foreground">
-                      Persetujuan terkunci sampai identitas pemohon lengkap.
+                      {missing.length > 0
+                        ? "Persetujuan terkunci sampai identitas pemohon lengkap."
+                        : "Persetujuan terkunci sampai pemohon mengunggah foto KTP."}
                     </span>
                   )}
                 </div>

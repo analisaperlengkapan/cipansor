@@ -7228,15 +7228,54 @@ model UserIdentity {
   /// diperiksa sekali seumur hidup.
   verifiedAt   DateTime? @map("verified_at")
   verifiedById String?   @map("verified_by_id")
-  /// Bagaimana identitasnya dibuktikan — inilah artefak yang lestari.
+  /// Catatan penyetuju saat mencocokkan — inilah artefak yang lestari.
   ///
-  /// Bukan gambarnya. Sebuah pindaian KTP adalah data pribadi bersifat
-  /// spesifik yang harus dijaga selama disimpan; catatan bahwa seorang pejabat
-  /// tertentu telah mencocokkannya pada tanggal tertentu menjawab pertanyaan
-  /// yang sama, berukuran beberapa baris, dan tidak menjadi sasaran bila basis
-  /// data ini bocor.
-  verificationMethod IdentityVerificationMethod? @map("verification_method")
+  /// Bukan gambarnya. Pindaian KTP adalah data pribadi bersifat spesifik yang
+  /// harus dijaga selama ia disimpan; catatan bahwa seorang pejabat tertentu
+  /// telah mencocokkannya pada tanggal tertentu, terhadap berkas ber-hash
+  /// tertentu, menjawab pertanyaan yang sama — berukuran beberapa baris, dan
+  /// tidak menjadi sasaran bila basis data ini bocor.
   verificationNote   String?                     @map("verification_note") @db.Text
+
+  /// Berkas foto KTP, selama masa hidupnya yang pendek.
+  ///
+  /// Disimpan **di luar** `public/uploads`. Direktori itu disajikan di balik
+  /// `uploadsAuth`, yang menurut komentarnya sendiri adalah autentikasi dan
+  /// bukan otorisasi: setiap token yang sah membuka setiap berkas di sana. Foto
+  /// KTP karena itu tidak boleh melewatinya — ia hanya boleh terbaca oleh Super
+  /// Admin yang sedang memutuskan, lewat endpoint yang memeriksanya dan
+  /// mencatat setiap pembacaan.
+  ///
+  /// **Ditolak → dihapus seketika. Disetujui → disimpan sampai `ktpRetainUntil`.**
+  ///
+  /// Pengajuan yang ditolak tidak menerbitkan kunci, sehingga berkasnya tidak
+  /// membuktikan apa pun lagi, dan data pribadi yang disimpan tanpa keperluan
+  /// hanyalah kewajiban tanpa manfaat.
+  ///
+  /// Pengajuan yang disetujui lain persoalannya. Menghapusnya saat itu juga
+  /// membuat pertanyaan "tunjukkan kartu yang Anda periksa" tidak dapat
+  /// dijawab — dan justru pertanyaan itulah yang membuat bukti registrasi
+  /// disimpan dalam praktik yang baku: eIDAS Ps. 24.2(h) mewajibkan
+  /// penyelenggara menyimpan informasi registrasi "untuk keperluan pembuktian
+  /// dalam proses hukum", dan CA/Browser Forum menetapkan **tujuh tahun
+  /// setelah sertifikat berhenti berlaku**. Hash saja tidak menggantikannya:
+  /// ia dapat memutuskan apakah sebuah salinan identik, tetapi tidak dapat
+  /// memunculkan kembali apa yang diperiksa.
+  ///
+  /// Yang tetap berlaku: **pemohon kehilangan aksesnya begitu diputuskan.** Ia
+  /// sudah memegang kartunya sendiri, sehingga menutup jalur baca itu tidak
+  /// merugikannya dan menghapus satu jalan penyadapan bila sesinya dibajak.
+  /// Hanya Super Admin yang dapat membukanya, lewat satu endpoint yang
+  /// mencatat setiap pembacaan.
+  ktpFileName   String?   @map("ktp_file_name")
+  ktpSha256     String?   @map("ktp_sha256")
+  ktpUploadedAt DateTime? @map("ktp_uploaded_at")
+  /// Batas simpan berkasnya. Lewat tanggal ini ia dihapus oleh
+  /// `db:purge-identity-documents`, dan `ktpDeletedAt` mencatat bahwa itu
+  /// benar-benar terjadi — kolom kosong tidak dapat membedakan "sudah dihapus"
+  /// dari "tidak pernah ada".
+  ktpRetainUntil DateTime? @map("ktp_retain_until")
+  ktpDeletedAt   DateTime? @map("ktp_deleted_at")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -7245,13 +7284,6 @@ model UserIdentity {
   verifiedBy User? @relation("IdentityVerifier", fields: [verifiedById], references: [id])
 
   @@map("user_identities")
-}
-
-/// Cara identitas seseorang dibuktikan kepada penyetuju.
-enum IdentityVerificationMethod {
-  KTP_IN_PERSON // Kartu identitas ditunjukkan langsung dan dicocokkan
-  KTP_SCAN // Pindaian/foto kartu identitas diperiksa
-  KNOWN_PERSONALLY // Dikenali pribadi oleh penyetuju, tanpa kartu ditunjukkan
 }
 
 model SigningKeyRequest {

@@ -19,27 +19,14 @@ export type SigningKeyState =
   | "REVOKED";
 
 /**
- * Cara identitas seseorang dibuktikan kepada penyetuju.
+ * Keadaan identitas pemohon.
  *
- * Inilah artefak yang lestari — bukan pindaian kartunya. Catatan bahwa pejabat
- * tertentu telah mencocokkannya pada tanggal tertentu menjawab pertanyaan yang
- * sama, berukuran beberapa baris, dan tidak menjadi sasaran bila basis data
- * bocor.
+ * Tidak ada lagi pilihan *cara* pembuktian. Dulu ada tiga — kartu ditunjukkan
+ * langsung, pindaian diperiksa, dikenali pribadi — dan dua di antaranya tidak
+ * meninggalkan apa pun yang dapat diperiksa: seorang penyetuju dapat
+ * memilihnya tanpa melakukan apa pun, sehingga seluruh gerbang ini menyusut
+ * menjadi sekadar klik. Satu jalur saja sekarang, lewat berkas yang diunggah.
  */
-export type IdentityVerificationMethod =
-  | "KTP_IN_PERSON"
-  | "KTP_SCAN"
-  | "KNOWN_PERSONALLY";
-
-export const IDENTITY_VERIFICATION_LABELS: Record<
-  IdentityVerificationMethod,
-  string
-> = {
-  KTP_IN_PERSON: "KTP ditunjukkan langsung dan dicocokkan",
-  KTP_SCAN: "Pindaian/foto KTP diperiksa",
-  KNOWN_PERSONALLY: "Dikenali pribadi, tanpa kartu ditunjukkan",
-};
-
 export interface EsignIdentityStatus {
   legalName: string | null;
   birthPlace: string | null;
@@ -49,6 +36,11 @@ export interface EsignIdentityStatus {
   /** Ruas yang masih kosong, dalam bahasa yang bisa dibacakan. */
   missingFields: string[];
   verifiedAt: string | null;
+  ktpUploadedAt: string | null;
+  ktpDeletedAt: string | null;
+  /** Sampai kapan berkasnya disimpan; hanya Super Admin yang dapat membukanya. */
+  ktpRetainUntil: string | null;
+  hasKtpOnFile: boolean;
 }
 
 export interface EsignStatus {
@@ -63,6 +55,15 @@ export interface EsignStatus {
   canRequestRenewal: boolean;
   needsNewIssuance: boolean;
   pendingRequest: { id: string; kind: string; createdAt: string } | null;
+  /**
+   * Persetujuan sudah ada dan passphrase-nya belum ditetapkan.
+   *
+   * Kotak passphrase dulu ditawarkan berdasarkan "belum punya kunci dan tidak
+   * sedang mengajukan" — yang juga benar bagi orang yang belum pernah
+   * mengajukan apa pun, sehingga kotak itu tampil berdampingan dengan kotak
+   * pengajuan dan tombolnya pasti ditolak server.
+   */
+  approvedAwaitingActivation: boolean;
 }
 
 export function useEsign() {
@@ -92,6 +93,20 @@ export function useEsign() {
     onSuccess: invalidate,
   });
 
+  /** Foto KTP — satu-satunya jalur pembuktian identitas. */
+  const uploadKtp = useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData();
+      form.append("file", file);
+      return (
+        await api.post("/esign/me/identity/ktp", form, {
+          headers: { "Content-Type": "multipart/form-data" },
+        })
+      ).data.data;
+    },
+    onSuccess: invalidate,
+  });
+
   const requestKey = useMutation({
     mutationFn: async (reason?: string) =>
       (await api.post("/esign/me/request", { reason })).data.data,
@@ -113,7 +128,7 @@ export function useEsign() {
     onSuccess: invalidate,
   });
 
-  return { status, saveIdentity, requestKey, activate, changePassphrase };
+  return { status, saveIdentity, uploadKtp, requestKey, activate, changePassphrase };
 }
 
 /** Antrean pengajuan — hanya Super Admin yang dilayani server. */
@@ -133,10 +148,7 @@ export function useEsignRequests(status?: "PENDING" | "APPROVED" | "REJECTED") {
       grantedDays?: number;
       note?: string;
       /** Wajib bila identitas pemohon belum pernah diverifikasi. */
-      identityVerification?: {
-        method: IdentityVerificationMethod;
-        note?: string;
-      };
+      identityVerification?: { note?: string };
     }) => {
       const { id, ...body } = input;
       return (await api.post(`/esign/requests/${id}/decide`, body)).data.data;

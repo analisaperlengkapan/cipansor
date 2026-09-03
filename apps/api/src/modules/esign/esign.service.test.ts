@@ -66,8 +66,12 @@ function verifiedIdentity(over: Record<string, unknown> = {}) {
     birthDate: new Date('1975-05-12T00:00:00.000Z'),
     verifiedAt: new Date('2026-08-01T00:00:00.000Z'),
     verifiedById: 'superadmin',
-    verificationMethod: 'KTP_IN_PERSON',
     verificationNote: null,
+    ktpFileName: 'ktp-abc.jpg',
+    ktpSha256: 'a'.repeat(64),
+    ktpUploadedAt: new Date('2026-07-31T00:00:00.000Z'),
+    ktpRetainUntil: null,
+    ktpDeletedAt: null,
     ...over,
   };
 }
@@ -257,7 +261,7 @@ describe('persetujuan menyatakan siapa orangnya', () => {
 
     await expect(
       EsignService.decideRequest('req-1', 'superadmin', true, 30)
-    ).rejects.toThrow(/sebutkan cara pemeriksaannya/);
+    ).rejects.toThrow(/nyatakan kecocokannya/);
   });
 
   it('mencatat siapa yang memverifikasi, kapan, dan dengan cara apa', async () => {
@@ -269,8 +273,7 @@ describe('persetujuan menyatakan siapa orangnya', () => {
     vi.mocked(prisma.userSigningKey.deleteMany).mockResolvedValue({ count: 0 } as any);
 
     await EsignService.decideRequest('req-1', 'superadmin', true, 30, undefined, {
-      method: 'KTP_IN_PERSON' as any,
-      note: 'KTP asli ditunjukkan di kantor yayasan.',
+      note: 'Foto KTP dibuka dan cocok dengan data yang diisi.',
     });
 
     expect(prisma.userIdentity.update).toHaveBeenCalledWith(
@@ -278,9 +281,67 @@ describe('persetujuan menyatakan siapa orangnya', () => {
         where: { userId: 'ketua' },
         data: expect.objectContaining({
           verifiedById: 'superadmin',
-          verificationMethod: 'KTP_IN_PERSON',
-          verificationNote: 'KTP asli ditunjukkan di kantor yayasan.',
+          verificationNote: 'Foto KTP dibuka dan cocok dengan data yang diisi.',
         }),
+      })
+    );
+  });
+
+  /**
+   * Satu-satunya jalur pembuktian. Pilihan "kartu ditunjukkan langsung" dan
+   * "dikenali pribadi" pernah ada dan keduanya tidak meninggalkan apa pun yang
+   * dapat diperiksa — seorang penyetuju dapat memilihnya tanpa melakukan apa
+   * pun.
+   */
+  it('menolak menyetujui bila pemohon belum mengunggah foto KTP', async () => {
+    vi.mocked(prisma.signingKeyRequest.findUnique).mockResolvedValue(pending as any);
+    vi.mocked(prisma.userIdentity.findUnique).mockResolvedValue(
+      verifiedIdentity({ verifiedAt: null, ktpFileName: null }) as any
+    );
+
+    await expect(
+      EsignService.decideRequest('req-1', 'superadmin', true, 30, undefined, {
+        note: 'cocok',
+      })
+    ).rejects.toThrow(/belum mengunggah foto KTP/);
+    expect(prisma.signingKeyRequest.update).not.toHaveBeenCalled();
+  });
+
+  /**
+   * Disetujui berarti ada kunci yang terbit, dan dasar penerbitannya dapat
+   * dipersoalkan selama kunci itu masih dapat menandatangani. Karena itu
+   * berkasnya **disimpan**, bukan dihapus — dengan batas waktu yang dihitung
+   * dari akhir masa berlaku kuncinya, bukan dari hari keputusan.
+   */
+  it('menyimpan foto KTP setelah disetujui, dengan batas waktu dari akhir masa kunci', async () => {
+    vi.mocked(prisma.signingKeyRequest.findUnique).mockResolvedValue(pending as any);
+    vi.mocked(prisma.userIdentity.findUnique).mockResolvedValue(verifiedIdentity() as any);
+    vi.mocked(prisma.signingKeyRequest.update).mockResolvedValue({ id: 'req-1' } as any);
+    vi.mocked(prisma.userSigningKey.deleteMany).mockResolvedValue({ count: 0 } as any);
+
+    await EsignService.decideRequest('req-1', 'superadmin', true, 30);
+
+    const call = vi.mocked(prisma.userIdentity.update).mock.calls.at(-1)![0] as any;
+    expect(call.data.ktpRetainUntil).toBeInstanceOf(Date);
+    // Jauh di depan: 30 hari masa kunci ditambah masa retensi bertahun-tahun.
+    expect(call.data.ktpRetainUntil.getTime()).toBeGreaterThan(
+      Date.now() + 365 * DAY
+    );
+    // Dan berkasnya tidak dibuang.
+    expect(call.data.ktpFileName).toBeUndefined();
+  });
+
+  /** Ditolak berarti tidak ada kunci — berkasnya tidak membuktikan apa pun lagi. */
+  it('menghapus foto KTP setelah pengajuan ditolak', async () => {
+    vi.mocked(prisma.signingKeyRequest.findUnique).mockResolvedValue(pending as any);
+    vi.mocked(prisma.userIdentity.findUnique).mockResolvedValue(verifiedIdentity() as any);
+    vi.mocked(prisma.signingKeyRequest.update).mockResolvedValue({ id: 'req-1' } as any);
+
+    await EsignService.decideRequest('req-1', 'superadmin', false, undefined, 'Belum perlu.');
+
+    expect(prisma.userIdentity.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ ktpFileName: null }),
       })
     );
   });
@@ -293,13 +354,22 @@ describe('persetujuan menyatakan siapa orangnya', () => {
     await expect(
       EsignService.decideRequest('req-1', 'superadmin', true, 30)
     ).resolves.toBeTruthy();
-    expect(prisma.userIdentity.update).not.toHaveBeenCalled();
+
+    // Barisnya memang tetap disentuh — batas simpan berkasnya ditetapkan di
+    // sini. Yang diuji adalah verifikasinya tidak ditimpa ulang, bukan bahwa
+    // tidak ada penulisan sama sekali: menegaskan "update tidak dipanggil"
+    // mengukur mekanismenya, bukan akibatnya.
+    for (const [call] of vi.mocked(prisma.userIdentity.update).mock.calls) {
+      expect((call as any).data.verifiedById).toBeUndefined();
+      expect((call as any).data.verificationNote).toBeUndefined();
+    }
   });
 
   /** Menolak tidak menuntut apa pun: yang ditolak tidak menerbitkan kunci. */
   it('menolak pengajuan tanpa memeriksa identitas', async () => {
     vi.mocked(prisma.signingKeyRequest.findUnique).mockResolvedValue(pending as any);
     vi.mocked(prisma.userIdentity.findUnique).mockResolvedValue(null as any);
+    vi.mocked(prisma.userSigningKey.findUnique).mockResolvedValue(null as any);
     vi.mocked(prisma.signingKeyRequest.update).mockResolvedValue({ id: 'req-1' } as any);
 
     await expect(

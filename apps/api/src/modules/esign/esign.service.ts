@@ -1,5 +1,4 @@
 import {
-  IdentityVerificationMethod,
   LetterFlowAction,
   LetterStatus,
   Prisma,
@@ -18,6 +17,13 @@ import {
   nikBirthDateMismatch,
   normaliseNik,
 } from '@/utils/signer-identity';
+import {
+  deleteIdentityDocument,
+  identityDocumentRetainUntil,
+  isAcceptedIdentityDocument,
+  readIdentityDocument,
+  storeIdentityDocument,
+} from '@/utils/identity-document-store';
 import crypto from 'crypto';
 import {
   createKeyMaterial,
@@ -158,6 +164,36 @@ function asHttpError(error: unknown): unknown {
   return error.forbidden ? Errors.forbidden(error.message) : Errors.badRequest(error.message);
 }
 
+/**
+ * Hapus berkas KTP seorang pemohon sekarang juga, dan catat bahwa ia dihapus.
+ *
+ * Hanya untuk jalur yang benar-benar mengakhiri kegunaannya: pengajuan yang
+ * **ditolak** (tidak ada kunci yang terbit, jadi tidak ada yang perlu
+ * dipertanggungjawabkan) dan data identitas yang **diubah** (berkasnya
+ * membuktikan data yang sudah tidak berlaku).
+ *
+ * Pengajuan yang **disetujui** tidak lewat sini — berkasnya disimpan sampai
+ * `ktpRetainUntil`, karena "tunjukkan kartu yang Anda periksa" adalah
+ * pertanyaan yang baru muncul bertahun-tahun kemudian dan hash tidak dapat
+ * menjawabnya.
+ *
+ * `ktpDeletedAt` disimpan justru supaya penghapusannya dapat ditunjukkan:
+ * kolom kosong tidak dapat membedakan "sudah dihapus" dari "tidak pernah ada".
+ */
+async function discardIdentityDocument(userId: string): Promise<void> {
+  const identity = await prisma.userIdentity.findUnique({
+    where: { userId },
+    select: { ktpFileName: true },
+  });
+  if (!identity?.ktpFileName) return;
+
+  await deleteIdentityDocument(identity.ktpFileName);
+  await prisma.userIdentity.update({
+    where: { userId },
+    data: { ktpFileName: null, ktpDeletedAt: new Date() },
+  });
+}
+
 export const EsignService = {
   /** Ringkasan kunci milik pengguna, untuk halaman pengaturan. */
   async myStatus(userId: string) {
@@ -182,6 +218,16 @@ export const EsignService = {
       orderBy: { createdAt: 'desc' },
     });
 
+    const approvedEnrolment = await prisma.signingKeyRequest.findFirst({
+      where: {
+        userId,
+        status: SigningKeyRequestStatus.APPROVED,
+        kind: SigningKeyRequestKind.ENROLLMENT,
+      },
+      orderBy: { decidedAt: 'desc' },
+      select: { id: true },
+    });
+
     // Kunci yang sudah disetujui tetapi belum pernah dibuka passphrase-nya
     // masih menunggu pengguna menetapkan passphrase.
     const state = key ? effectiveState(key) : null;
@@ -203,7 +249,32 @@ export const EsignService = {
         hasNik: !!identity?.nik,
         missingFields: missingIdentityFields(identity),
         verifiedAt: identity?.verifiedAt ?? null,
+        /**
+         * Keadaan berkas KTP, tanpa berkasnya.
+         *
+         * Pemiliknya perlu tahu tiga hal: apakah ia sudah mengunggah, apakah
+         * berkasnya masih ada, dan kapan ia dihapus. Yang tidak perlu ia lihat
+         * adalah gambarnya — ia sudah memegang kartunya, dan setiap jalur yang
+         * dapat mengembalikannya adalah satu jalur lagi yang terbuka bila
+         * sesinya dibajak.
+         */
+        ktpUploadedAt: identity?.ktpUploadedAt ?? null,
+        ktpDeletedAt: identity?.ktpDeletedAt ?? null,
+        ktpRetainUntil: identity?.ktpRetainUntil ?? null,
+        hasKtpOnFile: !!identity?.ktpFileName,
       },
+      /**
+       * Persetujuan sudah ada dan passphrase-nya belum ditetapkan.
+       *
+       * Halaman pengaturan menawarkan kotak passphrase berdasarkan
+       * `!hasKey && !pendingRequest`, yang juga benar bagi orang yang belum
+       * pernah mengajukan apa pun — sehingga kotak "Tetapkan passphrase" tampil
+       * berdampingan dengan kotak "Ajukan penerbitan", dan tombolnya pasti
+       * ditolak `activateKey` dengan "Belum ada persetujuan penerbitan". Ini
+       * ruas yang membuat halaman itu dapat menawarkan langkah yang memang
+       * sedang berlaku, bukan menebaknya.
+       */
+      approvedAwaitingActivation: !key && !!approvedEnrolment,
       hasKey: !!key,
       state,
       expiresAt: key?.expiresAt ?? null,
@@ -273,6 +344,16 @@ export const EsignService = {
       );
     }
 
+    // Berkas KTP yang menyertai data lama ikut dibuang: ia diunggah untuk
+    // membuktikan data *yang itu*, dan data itu sudah tidak berlaku.
+    const previous = await prisma.userIdentity.findUnique({
+      where: { userId },
+      select: { ktpFileName: true },
+    });
+    if (previous?.ktpFileName) {
+      await deleteIdentityDocument(previous.ktpFileName);
+    }
+
     const data = {
       legalName: input.legalName.trim(),
       nik,
@@ -281,8 +362,12 @@ export const EsignService = {
       // Data berubah, maka verifikasinya gugur — lihat komentar di atas.
       verifiedAt: null,
       verifiedById: null,
-      verificationMethod: null,
       verificationNote: null,
+      ktpFileName: null,
+      ktpSha256: null,
+      ktpUploadedAt: null,
+      ktpRetainUntil: null,
+      ktpDeletedAt: previous?.ktpFileName ? new Date() : null,
     };
 
     const identity = await prisma.userIdentity.upsert({
@@ -299,6 +384,106 @@ export const EsignService = {
       // pencatatan kependudukan juga ada, dan memblokir pejabat yang sah karena
       // NIK-nya sendiri tidak konsisten lebih merugikan daripada melaporkannya.
       warning: nikBirthDateMismatch(nik, birthDate),
+    };
+  },
+
+  /**
+   * Unggah foto KTP sebagai bukti identitas.
+   *
+   * Satu-satunya jalur pembuktian, dan itu disengaja. Pilihan "kartu
+   * ditunjukkan langsung" dan "dikenali pribadi" pernah ada di sini, dan
+   * keduanya tidak meninggalkan apa pun yang dapat diperiksa: seorang penyetuju
+   * dapat memilihnya tanpa melakukan apa pun, dan catatan yang tersimpan
+   * berbunyi "karena saya bilang begitu". Pilihan yang tanpa bukti mengubah
+   * seluruh gerbang ini menjadi sekadar klik — dan menuntut seratusan staf
+   * lintas unit mendatangi Super Admin satu per satu bukan alur yang dapat
+   * dijalankan siapa pun.
+   *
+   * Berkasnya berumur pendek: ia dihapus begitu pengajuannya diputuskan.
+   */
+  async uploadIdentityDocument(userId: string, file: Express.Multer.File) {
+    if (!isAcceptedIdentityDocument(file.mimetype)) {
+      throw Errors.badRequest(
+        'Berkas harus berupa gambar (JPG, PNG, WebP) atau PDF.'
+      );
+    }
+
+    const identity = await prisma.userIdentity.findUnique({ where: { userId } });
+    if (!identity) {
+      throw Errors.badRequest(
+        'Lengkapi dulu data identitas Anda sebelum mengunggah foto KTP.'
+      );
+    }
+    if (identity.verifiedAt) {
+      throw Errors.badRequest(
+        'Identitas Anda sudah diverifikasi; foto KTP tidak perlu diunggah lagi.'
+      );
+    }
+
+    // Unggahan baru menggantikan yang lama, dan yang lama benar-benar dihapus
+    // — bukan sekadar kehilangan rujukannya di basis data.
+    if (identity.ktpFileName) {
+      await deleteIdentityDocument(identity.ktpFileName);
+    }
+
+    const stored = await storeIdentityDocument(file.buffer, file.mimetype);
+
+    await prisma.userIdentity.update({
+      where: { userId },
+      data: {
+        ktpFileName: stored.fileName,
+        ktpSha256: stored.sha256,
+        ktpUploadedAt: new Date(),
+        ktpDeletedAt: null,
+      },
+    });
+
+    return { uploadedAt: new Date(), sha256: stored.sha256 };
+  },
+
+  /**
+   * Baca foto KTP seorang pemohon — hanya untuk Super Admin, dan tercatat.
+   *
+   * Kewenangannya ditegakkan di rute (`isSuperAdmin`); yang ada di sini adalah
+   * bagian yang tidak boleh hilang bersama perubahan rute: **setiap pembacaan
+   * dicatat.** "Hanya Super Admin yang dapat melihatnya" adalah janji yang
+   * memerlukan catatan sebelum siapa pun dapat memeriksanya — termasuk memeriksa
+   * apakah seorang Super Admin membukanya di luar keperluan memutuskan.
+   */
+  async readIdentityDocument(subjectUserId: string, readerId: string) {
+    const identity = await prisma.userIdentity.findUnique({
+      where: { userId: subjectUserId },
+      select: { ktpFileName: true, ktpDeletedAt: true },
+    });
+
+    if (!identity?.ktpFileName) {
+      throw Errors.notFound(
+        identity?.ktpDeletedAt
+          ? 'Foto KTP sudah dihapus setelah pengajuannya diputuskan.'
+          : 'Pemohon belum mengunggah foto KTP.'
+      );
+    }
+
+    const buffer = await readIdentityDocument(identity.ktpFileName);
+
+    await prisma.auditLog.create({
+      data: {
+        userId: readerId,
+        action: 'READ',
+        entity: 'UserIdentity.ktp',
+        entityId: subjectUserId,
+      },
+    });
+
+    return {
+      buffer,
+      contentType: identity.ktpFileName.endsWith('.pdf')
+        ? 'application/pdf'
+        : identity.ktpFileName.endsWith('.png')
+          ? 'image/png'
+          : identity.ktpFileName.endsWith('.webp')
+            ? 'image/webp'
+            : 'image/jpeg',
     };
   },
 
@@ -390,9 +575,14 @@ export const EsignService = {
                 birthPlace: true,
                 birthDate: true,
                 verifiedAt: true,
-                verificationMethod: true,
                 verificationNote: true,
                 verifiedBy: { select: { name: true } },
+                // Berkasnya sendiri tidak ikut — ia dibaca lewat endpointnya
+                // sendiri, yang memeriksa kewenangan dan mencatat pembacaannya.
+                ktpUploadedAt: true,
+                ktpDeletedAt: true,
+                ktpRetainUntil: true,
+                ktpSha256: true,
               },
             },
           },
@@ -418,7 +608,7 @@ export const EsignService = {
     approve: boolean,
     grantedDays?: number,
     note?: string,
-    identityVerification?: { method: IdentityVerificationMethod; note?: string }
+    identityVerification?: { note?: string }
   ) {
     const request = await prisma.signingKeyRequest.findUnique({ where: { id: requestId } });
     if (!request) throw Errors.notFound('Pengajuan tidak ditemukan');
@@ -427,6 +617,11 @@ export const EsignService = {
     }
 
     if (!approve) {
+      // Ditolak berarti tidak ada kunci yang terbit, jadi foto KTP-nya tidak
+      // lagi membuktikan apa pun — dan data pribadi yang disimpan tanpa
+      // keperluan adalah kewajiban tanpa manfaat.
+      await discardIdentityDocument(request.userId);
+
       const rejected = await prisma.signingKeyRequest.update({
         where: { id: requestId },
         data: {
@@ -476,25 +671,47 @@ export const EsignService = {
           'dapat diterbitkan atas namanya. Minta pemohon melengkapinya lebih dahulu.'
       );
     }
-    if (!identity!.verifiedAt && !identityVerification) {
-      throw Errors.badRequest(
-        'Identitas pemohon belum diverifikasi. Cocokkan datanya dengan kartu identitas, ' +
-          'lalu sebutkan cara pemeriksaannya saat menyetujui.'
-      );
+    if (!identity!.verifiedAt) {
+      if (!identity!.ktpFileName) {
+        throw Errors.badRequest(
+          'Pemohon belum mengunggah foto KTP, sehingga identitasnya tidak dapat ' +
+            'dicocokkan. Minta pemohon mengunggahnya lebih dahulu.'
+        );
+      }
+      if (!identityVerification) {
+        throw Errors.badRequest(
+          'Identitas pemohon belum diverifikasi. Buka foto KTP-nya, cocokkan dengan ' +
+            'data yang diisi, lalu nyatakan kecocokannya saat menyetujui.'
+        );
+      }
     }
 
-    return prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       if (identityVerification) {
         await tx.userIdentity.update({
           where: { userId: request.userId },
           data: {
             verifiedAt: new Date(),
             verifiedById: deciderId,
-            verificationMethod: identityVerification.method,
             verificationNote: identityVerification.note ?? null,
           },
         });
       }
+
+      /**
+       * Batas simpan berkas KTP, dihitung dari akhir masa berlaku kuncinya.
+       *
+       * Bukan dari hari ini: praktik baku menghitung retensi bukti registrasi
+       * *setelah sertifikatnya berhenti berlaku*, sebab selama kunci masih
+       * dapat menandatangani, dasar penerbitannya masih dapat dipersoalkan.
+       * Pemohon tetap kehilangan aksesnya sekarang juga — yang disimpan ini
+       * hanya terbaca oleh Super Admin, lewat endpoint yang mencatatnya.
+       */
+      const keyExpiry = expiryFrom(new Date(), days);
+      await tx.userIdentity.update({
+        where: { userId: request.userId },
+        data: { ktpRetainUntil: identityDocumentRetainUntil(keyExpiry) },
+      });
 
       const approved = await tx.signingKeyRequest.update({
         where: { id: requestId },
@@ -524,6 +741,8 @@ export const EsignService = {
 
       return approved;
     });
+
+    return result;
   },
 
   /**

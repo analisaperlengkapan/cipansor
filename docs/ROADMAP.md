@@ -413,27 +413,72 @@ What #413 did **not** do, and is worth knowing:
 
 ---
 
-## 🔴 14. E-Office & electronic signature — audited 2026-09-02, six PRs planned
+## 🟡 14. E-Office & electronic signature — audited 2026-09-02, PR-1..PR-4 shipped
 
 Full findings and the plan: [`EOFFICE_ESIGN_PLAN.md`](./EOFFICE_ESIGN_PLAN.md).
-Three things from it that change what you do next:
 
-- **PR #414 must be closed, not merged.** The feature it advertises is not in
-  it: on 2026-09-02 at 01:57 UTC a Jules commit titled *"update status assertion
-  … and add mysql2 override"* deleted the +5,112 lines that PR #421 had merged
-  into that branch seventeen minutes earlier. Every correspondence file on the
-  branch is now byte-identical to `main`. Merging #414 would only downgrade
-  dependencies and CI and delete two test suites. **The work survives at commit
-  `e93a7cf2`** and nothing points at it — recover from there.
+**Shipped so far:** PR-1 (#435, the feature recovered onto `main` and the naskah
+given a real letterhead), PR-2 + PR-2b (#436, revocation that the app can
+actually perform, with authority placed where ANRI, RFC 5280 and UU 16/2001
+Pasal 29 all put it), PR-3 (#437, the signed PDF bytes archived so a dependency
+bump can no longer invalidate every letter ever signed), PR-4 (flow completeness
+— a real dispatch record, tembusan, and lampiran, plus the end of `SENT` being
+applied to incoming letters).
+
+**Still open:** PR-5
+(PAdES B-B + RFC 3161 timestamps — the highest-value remaining item, since
+without a timestamp there is no answer to *"was the key valid at the time of
+signing"*, which is exactly what revocation semantics need), PR-6 (a.n./u.b./
+Plt./Plh. — blocked on a governance decision), PR-7 (Arabic — needs an embedded
+Unicode font and a shaping engine).
+
+Three things from the audit that still change what you do next:
+
+- **PR #414 must be closed, not merged.** ✅ *Closed 2026-09-02.* The feature it
+  advertised was not in it: a Jules commit titled *"update status assertion …
+  and add mysql2 override"* deleted the +5,112 lines that PR #421 had merged
+  into that branch seventeen minutes earlier. The work was recovered from commit
+  `e93a7cf2` and shipped in #435; a copy also stands at tag `esign-salvage`.
 - **Naskah dinas are rasterised today.** `e-office/letter/[id]/page.tsx:126`
   turns the whole letter into one PNG via `html2canvas` + `jsPDF.addImage`, so
   the text is unselectable, unsearchable, and cannot carry a real PAdES
   signature. `raport-merdeka` does the same. The server-side `pdf-lib` generator
   in `e93a7cf2` fixes it, with four defects to repair first.
-- **Revocation is display-only.** Key revocation has an endpoint but no UI;
-  letter-signature revocation has schema fields, a public "Surat telah dicabut"
-  message, and template filtering — but **no code path anywhere writes
-  `revokedAt`**. The system advertises a capability it does not have.
+- **Revocation is display-only.** ✅ *Fixed in #436.* Key revocation now has a
+  UI, letter-signature revocation is a signed statement (passphrase required,
+  verifiable on the public page), a request-and-decide flow keeps proposing
+  separate from deciding, and the withdrawn naskah prints with a DICABUT stamp
+  naming who withdrew it. Super Admin can revoke **keys**, never a signed
+  naskah — that boundary is deliberate; see the plan §PR-2b.
+- **Downloads used to re-render the naskah every time.** ✅ *Fixed in #437.*
+  `LetterSignedDocument` archives the exact bytes that were hashed, and
+  `resolveLetterPdf` serves them verbatim. Run
+  `pnpm --filter api db:archive-letters` after deploying to backfill letters
+  signed before the archive existed — it archives only those whose bytes still
+  reproduce exactly, and reports the rest rather than storing wrong bytes.
+- **`SENT` meant the opposite of what it says.** ✅ *Fixed in PR-4.* It was
+  applied to *incoming* letters whose review finished with no disposition
+  recipients, and never to an outgoing letter at all — so every "surat terkirim"
+  figure counted letters that had just arrived. Outgoing letters now get a real
+  buku ekspedisi (`LetterDispatch`: date, channel, who received it, resi, tanda
+  terima) behind `POST /correspondence/letters/:id/dispatch`, `Letter.sentAt`
+  records the first departure, and a finished incoming letter with nobody to
+  forward it to is archived, which is what actually happens to it.
+- **Tembusan and lampiran existed only in the schema.** ✅ *Fixed in PR-4.*
+  `isCC` had exactly one writer in the whole codebase — a hardcoded `false` —
+  and there was no attachment table at all, so the naskah's "Lampiran" line was
+  permanently "-". Both are now end-to-end: chosen on the form, stored, listed
+  on the letter page, and printed on the naskah (`Lampiran : 2 (dua) berkas`,
+  and a numbered `Tembusan:` block at the foot). A letter with neither renders
+  byte-for-byte as before — `generate-letter-pdf.test.ts` pins that hash, since
+  changing it would report every previously signed letter as altered.
+- **A letter cannot be edited after it is created.** 🔴 *Found while building
+  PR-4; not fixed.* There is no `PATCH /letters/:id` anywhere — the module's only
+  `router.patch` is `/dispositions/:id/status`, and `UpdateLetterInput` is a DTO
+  with no endpoint behind it. The revision loop therefore has no middle step: a
+  reviewer returns a draft, the page invites the author to fix it, and the only
+  move available is resubmitting the identical text. Lampiran and tembusan are
+  likewise fixed at creation. See plan §2.7 (e) for what fixing it involves.
 
 The signing crypto itself is *good* and should not be rebuilt — scrypt-sealed
 Ed25519 keys, a passphrase that is never stored in any form, server-decided
@@ -457,5 +502,12 @@ UU ITE Pasal 11, PP 71/2019, and PAdES.
 - **CI runs `pnpm install --frozen-lockfile`.** A local install is not frozen,
   so lockfile drift passes locally and fails CI at the install step — which
   looks like several unrelated jobs failing within seconds.
+- **The Security job can go red on a PR that changed no code.** `audit:deps`
+  queries GitHub's live advisory endpoint, so a newly published advisory against
+  any transitive dependency fails every open PR at once, including `main` if
+  anything re-runs there. Read the failure before blaming the diff: the fix is
+  almost always raising the matching pin in the root `package.json`
+  `pnpm.overrides` (2026-09-02: `fast-uri` >=4.1.3, `qs` ^6.16.0), then
+  `pnpm install` and `pnpm run audit:deps` to confirm 0 advisories.
 - **Never push to `main`** (also enforced by a repository ruleset requiring PRs)
   and never `Write` `schema.prisma` wholesale — edit it surgically.

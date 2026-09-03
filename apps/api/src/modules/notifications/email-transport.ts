@@ -52,6 +52,20 @@ export interface DeliverEmailInput {
   html: string;
   /** Optional plain-text part. Derived from `html` when omitted. */
   text?: string;
+  /**
+   * Inline parts the HTML refers to by `cid:`.
+   *
+   * The lambang travels this way rather than as a hosted URL: Outlook and
+   * Gmail's "ask before displaying" mode block remote images by default, and a
+   * `data:` URI is stripped outright — so an attached part is the only form
+   * that renders for everyone without them having to click anything.
+   */
+  attachments?: Array<{
+    filename: string;
+    content: Buffer;
+    contentType: string;
+    cid?: string;
+  }>;
 }
 
 export interface DeliverEmailResult {
@@ -144,6 +158,7 @@ async function composeRawMessage(input: DeliverEmailInput): Promise<Buffer> {
     subject: input.subject,
     html: input.html,
     text: input.text ?? htmlToText(input.html),
+    attachments: input.attachments,
   });
 
   return info.message as Buffer;
@@ -265,6 +280,7 @@ async function sendViaSmtp(input: DeliverEmailInput): Promise<DeliverEmailResult
     subject: input.subject,
     html: input.html,
     text: input.text ?? htmlToText(input.html),
+    attachments: input.attachments,
   });
 
   return { kind: 'smtp', delivered: true, messageId: info.messageId };

@@ -11,6 +11,7 @@ import {
   type LetterType,
 } from '@cipansor/shared';
 import { LOGO_CIPANSOR_PNG_BASE64 } from '@/assets/logo-cipansor';
+import { letterVerificationUrl } from '@/utils/verification-url';
 
 /** "KETUA YAYASAN …" → "Ketua Yayasan …", as it is written under a signature. */
 const DECIDING_OFFICIAL_TITLE_CASE = DECIDING_OFFICIAL.split(' ')
@@ -46,7 +47,7 @@ const DECIDING_OFFICIAL_TITLE_CASE = DECIDING_OFFICIAL.split(' ')
  * perubahan apa pun yang mengubah keluaran** — kop surat, jarak baris, urutan
  * gambar, atau kenaikan versi `pdf-lib`.
  */
-export const LETTER_PDF_GENERATOR = 'cipansor-naskah/2026-09-03b';
+export const LETTER_PDF_GENERATOR = 'cipansor-naskah/2026-09-03c';
 
 export class LetterPdfError extends Error {
   constructor(message: string) {
@@ -633,17 +634,55 @@ export async function generateLetterPdfBuffer(letter: LetterPdfInput): Promise<B
   }
 
   if (activeSignature) {
-    const qrBuffer = await QRCode.toBuffer(activeSignature.verificationToken, {
+    /**
+     * Yang disandikan QR adalah **alamat halaman verifikasi**, bukan tokennya.
+     *
+     * Sebelumnya isinya token mentah — sebuah untai acak. Memindainya tidak
+     * membuka apa pun: pembaca mendapat teks tak berarti dari sebuah kode yang
+     * seluruh penampilannya menjanjikan sesuatu akan terbuka. Itu lebih buruk
+     * daripada tidak ada QR sama sekali, sebab ia tampak dapat dipindai dan
+     * tidak.
+     *
+     * Tanpa token di dalam tautannya, juga disengaja. Halaman itu memeriksa
+     * berkas yang diunggah; tautan bertoken hanya dapat menjawab "ada surat
+     * yang pernah ditandatangani", bukan "surat yang Anda pegang inilah surat
+     * itu" — celah yang justru menjadi alasan halaman verifikasi berbasis token
+     * dihapus (§1 rencana). Yang dituju pemindai adalah tempat ia menyerahkan
+     * berkasnya, dan itulah yang diberikan.
+     *
+     * Koreksi galat H (~30%) dipilih supaya lambang yayasan boleh menutup
+     * bagian tengahnya tanpa membuat kodenya gagal dibaca.
+     */
+    const qrBuffer = await QRCode.toBuffer(letterVerificationUrl(), {
       type: 'png',
       margin: 1,
-      width: 150,
+      width: 300,
+      errorCorrectionLevel: 'H',
     });
     const qrImage = await pdfDoc.embedPng(qrBuffer);
-    cur.page.drawImage(qrImage, {
-      x: rightAlignX + 20,
-      y: cur.y - 65,
-      width: 65,
-      height: 65,
+    const qrSize = 65;
+    const qrX = rightAlignX + 20;
+    const qrY = cur.y - qrSize;
+    cur.page.drawImage(qrImage, { x: qrX, y: qrY, width: qrSize, height: qrSize });
+
+    // Lambang yayasan di tengah kodenya — bentuk yang lazim dipakai instansi,
+    // dan yang membuat naskah dikenali sebagai naskah yayasan sekali lihat.
+    // Ukurannya dijaga di bawah seperlima sisi kode agar tetap di dalam
+    // toleransi koreksi galat H, dengan alas putih supaya tepinya tidak
+    // bercampur dengan modul-modul gelap di sekelilingnya.
+    const badge = qrSize * 0.22;
+    cur.page.drawRectangle({
+      x: qrX + (qrSize - badge) / 2 - 1.5,
+      y: qrY + (qrSize - badge) / 2 - 1.5,
+      width: badge + 3,
+      height: badge + 3,
+      color: rgb(1, 1, 1),
+    });
+    cur.page.drawImage(logo, {
+      x: qrX + (qrSize - badge) / 2,
+      y: qrY + (qrSize - badge) / 2,
+      width: badge,
+      height: badge,
     });
     cur.down(72);
 
@@ -727,8 +766,9 @@ export async function generateLetterPdfBuffer(letter: LetterPdfInput): Promise<B
   }
 
   if (activeSignature) {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://cipansor.or.id';
-    const verifyUrlText = `Verifikasi keaslian: ${siteUrl.replace(/\/$/, '')}/public/verify-letter`;
+    // Alamat yang sama dengan yang disandikan QR, dari satu tempat — supaya
+    // yang dibaca mata dan yang dibaca pemindai tidak dapat berselisih.
+    const verifyUrlText = `Verifikasi keaslian: ${letterVerificationUrl()}`;
     cur.pages[total - 1].drawText(verifyUrlText, {
       x: MARGIN_X,
       y: 30,

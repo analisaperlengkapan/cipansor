@@ -254,10 +254,23 @@ export interface ExamAnswer {
   createdAt?: string | Date;
 }
 
+export enum SecurityEventType {
+  TAB_SWITCH = "TAB_SWITCH",
+  FOCUS_LOST = "FOCUS_LOST",
+  COPY = "COPY",
+  PASTE = "PASTE",
+  RIGHT_CLICK = "RIGHT_CLICK",
+}
+
+export interface RecordSecurityLogInput {
+  eventType: SecurityEventType | string;
+  details?: string | null;
+}
+
 export interface ExamSecurityLog {
   id: string;
   attemptId: string;
-  type: string;
+  type: SecurityEventType | string;
   details?: string | null;
   createdAt: string | Date;
 }

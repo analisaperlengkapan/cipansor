@@ -7,7 +7,7 @@ import { z } from 'zod';
 
 const recordSecurityLogSchema = z.object({
   eventType: z.enum(['TAB_SWITCH', 'FOCUS_LOST', 'COPY', 'PASTE', 'RIGHT_CLICK']),
-  details: z.string().max(500).optional(),
+  details: z.string().max(500).nullable().optional(),
 });
 
 const router = Router();

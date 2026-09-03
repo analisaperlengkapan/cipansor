@@ -701,7 +701,7 @@ describe('CBT Service', () => {
         status: 'COMPLETED',
         exam: {
           id: 'exam-1',
-          maxScore: 50, // exam max score set to 50
+          maxScore: 100, // exam maxScore is 100, but question bank points total 50
           subjectId: 'sub-1',
           academicYearId: 'ay-1',
           teacherId: 't-1',

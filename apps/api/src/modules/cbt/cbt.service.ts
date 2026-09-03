@@ -1214,9 +1214,12 @@ export class CBTService {
 
     if (!teacher) return null;
 
-    const maxScore = attempt.exam.maxScore ? Number(attempt.exam.maxScore) : 100;
+    const questions = attempt.exam.questionBank?.questions || [];
+    const totalPossiblePoints = questions.reduce((sum: number, q: { points?: number | null }) => sum + Number(q.points || 0), 0);
+    const denominator = totalPossiblePoints > 0 ? totalPossiblePoints : (attempt.exam.maxScore ? Number(attempt.exam.maxScore) : 100);
+
     const numericScore = Number(attempt.score);
-    const percentage = maxScore > 0 ? (numericScore / maxScore) * 100 : 0;
+    const percentage = denominator > 0 ? Math.min(100, Math.max(0, (numericScore / denominator) * 100)) : 0;
     const letterGrade = calculateLetterGrade(percentage);
 
     return db.grade.upsert({
@@ -1233,7 +1236,7 @@ export class CBTService {
         academicYearId: attempt.exam.academicYearId,
         type: 'EXAM',
         score: attempt.score,
-        maxScore: new Decimal(maxScore),
+        maxScore: new Decimal(denominator),
         percentage: new Decimal(percentage),
         letterGrade,
         notes: `Nilai CBT Ujian Online (${attempt.exam.title})`,
@@ -1241,7 +1244,7 @@ export class CBTService {
       },
       update: {
         score: attempt.score,
-        maxScore: new Decimal(maxScore),
+        maxScore: new Decimal(denominator),
         percentage: new Decimal(percentage),
         letterGrade,
         gradedAt: new Date(),

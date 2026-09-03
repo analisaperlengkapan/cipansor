@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import type { RegistrantDTO, RegistrantDocumentDTO } from "@cipansor/shared";
 
 // =====================================
 // Backward-compat types & constants
@@ -214,7 +215,7 @@ export function useRegistrants(params?: any) {
 }
 
 export function useRegistrant(id: string) {
-  return useQuery({
+  return useQuery<RegistrantDTO>({
     queryKey: ["admission-registrant", id],
     queryFn: async () => {
       const response = await api.get(`/admissions/registrants/${id}`);
@@ -224,10 +225,21 @@ export function useRegistrant(id: string) {
   });
 }
 
+export interface OnboardRegistrantPayload {
+  registrantId: string;
+  unitId?: string;
+  classId?: string;
+  assignedClassId?: string;
+  roomId?: string;
+  nis?: string;
+  nisn?: string;
+  academicYearId?: string;
+}
+
 export function useOnboardRegistrant() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: any) => {
+    mutationFn: async (payload: OnboardRegistrantPayload) => {
       // The onboarding orchestrator is mounted under the waves sub-router at
       // POST /admissions/waves/onboard-registrant (see ppdb-wave.routes.ts).
       // The handler reads `registrantId` from the request body.

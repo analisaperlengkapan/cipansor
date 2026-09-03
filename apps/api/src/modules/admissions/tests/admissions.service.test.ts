@@ -55,15 +55,30 @@ describe('Admissions Service', () => {
     vi.mocked(prisma.admissionWave.count as any).mockResolvedValue(0);
   });
 
-  it('should reject document upload when registration token is invalid', async () => {
+  it('should reject document upload when registration token is registrant id or non-timestamped token', async () => {
     vi.mocked(prisma.registrant.findUnique).mockResolvedValue({ id: 'reg123', registrationNo: 'REG-001' } as any);
+
+    // Rejecting registrant.id as token
+    await expect(
+      service.createPublicRegistrantDocumentService({
+        registrantId: 'reg123',
+        type: 'PHOTO',
+        base64: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+        registrationToken: 'reg123',
+      })
+    ).rejects.toThrow('Invalid registration token');
+
+    // Rejecting non-timestamped simple HMAC token
+    const crypto = await import('crypto');
+    const { config } = await import('../../../config');
+    const simpleHmac = crypto.createHmac('sha256', config.jwt.secret).update('reg123').digest('hex').slice(0, 16);
 
     await expect(
       service.createPublicRegistrantDocumentService({
         registrantId: 'reg123',
         type: 'PHOTO',
         base64: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-        registrationToken: 'invalid_token_123',
+        registrationToken: simpleHmac,
       })
     ).rejects.toThrow('Invalid registration token');
   });
@@ -88,23 +103,43 @@ describe('Admissions Service', () => {
     ).rejects.toThrow('Invalid registration token');
   });
 
-  it('should reject document upload when base64 exceeds size limit', async () => {
+  it('should reject document upload when url contains data-URI exceeding size limit or invalid MIME', async () => {
     const crypto = await import('crypto');
     const { config } = await import('../../../config');
-    const expectedToken = crypto.createHmac('sha256', config.jwt.secret).update('reg123').digest('hex').slice(0, 16);
+    const tsHex = Date.now().toString(16);
+    const hmacHex = crypto.createHmac('sha256', config.jwt.secret).update(`reg123:${tsHex}`).digest('hex').slice(0, 16);
+    const validToken = `${tsHex}.${hmacHex}`;
 
     vi.mocked(prisma.registrant.findUnique).mockResolvedValue({ id: 'reg123', registrationNo: 'REG-001' } as any);
 
-    const hugeBase64 = 'data:image/png;base64,' + 'A'.repeat(4500000);
+    const hugeUrlDataUri = 'data:image/png;base64,' + 'A'.repeat(3000000);
 
     await expect(
       service.createPublicRegistrantDocumentService({
         registrantId: 'reg123',
         type: 'PHOTO',
-        base64: hugeBase64,
-        registrationToken: expectedToken,
+        url: hugeUrlDataUri,
+        registrationToken: validToken,
       })
     ).rejects.toThrow('Ukuran berkas melebihi batas maksimum');
+
+    await expect(
+      service.createPublicRegistrantDocumentService({
+        registrantId: 'reg123',
+        type: 'PHOTO',
+        url: 'data:text/plain;base64,SGVsbG8=',
+        registrationToken: validToken,
+      })
+    ).rejects.toThrow('Tipe berkas tidak didukung');
+
+    await expect(
+      service.createPublicRegistrantDocumentService({
+        registrantId: 'reg123',
+        type: 'PHOTO',
+        url: 'ftp://malicious.com/file.exe',
+        registrationToken: validToken,
+      })
+    ).rejects.toThrow('URL dokumen tidak valid');
   });
 
   it('should reject registration when all waves for a period are full', async () => {

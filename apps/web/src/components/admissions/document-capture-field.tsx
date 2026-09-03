@@ -19,6 +19,7 @@ interface DocumentCaptureFieldProps {
     familyCardNumber?: string;
   };
   onOcrExtracted?: (extracted: { nationalId?: string; familyCardNumber?: string }) => void;
+  onOcrResult?: (result: { status: "WARNING" | "MISMATCH"; notes: string[] }) => void;
 }
 
 export function DocumentCaptureField({

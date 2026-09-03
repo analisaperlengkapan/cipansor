@@ -400,6 +400,11 @@ export default function RegistrationDetailPage({
                     <div>
                       <p className="font-semibold text-sm">{doc.name}</p>
                       <p className="text-xs text-muted-foreground">Tipe: {doc.type}</p>
+                      {doc.notes && (
+                        <p className="text-xs text-amber-700 bg-amber-50 p-1.5 rounded border border-amber-200 mt-1 max-w-lg">
+                          {doc.notes}
+                        </p>
+                      )}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       {doc.fileUrl && (

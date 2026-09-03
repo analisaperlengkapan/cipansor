@@ -296,6 +296,38 @@ export async function getRegistrantById(id: string) {
   });
 }
 
+export async function createPublicRegistrantService(data: CreateRegistrantExtendedInput) {
+  const period = await prisma.admissionPeriod.findUnique({
+    where: { id: data.admissionPeriodId },
+    select: { isActive: true, startDate: true, endDate: true },
+  });
+
+  if (!period) {
+    throw Errors.notFound('Admission period');
+  }
+
+  const now = new Date();
+  if (!period.isActive || now < period.startDate || now > period.endDate) {
+    throw Errors.badRequest('Admission period is not open for registration');
+  }
+
+  const registrant = await createRegistrant(data);
+
+  const crypto = await import('crypto');
+  const timestampHex = Date.now().toString(16);
+  const hmacHex = crypto.createHmac('sha256', config.jwt.secret).update(`${registrant.id}:${timestampHex}`).digest('hex').slice(0, 16);
+  const registrationToken = `${timestampHex}.${hmacHex}`;
+
+  return {
+    id: registrant.id,
+    registrationNo: registrant.registrationNo,
+    registrationToken,
+    fullName: registrant.fullName,
+    status: registrant.status,
+    createdAt: registrant.createdAt,
+  };
+}
+
 export async function createRegistrant(data: CreateRegistrantExtendedInput) {
   // Race-safety: `generateRegistrationNo` derives the next number from
   // `count(*) + 1`. Under PostgreSQL's default READ COMMITTED isolation,
@@ -358,7 +390,7 @@ async function createRegistrantOnce(data: CreateRegistrantExtendedInput) {
         ? await tx.admissionWave.findMany({
             where: {
               periodId: data.admissionPeriodId,
-              status: 'OPEN',
+              status: { in: ['OPEN', 'FULL'] },
               startDate: { lte: now },
               endDate: { gte: now },
             },
@@ -374,10 +406,13 @@ async function createRegistrantOnce(data: CreateRegistrantExtendedInput) {
         const claim = await tx.admissionWave.updateMany({
           where: {
             id: wave.id,
-            status: 'OPEN',
+            status: { in: ['OPEN', 'FULL'] },
             registeredCount: { lt: wave.quota },
           },
-          data: { registeredCount: { increment: 1 } },
+          data: {
+            registeredCount: { increment: 1 },
+            status: 'OPEN',
+          },
         });
 
         if (claim.count === 1) {
@@ -802,8 +837,10 @@ export async function createPublicRegistrantDocumentService(data: {
   base64?: string;
   fileName?: string;
   registrationToken?: string;
+  ocrNotes?: string[];
+  ocrStatus?: 'WARNING' | 'MISMATCH';
 }) {
-  const { registrantId, type, url, base64, fileName, registrationToken } = data;
+  const { registrantId, type, url, base64, fileName, registrationToken, ocrNotes, ocrStatus } = data;
 
   const registrant = await prisma.registrant.findUnique({
     where: { id: registrantId },
@@ -833,12 +870,6 @@ export async function createPublicRegistrantDocumentService(data: {
         isTokenValid = true;
       }
     }
-  } else {
-    // Fallback for simple legacy token
-    const expectedToken = crypto.createHmac('sha256', config.jwt.secret).update(registrant.id).digest('hex').slice(0, 16);
-    if (registrationToken === registrant.id || registrationToken === expectedToken) {
-      isTokenValid = true;
-    }
   }
 
   if (!isTokenValid) {
@@ -846,18 +877,27 @@ export async function createPublicRegistrantDocumentService(data: {
   }
 
   const docUrl = url || base64;
-  if (!docUrl) {
+  if (!docUrl || typeof docUrl !== 'string') {
     throw Errors.badRequest('Dokumen url/base64 wajib diisi');
   }
 
-  // Validate base64 length & MIME (max ~2MB)
-  if (base64) {
-    if (base64.length > 2800000) {
+  // Unified validation for docUrl (data-URI or remote HTTP/HTTPS URL)
+  if (docUrl.startsWith('data:')) {
+    if (docUrl.length > 2800000) {
       throw Errors.badRequest('Ukuran berkas melebihi batas maksimum (2MB)');
     }
-    const mimeMatch = base64.match(/^data:(image\/(jpeg|jpg|png|webp)|application\/pdf);base64,/i);
+    const mimeMatch = docUrl.match(/^data:(image\/(jpeg|jpg|png|webp)|application\/pdf);base64,/i);
     if (!mimeMatch) {
       throw Errors.badRequest('Tipe berkas tidak didukung. Hanya gambar (JPEG/PNG/WebP) dan PDF yang diperbolehkan');
+    }
+  } else {
+    try {
+      const parsedUrl = new URL(docUrl);
+      if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+        throw new Error('Invalid protocol');
+      }
+    } catch {
+      throw Errors.badRequest('URL dokumen tidak valid (harus diawali http:// atau https://)');
     }
   }
 
@@ -875,12 +915,18 @@ export async function createPublicRegistrantDocumentService(data: {
     schemaType = 'ijazah';
   }
 
+  let ocrSummaryNote: string | undefined = undefined;
+  if (ocrNotes && ocrNotes.length > 0) {
+    ocrSummaryNote = `[Hasil Verifikasi: ${ocrStatus || 'WARNING'}] ${ocrNotes.join(' | ')}`;
+  }
+
   const createRegistrantDocumentSchema = (await import('./admissions.schema')).createRegistrantDocumentSchema;
   const docData = createRegistrantDocumentSchema.parse({
     registrantId,
     name: fileName || `${schemaType}_${Date.now()}`,
     type: schemaType,
     fileUrl: docUrl,
+    notes: ocrSummaryNote,
   });
 
   // Execute count check and document creation within a row-locked transaction to prevent race conditions

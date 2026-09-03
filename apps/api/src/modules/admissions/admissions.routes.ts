@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { RoleCode } from '@prisma/client';
-import { parseDocumentSchema } from '@cipansor/shared';
+import { parseDocumentSchema, createPublicRegistrantDocumentSchema } from '@cipansor/shared';
 import { config } from '../../config';
 import * as controller from './admissions.controller';
 import { authenticate, authorize } from '../../middleware/auth';
@@ -72,6 +72,7 @@ router.post(
 router.post(
   '/public/registrants/:registrantId/documents',
   documentUploadLimiter,
+  validate(createPublicRegistrantDocumentSchema),
   controller.createPublicRegistrantDocument
 );
 router.get(

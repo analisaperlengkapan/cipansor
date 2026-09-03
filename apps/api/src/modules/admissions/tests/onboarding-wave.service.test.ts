@@ -195,10 +195,52 @@ describe('Student Onboarding & Wave Quota Unit Tests', () => {
       expect(prisma.admissionWave.updateMany).toHaveBeenCalledWith({
         where: {
           id: 'w-2',
-          status: 'OPEN',
+          status: { in: ['OPEN', 'FULL'] },
           registeredCount: { lt: 50 },
         },
-        data: { registeredCount: { increment: 1 } },
+        data: { registeredCount: { increment: 1 }, status: 'OPEN' },
+      });
+    });
+
+    it('claims a wave previously marked FULL if registeredCount is less than quota due to cancellation', async () => {
+      const mockPeriod = {
+        id: 'period-1',
+        academicYear: { name: '2026/2027' },
+        unit: { name: 'SMP IT' },
+        unitId: 'unit-1',
+        registrationFee: 0,
+      };
+
+      const wave1Freed = { id: 'w-1', waveNumber: 1, registeredCount: 49, quota: 50, status: 'FULL' };
+
+      vi.mocked(prisma.admissionPeriod.findUnique).mockResolvedValue(mockPeriod as any);
+      vi.mocked(prisma.admissionWave.count).mockResolvedValue(1);
+      vi.mocked(prisma.admissionWave.findMany).mockResolvedValue([wave1Freed] as any);
+      vi.mocked(prisma.admissionWave.updateMany).mockResolvedValue({ count: 1 } as any);
+      vi.mocked(prisma.registrant.count).mockResolvedValue(15);
+      (vi.mocked(prisma.registrant.create) as any).mockImplementation(({ data }: any) =>
+        Promise.resolve({ ...data, id: 'reg-new' })
+      );
+
+      const result = await admissionsService.createRegistrant({
+        admissionPeriodId: 'period-1',
+        fullName: 'Santri Baru 2',
+        gender: 'FEMALE',
+        birthPlace: 'Bandung',
+        birthDate: new Date('2011-05-05').toISOString(),
+        address: 'Alamat',
+        fatherName: 'Ayah',
+        motherName: 'Ibu',
+      } as any);
+
+      expect(result.waveId).toBe('w-1');
+      expect(prisma.admissionWave.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: 'w-1',
+          status: { in: ['OPEN', 'FULL'] },
+          registeredCount: { lt: 50 },
+        },
+        data: { registeredCount: { increment: 1 }, status: 'OPEN' },
       });
     });
   });

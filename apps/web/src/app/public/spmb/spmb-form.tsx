@@ -204,6 +204,8 @@ export function SpmbForm({
     ktp: null,
   });
 
+  const [ocrResults, setOcrResults] = useState<Record<string, { status: "WARNING" | "MISMATCH"; notes: string[] }>>({});
+
   const steps = [
     { id: "student", title: "Data Calon Santri", icon: User },
     { id: "parent", title: "Data Orang Tua", icon: Users },
@@ -297,11 +299,14 @@ export function SpmbForm({
           reader.readAsDataURL(file);
         });
 
+        const ocr = ocrResults[key];
         await api.post(`/admissions/public/registrants/${registrantId}/documents`, {
           type,
           base64,
           fileName: file.name,
           registrationToken,
+          ocrNotes: ocr?.notes,
+          ocrStatus: ocr?.status,
         });
       } catch (err: any) {
         failedKeys.push(key);
@@ -1066,6 +1071,7 @@ export function SpmbForm({
                             documentType="foto"
                             file={files.photo}
                             onFileSelect={(f) => setFiles((prev) => ({ ...prev, photo: f }))}
+                            onOcrResult={(res) => setOcrResults((prev) => ({ ...prev, photo: res }))}
                           />
 
                           <DocumentCaptureField
@@ -1076,6 +1082,7 @@ export function SpmbForm({
                               fullName: formData.fatherName || formData.motherName,
                             }}
                             onFileSelect={(f) => setFiles((prev) => ({ ...prev, ktp: f }))}
+                            onOcrResult={(res) => setOcrResults((prev) => ({ ...prev, ktp: res }))}
                           />
 
                           <DocumentCaptureField
@@ -1092,6 +1099,7 @@ export function SpmbForm({
                                 setFormData((prev) => ({ ...prev, familyCardNumber: ext.familyCardNumber! }));
                               }
                             }}
+                            onOcrResult={(res) => setOcrResults((prev) => ({ ...prev, familyCard: res }))}
                           />
 
                           <DocumentCaptureField
@@ -1099,6 +1107,7 @@ export function SpmbForm({
                             documentType="akta"
                             file={files.birthCertificate}
                             onFileSelect={(f) => setFiles((prev) => ({ ...prev, birthCertificate: f }))}
+                            onOcrResult={(res) => setOcrResults((prev) => ({ ...prev, birthCertificate: res }))}
                           />
                         </div>
                       </div>

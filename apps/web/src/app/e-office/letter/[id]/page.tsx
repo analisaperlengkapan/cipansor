@@ -22,6 +22,8 @@ import {
   ShieldOff,
   PenLine,
   Undo2,
+  Paperclip,
+  Truck,
 } from "lucide-react";
 
 import { id } from "date-fns/locale";
@@ -59,9 +61,12 @@ import {
   LetterType,
   LetterNature,
   LetterUrgency,
+  LetterDirection,
+  LetterDispatchChannel,
   LETTER_TYPE_LABELS,
   LETTER_NATURE_LABELS,
   LETTER_URGENCY_LABELS,
+  LETTER_DISPATCH_CHANNEL_LABELS,
   mayRevokeSignature,
   whoMayRevoke,
 } from "@cipansor/shared";
@@ -93,6 +98,7 @@ export default function LetterDetailPage({
     createDisposition,
     updateDispositionStatus,
     resubmitLetter,
+    dispatchLetter,
   } = useCorrespondence(user?.unitId);
   const [participantSearch, setParticipantSearch] = useState("");
   const { data: participantsData } = useCorrespondenceParticipants({
@@ -121,6 +127,14 @@ export default function LetterDetailPage({
   });
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
   const [completeNotes, setCompleteNotes] = useState("");
+  const [dispatchOpen, setDispatchOpen] = useState(false);
+  const [dispatchData, setDispatchData] = useState({
+    channel: LetterDispatchChannel.HAND_DELIVERY as LetterDispatchChannel,
+    dispatchedAt: "",
+    receivedByName: "",
+    trackingNumber: "",
+    note: "",
+  });
   const [selectedReviewerId, setSelectedReviewerId] = useState<string>("");
 
   // Find active disposition for current user
@@ -311,6 +325,45 @@ export default function LetterDetailPage({
       setForwardModalOpen(false);
     } catch (error) {
       toast.error("Gagal meneruskan surat");
+    }
+  };
+
+  /**
+   * Mencatat pengiriman.
+   *
+   * Pesan penolakan server dibacakan apa adanya: "naskah ini sudah dicabut"
+   * dan "belum ditandatangani" adalah dua hal yang berbeda, dan menggantinya
+   * dengan "gagal mencatat pengiriman" membuat petugas mencoba lagi alih-alih
+   * memperbaiki keadaannya.
+   */
+  const handleDispatch = async () => {
+    if (!letter?.id) return;
+    try {
+      await dispatchLetter.mutateAsync({
+        id: letter.id,
+        channel: dispatchData.channel,
+        dispatchedAt: dispatchData.dispatchedAt
+          ? new Date(dispatchData.dispatchedAt).toISOString()
+          : undefined,
+        receivedByName: dispatchData.receivedByName.trim() || undefined,
+        trackingNumber: dispatchData.trackingNumber.trim() || undefined,
+        note: dispatchData.note.trim() || undefined,
+      });
+      toast.success("Pengiriman surat tercatat");
+      setDispatchOpen(false);
+      setDispatchData({
+        channel: LetterDispatchChannel.HAND_DELIVERY,
+        dispatchedAt: "",
+        receivedByName: "",
+        trackingNumber: "",
+        note: "",
+      });
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.error?.message ??
+          error?.response?.data?.message ??
+          "Gagal mencatat pengiriman surat",
+      );
     }
   };
 
@@ -550,6 +603,111 @@ export default function LetterDetailPage({
         </DialogContent>
       </Dialog>
 
+      {/*
+        Buku ekspedisi.
+
+        Yang dicatat bukan sekadar "sudah dikirim" melainkan kapan, lewat apa,
+        kepada siapa diserahkan, dan nomor resinya. Ketika penerima menyatakan
+        tidak menerima surat, keempatnya itulah jawabannya.
+      */}
+      <Dialog open={dispatchOpen} onOpenChange={setDispatchOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Catat Pengiriman Surat</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Saluran Pengiriman</Label>
+              <Select
+                value={dispatchData.channel}
+                onValueChange={(val) =>
+                  setDispatchData({
+                    ...dispatchData,
+                    channel: val as LetterDispatchChannel,
+                  })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(LETTER_DISPATCH_CHANNEL_LABELS).map(
+                    ([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ),
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Tanggal Pengiriman</Label>
+              <Input
+                type="date"
+                value={dispatchData.dispatchedAt}
+                onChange={(e) =>
+                  setDispatchData({
+                    ...dispatchData,
+                    dispatchedAt: e.target.value,
+                  })
+                }
+              />
+              {/* Dicatat setelah kurir kembali adalah hal biasa; dicatat untuk
+                  besok tidak — server pun menolaknya. */}
+              <p className="text-xs text-muted-foreground">
+                Kosongkan bila dikirim hari ini. Tidak dapat diisi tanggal yang
+                belum tiba.
+              </p>
+            </div>
+            <div className="grid gap-2">
+              <Label>Diterima Oleh (opsional)</Label>
+              <Input
+                placeholder="Nama penerima di tempat tujuan"
+                value={dispatchData.receivedByName}
+                onChange={(e) =>
+                  setDispatchData({
+                    ...dispatchData,
+                    receivedByName: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Nomor Resi (opsional)</Label>
+              <Input
+                placeholder="Nomor resi kurir/pos"
+                value={dispatchData.trackingNumber}
+                onChange={(e) =>
+                  setDispatchData({
+                    ...dispatchData,
+                    trackingNumber: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Catatan (opsional)</Label>
+              <Textarea
+                placeholder="Keterangan tambahan..."
+                value={dispatchData.note}
+                onChange={(e) =>
+                  setDispatchData({ ...dispatchData, note: e.target.value })
+                }
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setDispatchOpen(false)}>
+              Batal
+            </Button>
+            <Button onClick={handleDispatch} disabled={dispatchLetter.isPending}>
+              {dispatchLetter.isPending ? "Menyimpan..." : "Catat Pengiriman"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <SignLetterDialog
         letterId={letter.id}
         letterNumber={letter.letterNumber}
@@ -718,11 +876,15 @@ export default function LetterDetailPage({
                 </div>
               </div>
 
+              {/* Berkas naskahnya sendiri — bukan lampiran, yang punya
+                  daftarnya sendiri di bawah. Sebelumnya berlabel "Lampiran
+                  Surat.pdf", sehingga satu-satunya berkas yang ada disebut
+                  dengan nama sesuatu yang belum pernah ada. */}
               {letter.fileUrl && (
                 <div className="flex items-center gap-2 p-3 border rounded-md">
                   <FileText className="h-5 w-5 text-blue-600" />
                   <span className="text-sm font-medium flex-1">
-                    Lampiran Surat.pdf
+                    Berkas naskah
                   </span>
                   <Button variant="ghost" size="sm" asChild>
                     <a
@@ -733,6 +895,54 @@ export default function LetterDetailPage({
                       Download
                     </a>
                   </Button>
+                </div>
+              )}
+
+              {(letter.attachments?.length ?? 0) > 0 && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Lampiran ({letter.attachments!.length} berkas)
+                  </label>
+                  <ul className="mt-1 space-y-2">
+                    {letter.attachments!.map((att, index) => (
+                      <li
+                        key={att.id}
+                        className="flex items-center gap-2 rounded-md border p-3"
+                      >
+                        <Paperclip className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <span className="min-w-0 flex-1 truncate text-sm">
+                          {index + 1}. {att.name}
+                        </span>
+                        <Button variant="ghost" size="sm" asChild>
+                          <a
+                            href={authFileUrl(att.fileUrl)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Unduh
+                          </a>
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Tembusan, seperti yang tercetak di kaki naskah. */}
+              {(letter.recipients?.some((r) => r.isCC) ?? false) && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Tembusan
+                  </label>
+                  <ol className="mt-1 list-decimal space-y-1 pl-5 text-sm">
+                    {letter.recipients!
+                      .filter((r) => r.isCC)
+                      .map((r) => (
+                        <li key={r.id}>
+                          {r.user?.name ?? r.unit?.name ?? "Tidak diketahui"}
+                        </li>
+                      ))}
+                  </ol>
                 </div>
               )}
             </CardContent>
@@ -766,6 +976,77 @@ export default function LetterDetailPage({
                     </Button>
                   </div>
                 </object>
+              </CardContent>
+            </Card>
+          )}
+
+          {/*
+            Buku ekspedisi surat keluar.
+
+            Kartu ini ada untuk surat keluar saja, dan tetap tampil sebelum ada
+            pengiriman apa pun: yang perlu diketahui petugas justru bahwa naskah
+            yang sudah ditandatangani ini belum keluar dari kantor.
+          */}
+          {letter.direction === LetterDirection.OUTGOING && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Truck className="h-5 w-5" />
+                  Pengiriman
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {letter.sentAt ? (
+                  <p className="text-sm">
+                    Keluar dari kantor pada{" "}
+                    <span className="font-medium">
+                      {safeFormat(new Date(letter.sentAt), "dd MMMM yyyy", {
+                        locale: id,
+                      })}
+                    </span>
+                    .
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Belum tercatat dikirim.
+                  </p>
+                )}
+
+                {(letter.dispatches?.length ?? 0) > 0 && (
+                  <ul className="space-y-3">
+                    {letter.dispatches!.map((d) => (
+                      <li key={d.id} className="rounded-md border p-3 text-sm">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant="outline">
+                            {LETTER_DISPATCH_CHANNEL_LABELS[d.channel] ??
+                              d.channel}
+                          </Badge>
+                          <span className="text-muted-foreground text-xs">
+                            {safeFormat(
+                              new Date(d.dispatchedAt),
+                              "dd MMMM yyyy",
+                              { locale: id },
+                            )}
+                          </span>
+                        </div>
+                        <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                          {d.receivedByName && (
+                            <p>Diterima oleh: {d.receivedByName}</p>
+                          )}
+                          {d.trackingNumber && (
+                            <p>Nomor resi: {d.trackingNumber}</p>
+                          )}
+                          {d.dispatchedBy?.name && (
+                            <p>Dicatat oleh: {d.dispatchedBy.name}</p>
+                          )}
+                        </div>
+                        {d.note && (
+                          <p className="mt-2 whitespace-pre-line">{d.note}</p>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </CardContent>
             </Card>
           )}
@@ -871,6 +1152,28 @@ export default function LetterDetailPage({
                 <Send className="mr-2 h-4 w-4" />
                 Disposisi
               </Button>
+
+              {/*
+                Langkah yang selama ini tidak punya tombol.
+
+                Ditawarkan hanya untuk naskah keluar yang sudah ditandatangani
+                dan belum dicabut — persis keadaan yang akan diterima server,
+                supaya tombol ini tidak menjanjikan sesuatu yang akan ditolak.
+                Tetap tampil setelah surat berstatus terkirim: surat yang sama
+                diantar ke beberapa alamat, dan yang tidak sampai dikirim ulang.
+              */}
+              {letter.direction === LetterDirection.OUTGOING &&
+                !revokedSignature &&
+                (letter.status === "SIGNED" || letter.status === "SENT") && (
+                  <Button
+                    className="w-full"
+                    variant="outline"
+                    onClick={() => setDispatchOpen(true)}
+                  >
+                    <Truck className="mr-2 h-4 w-4" />
+                    {letter.sentAt ? "Catat Pengiriman Lagi" : "Catat Pengiriman"}
+                  </Button>
+                )}
 
               {/*
                 Menarik kembali surat yang telanjur beredar.

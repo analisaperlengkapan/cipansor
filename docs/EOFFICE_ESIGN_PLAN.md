@@ -162,10 +162,12 @@ The flow is otherwise strong (§3.2). These are the gaps:
 
 | # | Gap | Detail |
 |---|---|---|
-| a | **`SENT` is never used for outgoing letters** | `correspondence.service.ts:755` sets `SENT` only for **INCOMING** letters whose review finished with no disposition recipients — semantically inverted. Outgoing runs `DRAFT → PENDING_REVIEW → READY_TO_SIGN → SIGNED → ARCHIVED`, skipping it. There is no `sentAt` field and no dispatch record (date, channel, tanda terima), which is exactly what a buku agenda surat keluar records. Any "surat terkirim" statistic is therefore wrong. |
-| b | **Tembusan is modelled but dead** | `isCC` exists on the recipient model and is written exactly once in the codebase: a hardcoded `isCC: false` at `correspondence.service.ts:350`. Nothing sets it true; no UI offers it. Tembusan is a standard element of naskah dinas. |
+| a | ✅ *Fixed in PR-4.* **`SENT` is never used for outgoing letters** | `correspondence.service.ts:755` sets `SENT` only for **INCOMING** letters whose review finished with no disposition recipients — semantically inverted. Outgoing runs `DRAFT → PENDING_REVIEW → READY_TO_SIGN → SIGNED → ARCHIVED`, skipping it. There is no `sentAt` field and no dispatch record (date, channel, tanda terima), which is exactly what a buku agenda surat keluar records. Any "surat terkirim" statistic is therefore wrong. |
+| b | ✅ *Fixed in PR-4.* **Tembusan is modelled but dead** | `isCC` exists on the recipient model and is written exactly once in the codebase: a hardcoded `isCC: false` at `correspondence.service.ts:350`. Nothing sets it true; no UI offers it. Tembusan is a standard element of naskah dinas. |
 | c | **Signing authority is unstructured** | `senderTitle` is free text. Naskah dinas distinguishes **a.n.**, **u.b.**, **Plt.**, **Plh.**, and that determines both who may sign and how the signature block prints. Today it is a typist's convention, not a rule the system can enforce. |
-| d | **No attachment list for outgoing letters** | `fileUrl` is a single field for the scanned original. There is no list of lampiran and no "Lampiran: N berkas" line. |
+| d | ✅ *Fixed in PR-4.* **No attachment list for outgoing letters** | `fileUrl` is a single field for the scanned original. There is no list of lampiran and no "Lampiran: N berkas" line. |
+
+| e | **A letter cannot be edited after it is created** | Found while building PR-4, not fixed by it. There is no `PATCH /letters/:id` — the only `router.patch` in the module is `/dispositions/:id/status`, and `UpdateLetterInput` is a DTO with no endpoint behind it. So the flow PR-2 completed has no middle step: a reviewer returns a draft, the page says *"Surat dikembalikan untuk diperbaiki"*, and the author's only available move is to resubmit the identical text. It also means lampiran and tembusan can only be attached at creation. Fixing it is a surface of its own — an edit form, a rule for which statuses and which fields are editable by whom, and re-clearing every paraf on save, since a paraf approves a specific text. |
 
 **Minor:** urgency has three levels (`NORMAL`/`IMMEDIATE`/`URGENT`); the common
 ANRI set is four, adding **Kilat**.
@@ -448,10 +450,64 @@ it in the same commit as any change to the PDF output.**
 generator emits really does break the hash, and that the archive keeps serving
 the bytes that were signed regardless.
 
-### PR-4 — Flow completeness (§2.7 a, b, d)
-`sentAt` plus a correct `SENT` transition for outgoing letters and a dispatch
-record; stop applying `SENT` to incoming letters; make tembusan usable
-end-to-end; add an attachment list and the "Lampiran" line.
+### PR-4 — Flow completeness (§2.7 a, b, d) — **SHIPPED**
+
+Three gaps, one theme: the schema described a letter's life more completely than
+any code ever filled in.
+
+**a. Dispatch.** `LetterDispatch` is a buku ekspedisi, not a flag — date,
+channel (diantar / kurir / pos / surel / WhatsApp), who received it, nomor resi,
+tanda terima. When the addressee says the letter never arrived, those are the
+five answers, and a boolean gives none of them. `POST /letters/:id/dispatch`
+writes one, moves the letter to `SENT`, and sets `Letter.sentAt` — **on the
+first dispatch only**, because a letter leaves the office once even when it is
+carried to three addresses or re-sent after going astray; every attempt keeps
+its own row.
+
+`assertMayDispatch` refuses three things, each for its own reason: an incoming
+letter (received, never sent — that inversion is what this PR removes), an
+unsigned naskah (nothing to hand over yet), and a withdrawn one (the copies
+already circulating are history and still print stamped, but sending a fresh
+copy of a retracted letter is a new act).
+
+And the inversion itself: review completion on an **incoming** letter with no
+disposition recipients set `SENT`. It now archives the letter, which is what
+actually happens to a surat masuk that has been read and needs no follow-up —
+recorded as its own flow event so the history says who closed it and why.
+
+**b. Tembusan.** `isCC` had exactly one writer in the entire codebase, the
+hardcoded `isCC: false` at letter creation. A column that is never true is not a
+column. Tembusan can now be chosen on the form, is stored, is listed on the
+letter page, and prints as a numbered `Tembusan:` block at the foot of the last
+page — below the signature block, because it describes circulation, not content.
+Anyone already a primary recipient is not also recorded as a copy recipient.
+
+**c. Lampiran.** There was no attachment table, so the naskah's "Lampiran" line
+was permanently `-` and was accidentally correct. `LetterAttachment` keeps name,
+URL, type, size and order; the header line prints `Lampiran : 2 (dua) berkas`,
+with the count in figures *and* words for the same reason a kuitansi does it.
+
+**The byte-stability constraint, and how it was kept.** Changing the generator's
+output invalidates every letter signed before the change. Both additions are
+therefore conditional: a naskah with no lampiran and no tembusan emits exactly
+the bytes it emitted before. `generate-letter-pdf.test.ts` pins that SHA-256 —
+captured from the pre-change build — so the guarantee is checked rather than
+asserted. `LETTER_PDF_RELATIONS` is the second half of the same problem: the
+signing path, the download path and the backfill script now read the letter's
+relations from one shared constant, because a path that forgot `attachments`
+would render a different document from the same letter and report a valid letter
+as altered.
+
+**Also fixed here:** a `WorkflowError` reached the client as a **500 "Internal
+server error"** in production. Every one of these rules was written to explain
+itself — "belum giliran Anda, menunggu verifikator urutan 2" — and the
+explanation was discarded one step before it was read. They now answer 409 with
+their own message.
+
+*Done when:* an outgoing letter can be recorded as dispatched with a tanda
+terima, a letter can carry tembusan and lampiran end-to-end, no incoming letter
+is ever labelled "Terkirim", and a letter signed before the change still
+verifies. ✅
 
 ### PR-5 — PAdES B-B + RFC 3161 (§4.3 Tier 1)
 Embed the signature in the PDF. Requires the RSA/ECDSA change.
@@ -541,6 +597,13 @@ behalf, and under which of those forms. Needs the yayasan's answer first.
 index). Production still has no `_prisma_migrations` (ROADMAP §3), so every
 deploy in this series must be pre-checked with a non-destructive
 `prisma migrate diff` that comes back clean.
+
+PR-3 adds one table (`letter_signed_documents`) and PR-4 adds two more
+(`letter_attachments`, `letter_dispatches`) plus one enum
+(`LetterDispatchChannel`) and one nullable column (`letters.sent_at`). All
+additive — nothing is dropped or narrowed, so `db push` is safe here — and after
+PR-3 deploys, run `pnpm --filter api db:archive-letters --dry-run` before the
+real backfill.
 
 ---
 

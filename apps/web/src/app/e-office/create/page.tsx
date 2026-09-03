@@ -63,6 +63,17 @@ const letterSchema = z.object({
   fileUrl: z.string().optional(),
   reviewerIds: z.array(z.string()).optional(),
   recipientIds: z.array(z.string()).optional(),
+  ccIds: z.array(z.string()).optional(),
+  attachments: z
+    .array(
+      z.object({
+        name: z.string(),
+        fileUrl: z.string(),
+        mimeType: z.string().optional(),
+        sizeBytes: z.number().optional(),
+      }),
+    )
+    .optional(),
 });
 
 function CreateLetterForm() {
@@ -85,6 +96,7 @@ function CreateLetterForm() {
   const { data: units = [] } = useUnits();
   const [searchQuery, setSearchQuery] = React.useState("");
   const [uploading, setUploading] = React.useState(false);
+  const [uploadingAttachment, setUploadingAttachment] = React.useState(false);
   const [submitMode, setSubmitMode] = React.useState<"DRAFT" | "SUBMIT">("DRAFT");
 
   const form = useForm<z.infer<typeof letterSchema>>({
@@ -98,6 +110,8 @@ function CreateLetterForm() {
       nature: LetterNature.PUBLIC,
       reviewerIds: [],
       recipientIds: [],
+      ccIds: [],
+      attachments: [],
     },
   });
 
@@ -159,6 +173,49 @@ function CreateLetterForm() {
       toast.error("Gagal upload file");
     } finally {
       setUploading(false);
+    }
+  };
+
+  /**
+   * Menambahkan satu lampiran.
+   *
+   * Berkasnya diunggah lebih dulu dan yang disimpan bersama surat hanyalah
+   * rujukannya — jalur yang sama dengan berkas naskah di atas. Nama aslinya
+   * ikut disimpan: "Daftar hadir.pdf" adalah yang dicari pengarsip, bukan nama
+   * acak yang diberikan penyimpanan.
+   */
+  const handleAttachmentUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingAttachment(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await api.post("/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      if (response.data.success) {
+        form.setValue("attachments", [
+          ...(form.getValues("attachments") || []),
+          {
+            name: file.name,
+            fileUrl: response.data.data.url,
+            mimeType: file.type || undefined,
+            sizeBytes: file.size,
+          },
+        ]);
+        toast.success(`Lampiran "${file.name}" ditambahkan`);
+      }
+    } catch {
+      toast.error("Gagal mengunggah lampiran");
+    } finally {
+      setUploadingAttachment(false);
+      // Supaya berkas dengan nama yang sama dapat dipilih lagi setelah dihapus.
+      e.target.value = "";
     }
   };
 
@@ -442,6 +499,75 @@ function CreateLetterForm() {
                   )}
                 />
               )}
+
+              {/*
+                Tembusan.
+
+                Unsur baku naskah dinas yang selama ini tidak punya tempat:
+                kolomnya ada di basis data dan tidak pernah bernilai apa pun
+                selain "bukan tembusan", sehingga penyusun yang perlu
+                mencantumkannya menuliskannya di badan surat — di mana ia tidak
+                terbaca oleh apa pun, dan tidak tercetak di kaki naskah
+                sebagaimana mestinya.
+              */}
+              {direction === LetterDirection.OUTGOING && (
+                <FormField
+                  control={form.control}
+                  name="ccIds"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tembusan (opsional)</FormLabel>
+                      <FormControl>
+                        <div className="space-y-2 rounded-md border p-3">
+                          <Input
+                            placeholder="Cari penerima tembusan..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="mb-2 bg-white text-xs"
+                          />
+                          <div className="max-h-40 space-y-2 overflow-y-auto">
+                            {staffOptions.map((option: any) => (
+                              <div
+                                key={option.value}
+                                className="flex items-center space-x-2"
+                              >
+                                <input
+                                  type="checkbox"
+                                  id={`cc-${option.value}`}
+                                  value={option.value}
+                                  checked={(field.value || []).includes(option.value)}
+                                  onChange={(e) => {
+                                    const current = field.value || [];
+                                    field.onChange(
+                                      e.target.checked
+                                        ? [...current, option.value]
+                                        : current.filter(
+                                            (val: string) => val !== option.value,
+                                          ),
+                                    );
+                                  }}
+                                  className="h-4 w-4 rounded border-gray-300"
+                                />
+                                <label
+                                  htmlFor={`cc-${option.value}`}
+                                  className="cursor-pointer text-sm"
+                                >
+                                  {option.label}
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </FormControl>
+                      <FormDescription>
+                        Penerima salinan naskah. Namanya tercetak sebagai daftar
+                        bernomor di kaki surat.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               {direction === LetterDirection.INCOMING && (
                 <FormField
                   control={form.control}
@@ -601,9 +727,80 @@ function CreateLetterForm() {
                     </FormControl>
                     {field.value && (
                       <FormDescription className="text-green-600 flex items-center gap-1">
-                        <Upload className="h-3 w-3" /> File siap dilampirkan
+                        <Upload className="h-3 w-3" /> Berkas naskah siap dikirim
                       </FormDescription>
                     )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/*
+                Lampiran, yang berbeda dari berkas naskah di atas.
+
+                Yang di atas adalah naskahnya sendiri — satu berkas, pindaian
+                atau unggahan. Lampiran adalah berkas yang *menyertainya*, dan
+                jumlahnya diumumkan di kepala surat sebagai "Lampiran : 2 (dua)
+                berkas" supaya penerima tahu apa yang seharusnya ia terima.
+              */}
+              <FormField
+                control={form.control}
+                name="attachments"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Lampiran</FormLabel>
+                    <FormControl>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-4">
+                          <Input
+                            type="file"
+                            onChange={handleAttachmentUpload}
+                            disabled={uploadingAttachment}
+                          />
+                          {uploadingAttachment && (
+                            <span className="text-sm text-muted-foreground">
+                              Mengunggah...
+                            </span>
+                          )}
+                        </div>
+                        {(field.value || []).length > 0 && (
+                          <ul className="space-y-2">
+                            {(field.value || []).map((att, index) => (
+                              <li
+                                key={`${att.fileUrl}-${index}`}
+                                className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm"
+                              >
+                                <span className="text-muted-foreground">
+                                  {index + 1}.
+                                </span>
+                                <span className="min-w-0 flex-1 truncate">
+                                  {att.name}
+                                </span>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    field.onChange(
+                                      (field.value || []).filter(
+                                        (_, i) => i !== index,
+                                      ),
+                                    )
+                                  }
+                                >
+                                  Hapus
+                                </Button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </FormControl>
+                    <FormDescription>
+                      Jumlahnya diumumkan pada kepala surat. Surat yang menyatakan
+                      dua lampiran dan sampai tanpa keduanya adalah surat yang
+                      kekurangannya dapat dibuktikan.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

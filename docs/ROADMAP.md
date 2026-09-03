@@ -413,7 +413,7 @@ What #413 did **not** do, and is worth knowing:
 
 ---
 
-## 🟡 14. E-Office & electronic signature — audited 2026-09-02, PR-1..PR-3 shipped
+## 🟡 14. E-Office & electronic signature — audited 2026-09-02, PR-1..PR-4 shipped
 
 Full findings and the plan: [`EOFFICE_ESIGN_PLAN.md`](./EOFFICE_ESIGN_PLAN.md).
 
@@ -421,9 +421,11 @@ Full findings and the plan: [`EOFFICE_ESIGN_PLAN.md`](./EOFFICE_ESIGN_PLAN.md).
 given a real letterhead), PR-2 + PR-2b (#436, revocation that the app can
 actually perform, with authority placed where ANRI, RFC 5280 and UU 16/2001
 Pasal 29 all put it), PR-3 (#437, the signed PDF bytes archived so a dependency
-bump can no longer invalidate every letter ever signed).
+bump can no longer invalidate every letter ever signed), PR-4 (flow completeness
+— a real dispatch record, tembusan, and lampiran, plus the end of `SENT` being
+applied to incoming letters).
 
-**Still open:** PR-4 (flow completeness — `sentAt`, tembusan, lampiran), PR-5
+**Still open:** PR-5
 (PAdES B-B + RFC 3161 timestamps — the highest-value remaining item, since
 without a timestamp there is no answer to *"was the key valid at the time of
 signing"*, which is exactly what revocation semantics need), PR-6 (a.n./u.b./
@@ -432,13 +434,11 @@ Unicode font and a shaping engine).
 
 Three things from the audit that still change what you do next:
 
-- **PR #414 must be closed, not merged.** The feature it advertises is not in
-  it: on 2026-09-02 at 01:57 UTC a Jules commit titled *"update status assertion
-  … and add mysql2 override"* deleted the +5,112 lines that PR #421 had merged
-  into that branch seventeen minutes earlier. Every correspondence file on the
-  branch is now byte-identical to `main`. Merging #414 would only downgrade
-  dependencies and CI and delete two test suites. **The work survives at commit
-  `e93a7cf2`** and nothing points at it — recover from there.
+- **PR #414 must be closed, not merged.** ✅ *Closed 2026-09-02.* The feature it
+  advertised was not in it: a Jules commit titled *"update status assertion …
+  and add mysql2 override"* deleted the +5,112 lines that PR #421 had merged
+  into that branch seventeen minutes earlier. The work was recovered from commit
+  `e93a7cf2` and shipped in #435; a copy also stands at tag `esign-salvage`.
 - **Naskah dinas are rasterised today.** `e-office/letter/[id]/page.tsx:126`
   turns the whole letter into one PNG via `html2canvas` + `jsPDF.addImage`, so
   the text is unselectable, unsearchable, and cannot carry a real PAdES
@@ -456,6 +456,29 @@ Three things from the audit that still change what you do next:
   `pnpm --filter api db:archive-letters` after deploying to backfill letters
   signed before the archive existed — it archives only those whose bytes still
   reproduce exactly, and reports the rest rather than storing wrong bytes.
+- **`SENT` meant the opposite of what it says.** ✅ *Fixed in PR-4.* It was
+  applied to *incoming* letters whose review finished with no disposition
+  recipients, and never to an outgoing letter at all — so every "surat terkirim"
+  figure counted letters that had just arrived. Outgoing letters now get a real
+  buku ekspedisi (`LetterDispatch`: date, channel, who received it, resi, tanda
+  terima) behind `POST /correspondence/letters/:id/dispatch`, `Letter.sentAt`
+  records the first departure, and a finished incoming letter with nobody to
+  forward it to is archived, which is what actually happens to it.
+- **Tembusan and lampiran existed only in the schema.** ✅ *Fixed in PR-4.*
+  `isCC` had exactly one writer in the whole codebase — a hardcoded `false` —
+  and there was no attachment table at all, so the naskah's "Lampiran" line was
+  permanently "-". Both are now end-to-end: chosen on the form, stored, listed
+  on the letter page, and printed on the naskah (`Lampiran : 2 (dua) berkas`,
+  and a numbered `Tembusan:` block at the foot). A letter with neither renders
+  byte-for-byte as before — `generate-letter-pdf.test.ts` pins that hash, since
+  changing it would report every previously signed letter as altered.
+- **A letter cannot be edited after it is created.** 🔴 *Found while building
+  PR-4; not fixed.* There is no `PATCH /letters/:id` anywhere — the module's only
+  `router.patch` is `/dispositions/:id/status`, and `UpdateLetterInput` is a DTO
+  with no endpoint behind it. The revision loop therefore has no middle step: a
+  reviewer returns a draft, the page invites the author to fix it, and the only
+  move available is resubmitting the identical text. Lampiran and tembusan are
+  likewise fixed at creation. See plan §2.7 (e) for what fixing it involves.
 
 The signing crypto itself is *good* and should not be rebuilt — scrypt-sealed
 Ed25519 keys, a passphrase that is never stored in any form, server-decided

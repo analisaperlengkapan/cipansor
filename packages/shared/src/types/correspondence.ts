@@ -38,6 +38,34 @@ export enum LetterNature {
   STRICTLY_CONFIDENTIAL = "STRICTLY_CONFIDENTIAL",
 }
 
+/**
+ * Cara sebuah naskah keluar dari kantor.
+ *
+ * Dicatat karena buku ekspedisi mencatatnya: ketika penerima menyatakan tidak
+ * menerima surat, "lewat apa dan kepada siapa diserahkan" adalah pertanyaan
+ * pertama, dan status SENT saja tidak menjawabnya.
+ */
+export enum LetterDispatchChannel {
+  HAND_DELIVERY = "HAND_DELIVERY",
+  COURIER = "COURIER",
+  POST = "POST",
+  EMAIL = "EMAIL",
+  WHATSAPP = "WHATSAPP",
+  OTHER = "OTHER",
+}
+
+export const LETTER_DISPATCH_CHANNEL_LABELS: Record<
+  LetterDispatchChannel,
+  string
+> = {
+  [LetterDispatchChannel.HAND_DELIVERY]: "Diantar langsung",
+  [LetterDispatchChannel.COURIER]: "Kurir / ekspedisi",
+  [LetterDispatchChannel.POST]: "Pos",
+  [LetterDispatchChannel.EMAIL]: "Surel",
+  [LetterDispatchChannel.WHATSAPP]: "WhatsApp",
+  [LetterDispatchChannel.OTHER]: "Lainnya",
+};
+
 export enum LetterStatus {
   DRAFT = "DRAFT",
   PENDING_REVIEW = "PENDING_REVIEW",
@@ -75,7 +103,25 @@ export interface CreateLetterInput {
   // Relations
   reviewerIds?: string[]; // Ordered list of reviewers (User IDs)
   recipientIds?: string[]; // Internal recipients (User IDs)
+  /**
+   * Tembusan — penerima salinan, bukan penerima surat.
+   *
+   * Sudah lama ada di sini dan di kolom `LetterRecipient.isCC`, dan selama itu
+   * pula tidak pernah terpakai: satu-satunya penulisan `isCC` di seluruh kode
+   * adalah `isCC: false` yang dipaku pada pembuatan surat. Tembusan adalah
+   * unsur baku naskah dinas; tanpa ini penyusun terpaksa menuliskannya di
+   * badan surat, di mana ia tidak terbaca oleh apa pun.
+   */
   ccIds?: string[]; // CC recipients (User IDs)
+  /** Lampiran yang menyertai naskah, sudah diunggah lewat POST /upload. */
+  attachments?: LetterAttachmentInput[];
+}
+
+export interface LetterAttachmentInput {
+  name: string;
+  fileUrl: string;
+  mimeType?: string;
+  sizeBytes?: number;
 }
 
 export interface UpdateLetterInput extends Partial<CreateLetterInput> {
@@ -148,6 +194,58 @@ export interface LetterFlowEventDetail {
   createdAt: string;
 }
 
+/** Satu lampiran naskah, sebagaimana dikirim API. */
+export interface LetterAttachmentDetail {
+  id: string;
+  name: string;
+  fileUrl: string;
+  mimeType?: string | null;
+  sizeBytes?: number | null;
+  order: number;
+  createdAt: string;
+}
+
+/**
+ * Penerima internal sebuah surat — termasuk penerima tembusan.
+ *
+ * `isCC` membedakan keduanya, dan itu satu-satunya alasan bentuk ini ada:
+ * daftar penerima dan daftar tembusan adalah dua daftar yang dicetak di dua
+ * tempat berbeda pada naskah.
+ */
+export interface LetterRecipientDetail {
+  id: string;
+  userId?: string | null;
+  unitId?: string | null;
+  isCC: boolean;
+  readAt?: string | null;
+  user?: { name: string } | null;
+  unit?: { name: string } | null;
+}
+
+/** Satu baris buku ekspedisi: kapan naskah keluar, lewat apa, dan buktinya. */
+export interface LetterDispatchDetail {
+  id: string;
+  dispatchedAt: string;
+  channel: LetterDispatchChannel;
+  receivedByName?: string | null;
+  trackingNumber?: string | null;
+  receiptUrl?: string | null;
+  note?: string | null;
+  dispatchedBy?: { name: string } | null;
+  createdAt: string;
+}
+
+/** Apa yang dicatat petugas ketika sebuah naskah benar-benar dikirim. */
+export interface DispatchLetterInput {
+  channel: LetterDispatchChannel;
+  /** Tidak diisi = sekarang. Tidak boleh di masa depan. */
+  dispatchedAt?: string;
+  receivedByName?: string;
+  trackingNumber?: string;
+  receiptUrl?: string;
+  note?: string;
+}
+
 export interface LetterDetail {
   id: string;
   unitId: string;
@@ -186,8 +284,13 @@ export interface LetterDetail {
   createdBy?: { name: string };
   createdByName: string;
   createdAt: string;
+  /** Kapan naskah pertama kali keluar dari kantor; null selama belum dikirim. */
+  sentAt?: string | null;
 
   reviewers: LetterReviewerDetail[];
+  recipients?: LetterRecipientDetail[];
+  attachments?: LetterAttachmentDetail[];
+  dispatches?: LetterDispatchDetail[];
   dispositions: LetterDispositionDetail[];
   flowEvents?: LetterFlowEventDetail[];
   signatures?: LetterSignatureDetail[];

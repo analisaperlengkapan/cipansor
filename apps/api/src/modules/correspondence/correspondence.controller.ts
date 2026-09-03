@@ -122,6 +122,22 @@ export const CorrespondenceController = {
     res.json(ApiResponse.success(result));
   }),
 
+  /**
+   * Buku ekspedisi: naskah ini benar-benar keluar dari kantor.
+   *
+   * Terpisah dari `archive` dengan sengaja — mengirim dan mengarsipkan adalah
+   * dua perbuatan yang berbeda, oleh orang yang bisa saja berbeda, dan sebuah
+   * surat yang sudah dikirim masih menunggu untuk diarsipkan.
+   */
+  dispatch: asyncHandler(async (req: Request, res: Response) => {
+    const result = await CorrespondenceService.dispatchLetter(
+      req.params.id,
+      actorOf(req),
+      req.body
+    );
+    res.status(201).json(ApiResponse.success(result));
+  }),
+
   archive: asyncHandler(async (req: Request, res: Response) => {
     const result = await CorrespondenceService.archiveLetter(
       req.params.id,

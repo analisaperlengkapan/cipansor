@@ -287,11 +287,14 @@ export function ChatWidget() {
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
-        aria-label={
-          open
-            ? "Tutup asisten informasi"
-            : "Buka asisten informasi — tanya seputar pendaftaran dan informasi umum"
-        }
+        // Nama pendek, dan itu keputusan yang sudah pernah salah sekali.
+        // Pengingatnya sempat diperpanjang jadi "Buka asisten informasi —
+        // tanya seputar pendaftaran dan informasi umum", yang membuat
+        // chatbot-widget.spec.ts merah: uji itu mengunci nama ini, dan
+        // benar melakukannya. Ajakan untuk bertanya adalah tugas pil di
+        // atas; nama sebuah tombol dibacakan utuh setiap kali fokus
+        // mendarat di sana, jadi ia tetap sependek mungkin.
+        aria-label={open ? "Tutup asisten informasi" : "Buka asisten informasi"}
         className={cn(
           "fixed bottom-6 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105",
         )}

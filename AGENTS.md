@@ -128,3 +128,27 @@ add new events to the `AppEvents` interface with a payload type.
 See nested `AGENTS.md` files: `apps/api/AGENTS.md`, `apps/web/AGENTS.md`,
 `packages/shared/AGENTS.md`, `apps/api/prisma/AGENTS.md`. Known technical debt and
 the remaining build-green roadmap live in `docs/KNOWN_ISSUES.md`.
+
+## Committed skills and hooks
+
+`.claude/` carries the automation this repo relies on, and it is checked in so
+every session gets it.
+
+| | |
+|---|---|
+| `skills/gate` | the quality gate AGENTS.md requires before pushing |
+| `skills/stack` | bring the local Postgres + Redis stack up |
+| `skills/screenshot-roles` | render real components for before/after shots |
+| `skills/sync-records` | move findings out of the transcript and into files |
+| `hooks/guard.sh` | PreToolUse — blocks a full-file Write to `schema.prisma` and a push to `main` |
+| `hooks/session-bootstrap.sh` | SessionStart — installs deps, generates the Prisma client, builds shared |
+| `hooks/pre-compact-sync.sh` | PreCompact — pauses the first manual `/compact` of a session so the records get written first |
+
+**Why the compaction hook exists.** Compaction discards the transcript, and only
+files survive it. Findings were reaching `memory/`, the plan and the ROADMAP
+only because the user remembered to ask, every single time. The hook asks
+instead: it exits 2 on the first manual `/compact`, which hands control back for
+a `sync-records` pass, and lets the next one through unconditionally — so it can
+nag but can never wedge a session. It never blocks *auto*-compaction, which
+fires at the context wall where a refusal would leave no way out.
+`/compact skip-sync` bypasses it deliberately.

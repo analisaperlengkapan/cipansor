@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useVerifyPdfLetter } from "@/hooks/use-correspondence";
 import {
   TurnstileWidget,
-  isTurnstileEnabled,
+  useTurnstile,
 } from "@/components/security/turnstile-widget";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -76,10 +76,7 @@ function PublicVerifyContent() {
    * dijawab oleh Cloudflare, bukan oleh nilai yang kita kirim sendiri ke
    * peramban.
    */
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
-  // Widget tidak dapat dimuat: teruskan, biarkan peladen yang memutuskan.
-  const [turnstileBlocked, setTurnstileBlocked] = useState(false);
+  const turnstile = useTurnstile();
 
   const verifyPdfMutation = useVerifyPdfLetter();
 
@@ -97,13 +94,6 @@ function PublicVerifyContent() {
     result.letter.authoringTrack in LETTER_AUTHORING_TRACK_LABELS
       ? (result.letter.authoringTrack as LetterAuthoringTrack)
       : null;
-
-  // Token Turnstile sekali pakai: penukaran kedua ditolak Cloudflare. Jadi
-  // tantangan baru diminta setelah SETIAP pengiriman, berhasil maupun gagal.
-  const refreshTurnstile = () => {
-    setTurnstileToken(null);
-    setTurnstileResetSignal((n) => n + 1);
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -124,7 +114,7 @@ function PublicVerifyContent() {
       return;
     }
 
-    if (isTurnstileEnabled() && !turnstileToken && !turnstileBlocked) {
+    if (!turnstile.ready) {
       setError(
         "Verifikasi keamanan belum selesai. Tunggu sesaat, lalu coba lagi.",
       );
@@ -137,12 +127,12 @@ function PublicVerifyContent() {
     try {
       const data = await verifyPdfMutation.mutateAsync({
         file: selectedFile,
-        turnstileToken,
+        turnstileToken: turnstile.token,
       });
       setResult(data);
-      refreshTurnstile();
+      turnstile.refresh();
     } catch (err: any) {
-      refreshTurnstile();
+      turnstile.refresh();
       if (err?.response?.status === 429) {
         setError("Terlalu banyak permintaan verifikasi. Silakan tunggu beberapa saat.");
       } else {
@@ -202,7 +192,7 @@ function PublicVerifyContent() {
               )}
             </div>
 
-            {isTurnstileEnabled() && (
+            {turnstile.required && (
               <div className="p-3 bg-slate-100 rounded-md border text-sm space-y-2">
                 <div className="flex items-center gap-2 text-slate-700 font-medium">
                   <Lock className="h-4 w-4 text-blue-600" />
@@ -210,9 +200,7 @@ function PublicVerifyContent() {
                 </div>
                 <TurnstileWidget
                   action="verify-letter"
-                  onToken={setTurnstileToken}
-                  onUnavailable={() => setTurnstileBlocked(true)}
-                  resetSignal={turnstileResetSignal}
+                  {...turnstile.widgetProps}
                 />
               </div>
             )}

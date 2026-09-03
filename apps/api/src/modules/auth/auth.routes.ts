@@ -125,6 +125,11 @@ const passwordResetLimiter = rateLimit({
 router.post(
   '/reset-password',
   passwordResetLimiter,
+  // Menukarkan tautan reset berarti menetapkan kata sandi. Tautannya memang
+  // sudah membawa token dari kotak masuk pemiliknya, tetapi endpoint ini
+  // terbuka bagi siapa pun dan formnya diisi manusia — jadi ongkos gerbangnya
+  // nol dan ia menutup penyapuan token.
+  requireTurnstile,
   validate(resetPasswordSchema),
   controller.resetPassword,
 );

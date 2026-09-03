@@ -28,6 +28,48 @@ export function isTurnstileEnabled(): boolean {
   return TURNSTILE_SITE_KEY.length > 0;
 }
 
+/**
+ * Keadaan Turnstile untuk satu form.
+ *
+ * Enam permukaan memakai pola yang sama: simpan token, minta tantangan baru
+ * setelah tiap pengiriman, dan jangan mengunci tombol ketika widget-nya tidak
+ * dapat dipakai. Ditulis ulang enam kali, pola itu akan salah di tempat yang
+ * berbeda-beda — dan yang paling mudah terlewat justru cabang `blocked`, yang
+ * hanya terlihat ketika Cloudflare tidak terjangkau.
+ */
+export function useTurnstile() {
+  const [token, setToken] = useState<string | null>(null);
+  const [resetSignal, setResetSignal] = useState(0);
+  const [blocked, setBlocked] = useState(false);
+  const required = isTurnstileEnabled();
+
+  /**
+   * Minta tantangan baru. Wajib dipanggil setelah SETIAP pengiriman, berhasil
+   * maupun gagal: token Turnstile sekali pakai dan penukaran kedua ditolak.
+   */
+  const refresh = useCallback(() => {
+    setToken(null);
+    setResetSignal((n) => n + 1);
+  }, []);
+
+  const onUnavailable = useCallback(() => setBlocked(true), []);
+
+  return {
+    token,
+    required,
+    blocked,
+    /**
+     * Apakah form boleh dikirim. Perhatikan `blocked`: gerbang yang tidak
+     * dapat dimuat harus MEMBUKA tombolnya, bukan menguncinya — peladen sudah
+     * gagal-terbuka ketika Cloudflare tak terjangkau, dan tombol yang terkunci
+     * di peramban tidak dapat dibuka oleh siapa pun dari sisi peladen.
+     */
+    ready: !required || token !== null || blocked,
+    refresh,
+    widgetProps: { onToken: setToken, onUnavailable, resetSignal },
+  };
+}
+
 const SCRIPT_SRC =
   "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 
@@ -113,6 +155,22 @@ export interface TurnstileWidgetProps {
   /** Label tindakan; muncul di analitik Turnstile untuk memisahkan form. */
   action?: string;
   /**
+   * Lebar widget. `flexible` (bawaan) mengikuti lebar induknya dengan minimum
+   * 300px, sehingga ia sejajar dengan kolom-kolom form di atasnya alih-alih
+   * berdiri 300px sendirian di dalam kartu yang lebih lebar.
+   */
+  size?: "flexible" | "normal" | "compact";
+  /**
+   * Kapan widget-nya terlihat.
+   *
+   * `interaction-only` tidak memakan ruang sama sekali sampai Cloudflare
+   * benar-benar menuntut interaksi. Itu yang benar untuk permukaan sempit
+   * seperti panel chat, di mana blok 65px yang selalu tampak memakan 13%
+   * tinggi panel demi sesuatu yang bagi hampir semua pengunjung tidak pernah
+   * perlu disentuh.
+   */
+  appearance?: "always" | "execute" | "interaction-only";
+  /**
    * Naikkan angkanya untuk meminta tantangan baru. Diperlukan setelah setiap
    * pengiriman, berhasil maupun gagal: token Turnstile sekali pakai, dan
    * penukaran kedua ditolak Cloudflare dengan `timeout-or-duplicate`.
@@ -125,6 +183,8 @@ export function TurnstileWidget({
   onToken,
   onUnavailable,
   action,
+  size = "flexible",
+  appearance = "always",
   resetSignal = 0,
   className,
 }: TurnstileWidgetProps) {
@@ -168,9 +228,29 @@ export function TurnstileWidget({
         widgetIdRef.current = window.turnstile.render(container, {
           sitekey: TURNSTILE_SITE_KEY,
           action,
+          size,
+          appearance,
           callback: (token: string) => emit(token),
+          // Kedaluwarsa itu wajar dan dapat dipulihkan: Turnstile menerbitkan
+          // tantangan baru sendiri, jadi cukup buang tokennya.
           "expired-callback": () => emit(null),
-          "timeout-callback": () => emit(null),
+          /**
+           * Timeout TIDAK dapat dipulihkan sendiri, dan di sinilah versi
+           * pertama mengunci halaman.
+           *
+           * Dulu jalur ini hanya memanggil `emit(null)`. Akibatnya: tantangan
+           * yang kehabisan waktu — jaringan lambat, tab ditinggal terbuka —
+           * meninggalkan tombol kirim mati selamanya, tanpa satu pun pesan di
+           * layar dan tanpa tuas apa pun di sisi peladen yang dapat
+           * membukanya. Persis penguncian yang `onUnavailable` dibuat untuk
+           * mencegah, lewat jalur yang terlewat. Ditemukan saat menguji
+           * penerapan produksi 2026-09-03, ketika peramban tanpa kepala
+           * memicunya.
+           */
+          "timeout-callback": () => {
+            emit(null);
+            giveUp();
+          },
           "error-callback": () => {
             emit(null);
             giveUp();
@@ -189,7 +269,7 @@ export function TurnstileWidget({
         widgetIdRef.current = undefined;
       }
     };
-  }, [action, emit, giveUp]);
+  }, [action, size, appearance, emit, giveUp]);
 
   useEffect(() => {
     // 0 adalah nilai awal, bukan permintaan reset — mereset di sini akan
@@ -211,8 +291,8 @@ export function TurnstileWidget({
       <div ref={containerRef} />
       {failed && (
         <p className="mt-2 text-sm text-muted-foreground">
-          Verifikasi keamanan tidak dapat dimuat. Periksa sambungan Anda, lalu
-          muat ulang halaman.
+          Verifikasi keamanan tidak dapat diselesaikan. Anda tetap dapat
+          melanjutkan; muat ulang halaman bila permintaan Anda ditolak.
         </p>
       )}
     </div>

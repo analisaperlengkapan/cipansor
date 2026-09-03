@@ -2,7 +2,6 @@
 
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Camera, Upload, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
@@ -40,33 +39,42 @@ export function DocumentCaptureField({
   } | null>(null);
 
   const processOcr = async (selectedFile: File) => {
+    setOcrStatus(null);
     if (!selectedFile.type.startsWith("image/")) {
       return;
     }
 
     setIsParsing(true);
     try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const imageBase64 = reader.result as string;
-        const res = await api.post("/admissions/public/parse-document", {
-          imageBase64,
-          documentType,
-          userInputData,
-        });
+      const imageBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (err) => reject(err);
+        reader.readAsDataURL(selectedFile);
+      });
 
-        if (res.data?.data) {
-          const data = res.data.data;
-          setOcrStatus(data.validation);
-          if (data.extractedData && onOcrExtracted) {
-            onOcrExtracted(data.extractedData);
-          }
-          toast.success("Dokumen berhasil dipindai dan diverifikasi.");
+      const res = await api.post("/admissions/public/parse-document", {
+        imageBase64,
+        documentType,
+        userInputData,
+      });
+
+      if (res.data?.data) {
+        const data = res.data.data;
+        setOcrStatus(data.validation);
+        if (data.extractedData && onOcrExtracted) {
+          onOcrExtracted(data.extractedData);
         }
-      };
-      reader.readAsDataURL(selectedFile);
+        toast.success("Dokumen berhasil dipindai dan diverifikasi.");
+      }
     } catch (err) {
       console.error("Failed to parse document OCR:", err);
+      setOcrStatus({
+        status: "WARNING",
+        notes: [
+          "Gagal melakukan verifikasi otomatis dokumen. Petugas akan memverifikasi secara manual.",
+        ],
+      });
     } finally {
       setIsParsing(false);
     }

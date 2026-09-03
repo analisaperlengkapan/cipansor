@@ -36,8 +36,10 @@ export async function getAdmissionPeriods(req: Request, res: Response, next: Nex
  */
 export async function parsePublicDocument(req: Request, res: Response, next: NextFunction) {
   try {
+    const { parseDocumentSchema } = await import('@cipansor/shared');
+    const data = parseDocumentSchema.parse(req.body);
     const { parseAndVerifyDocument } = await import('./document-ocr.service');
-    const result = await parseAndVerifyDocument(req.body);
+    const result = await parseAndVerifyDocument(data);
     res.json({ success: true, data: result });
   } catch (error) {
     next(error);
@@ -321,6 +323,55 @@ export async function getPublicUnits(_req: Request, res: Response, next: NextFun
  * enumerate internal columns (status history, test scores, etc.) by varying
  * payload shape.
  */
+export async function createPublicRegistrantDocument(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { registrantId } = req.params;
+    const { type, url, base64, fileName } = req.body;
+
+    const { prisma } = await import('../../lib/prisma');
+    const registrant = await prisma.registrant.findUnique({
+      where: { id: registrantId },
+      select: { id: true },
+    });
+
+    if (!registrant) {
+      throw Errors.notFound('Registrant');
+    }
+
+    const docUrl = url || base64;
+    if (!docUrl || !type) {
+      throw Errors.badRequest('Dokumen type dan url/base64 wajib diisi');
+    }
+
+    let schemaType: 'akta' | 'ijazah' | 'kk' | 'foto' | 'rapor' | 'lainnya' = 'lainnya';
+    const normalizedType = String(type).toLowerCase();
+    if (normalizedType.includes('foto') || normalizedType === 'photo') {
+      schemaType = 'foto';
+    } else if (normalizedType.includes('kk') || normalizedType === 'family_card') {
+      schemaType = 'kk';
+    } else if (normalizedType.includes('akta') || normalizedType === 'birth_certificate') {
+      schemaType = 'akta';
+    } else if (normalizedType.includes('rapor') || normalizedType === 'report_card') {
+      schemaType = 'rapor';
+    } else if (normalizedType.includes('ijazah') || normalizedType === 'diploma') {
+      schemaType = 'ijazah';
+    }
+
+    const data = createRegistrantDocumentSchema.parse({
+      registrantId,
+      name: fileName || `${schemaType}_${Date.now()}`,
+      type: schemaType,
+      fileUrl: docUrl,
+    });
+
+    const document = await service.createRegistrantDocument(data);
+
+    res.status(201).json({ success: true, data: document });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function createPublicRegistrant(req: Request, res: Response, next: NextFunction) {
   try {
     const data = createRegistrantSchema.parse(req.body);

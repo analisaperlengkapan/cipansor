@@ -52,6 +52,11 @@ router.post(
   publicRegistrantLimiter,
   controller.createPublicRegistrant
 );
+router.post(
+  '/public/registrants/:registrantId/documents',
+  publicRegistrantLimiter,
+  controller.createPublicRegistrantDocument
+);
 router.get(
   '/public/track',
   publicRegistrantLimiter,

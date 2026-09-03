@@ -7,36 +7,50 @@ import {
 } from '@/utils/parent-scope';
 import { assertAdmissionFeeSettled } from '@/utils/admission-fee-gate';
 
+export interface EnrollmentOptions {
+  classId?: string;
+  assignedClassId?: string;
+  academicYearId?: string;
+  nis?: string;
+  nisn?: string;
+  roomId?: string;
+}
+
 export class StudentOnboardingOrchestrator {
   /**
    * Process a registrant to become a full student
    * This is an integration point touching multiple domains:
    * PSB -> HR/User -> Academic -> Health -> Finance
-   *
-   * IMPORTANT — DUAL ENROLLMENT PATHS:
-   * The legacy enrollment entry point lives in
-   * `apps/api/src/modules/admissions/service.ts` (`enrollRegistrant`)
-   * and is exposed via `POST /api/admissions/registrants/:id/enroll`.
-   * The two paths intentionally do different work; see the JSDoc on
-   * `enrollRegistrant` for the side-by-side comparison. If you change
-   * any enrollment business rule here (parent account creation, wallet
-   * setup, medical record bootstrap, NIS generation, event emission,
-   * etc.), update `enrollRegistrant` too — or explicitly document why
-   * the two paths should diverge. Failing to do so leaves student
-   * records in inconsistent states depending on which API the caller
-   * used.
    */
   static async processEnrollment(
     registrantId: string,
     unitId: string,
     processedById: string,
-    assignedClassId?: string,
-    academicYearId?: string
+    options?: EnrollmentOptions | string,
+    legacyAcademicYearId?: string
   ) {
+    // Normalise options
+    let classId: string | undefined = undefined;
+    let academicYearId: string | undefined = legacyAcademicYearId;
+    let customNis: string | undefined = undefined;
+    let nisn: string | undefined = undefined;
+    let roomId: string | undefined = undefined;
+
+    if (typeof options === 'string') {
+      classId = options;
+    } else if (options && typeof options === 'object') {
+      classId = options.classId || options.assignedClassId;
+      academicYearId = options.academicYearId || legacyAcademicYearId;
+      customNis = options.nis;
+      nisn = options.nisn;
+      roomId = options.roomId;
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       // 1. Get registrant data
       const registrant = await tx.registrant.findUnique({
         where: { id: registrantId },
+        include: { admissionPeriod: true },
       });
 
       if (!registrant) {
@@ -49,14 +63,20 @@ export class StudentOnboardingOrchestrator {
 
       // Being accepted is an academic decision; it is not daftar ulang. The
       // fee owed lives on the period, so it has to be read alongside.
-      const period = await tx.admissionPeriod.findUnique({
+      const period = registrant.admissionPeriod || (await tx.admissionPeriod.findUnique({
         where: { id: registrant.admissionPeriodId },
-        select: { registrationFee: true },
-      });
+        select: { registrationFee: true, academicYearId: true },
+      }));
+
       assertAdmissionFeeSettled({
         registrationFee: period?.registrationFee ?? null,
         registrationFeePaidAt: registrant.registrationFeePaidAt,
       });
+
+      // Resolve academicYearId if not passed explicitly
+      if (!academicYearId && period?.academicYearId) {
+        academicYearId = period.academicYearId;
+      }
 
       // 2. Create User Account for Student
       const crypto = await import('crypto');
@@ -65,7 +85,7 @@ export class StudentOnboardingOrchestrator {
       // Use crypto for password reset token generation
       const resetToken = crypto.randomBytes(32).toString('hex');
       const resetTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-      const passwordHash = await hashPassword(crypto.randomBytes(8).toString('hex')); // Dummy secure hash, user will reset it
+      const passwordHash = await hashPassword(crypto.randomBytes(8).toString('hex')); // Dummy secure hash
 
       // Extract parts of name to create a safe email
       let cleanName = registrant.fullName.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -73,59 +93,55 @@ export class StudentOnboardingOrchestrator {
         cleanName = 'student'; // Fallback for non-Latin names
       }
 
-      // 3. Create Student Record (Generate NIS first so we can use it for email)
+      // 3. Resolve or Generate NIS
       const year = new Date().getFullYear();
+      let nis = customNis;
 
-      // Look up unit dynamically, fallback to UNK
+      if (!nis) {
+        // Look up unit dynamically, fallback to UNK
+        let unitCode = 'UNK';
+        const unit = await tx.unit.findUnique({ where: { id: unitId }, select: { type: true } });
+        if (unit && unit.type) {
+          unitCode = unit.type.toUpperCase();
+        }
+
+        // Use Postgres advisory locks to serialize NIS generation for the same unit + year
+        const prefix = `NIS-${year}-${unitCode}-`;
+
+        let lockKey = 0;
+        for (let i = 0; i < prefix.length; i++) {
+          lockKey = ((lockKey << 5) - lockKey) + prefix.charCodeAt(i);
+          lockKey = lockKey & lockKey;
+        }
+
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(${lockKey})`;
+
+        const prefixLen = prefix.length + 1;
+        const results = await tx.$queryRaw<Array<{ max_seq: number | null }>>`
+          SELECT MAX(CAST(substr(nis, ${prefixLen}) AS INTEGER)) as max_seq
+          FROM "students"
+          WHERE "unit_id" = ${unitId} AND nis LIKE ${prefix + '%'} AND substr(nis, ${prefixLen}) ~ '^[0-9]+$'
+        `;
+
+        let maxSeq = 0;
+        if (results && results.length > 0 && results[0].max_seq != null) {
+          maxSeq = Number(results[0].max_seq);
+        }
+
+        const nextSeq = maxSeq + 1;
+        nis = `${prefix}${String(nextSeq).padStart(4, '0')}`;
+      }
+
       let unitCode = 'UNK';
       const unit = await tx.unit.findUnique({ where: { id: unitId }, select: { type: true } });
       if (unit && unit.type) {
         unitCode = unit.type.toUpperCase();
       }
 
-      // Use Postgres advisory locks to serialize NIS generation for the same unit + year
-      const prefix = `NIS-${year}-${unitCode}-`;
-
-      // Hash the prefix into an integer for the pg_advisory_xact_lock
-      let lockKey = 0;
-      for (let i = 0; i < prefix.length; i++) {
-        lockKey = ((lockKey << 5) - lockKey) + prefix.charCodeAt(i);
-        lockKey = lockKey & lockKey; // Convert to 32bit integer
-      }
-
-      // Acquire a transaction-level advisory lock (released automatically at transaction end)
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${lockKey})`;
-
-      // Find the absolute maximum sequence number for this unit and year (ignoring legacy formats).
-      // We parse the integer value directly in the SQL to handle numbers > 9999 properly.
-      // Note: The table name in Prisma PostgreSQL is typically "students" or "Student" mapped.
-      // Use substr(text, position): its second argument is unambiguously a
-      // start index. `SUBSTRING(nis FROM $1)` binds $1 as text, which makes
-      // Postgres pick the POSIX-regex form (`SUBSTRING(string FROM pattern)`)
-      // instead of the positional form — so the sequence never parsed and
-      // maxSeq stayed 0, making every second onboarding in a unit/year collide
-      // on the generated NIS.
-      const prefixLen = prefix.length + 1; // +1 for SQL substr which is 1-indexed
-      const results = await tx.$queryRaw<Array<{ max_seq: number | null }>>`
-        SELECT MAX(CAST(substr(nis, ${prefixLen}) AS INTEGER)) as max_seq
-        FROM "students"
-        WHERE "unit_id" = ${unitId} AND nis LIKE ${prefix + '%'} AND substr(nis, ${prefixLen}) ~ '^[0-9]+$'
-      `;
-
-      let maxSeq = 0;
-      if (results && results.length > 0 && results[0].max_seq != null) {
-        maxSeq = Number(results[0].max_seq);
-      }
-
-      const nextSeq = maxSeq + 1;
-      const nis = `${prefix}${String(nextSeq).padStart(4, '0')}`;
-
       const email = `${cleanName}.${nis.toLowerCase()}@student.cipansor.local`;
 
-      const { eventBus } = await import('@/lib/event-bus');
-
-      // @ts-ignore - Ignore type error as Prisma types might be lagging behind schema for password reset
-      const user = await tx.user.create({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const user = await (tx.user.create as any)({
         data: {
           name: registrant.fullName,
           email,
@@ -138,14 +154,15 @@ export class StudentOnboardingOrchestrator {
         },
       });
 
-
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const student = await (tx.student.create as any)({
         data: {
           userId: user.id,
           status: 'active',
           unitId,
           nis,
-          entryYear: year, // entryYear requires an Int, using current year
+          nisn: nisn || undefined,
+          entryYear: year,
 
           // Core Data mapping from registrant
           gender: registrant.gender,
@@ -164,18 +181,16 @@ export class StudentOnboardingOrchestrator {
       });
 
       // 4. Create Parent User Account
-      let parentDefaultPassword;
       let parentResetToken: string | undefined;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let parentUser: any = null;
       if (registrant.parentPhone || registrant.parentEmail) {
-        // Prefer matching by email first since it is unique
         if (registrant.parentEmail) {
           parentUser = await tx.user.findUnique({
             where: { email: registrant.parentEmail }
           });
         }
 
-        // If not found by email, try finding by phone
         if (!parentUser && registrant.parentPhone) {
           parentUser = await tx.user.findFirst({
             where: { phone: registrant.parentPhone }
@@ -184,10 +199,10 @@ export class StudentOnboardingOrchestrator {
 
         if (!parentUser) {
           parentResetToken = crypto.randomBytes(32).toString('hex');
-          const parentResetTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-          // Assign a dummy unguessable password hash, parent will reset via token
+          const parentResetTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
           const parentPasswordHash = await hashPassword(crypto.randomBytes(16).toString('hex'));
           const parentEmail = registrant.parentEmail || `parent.${registrant.parentPhone}@parent.cipansor.local`;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           parentUser = await (tx.user.create as any)({
             data: {
               name: registrant.parentName,
@@ -212,21 +227,14 @@ export class StudentOnboardingOrchestrator {
           }
         });
 
-        // Give the guardian the role their child implies.
-        //
-        // This step did not exist: a wali onboarded through SPMB got a User row
-        // with the legacy `role: 'PARENT'` and no UserRoleAssignment at all, so
-        // they signed in only through the legacy fallback — with an empty
-        // permission list, which silently fails every permission-gated route —
-        // and had no unit scope. It also means a second child at another
-        // jenjang now widens the same account instead of needing a new one.
         await syncParentRoleAssignments(
           tx as unknown as ParentScopeClient,
           parentUser.id
         );
       }
 
-      // 5. Setup initial Health/UKS record (Empty but ready)
+      // 5. Setup initial Health/UKS record
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (tx.medicalRecord.create as any)({
         data: {
           studentId: student.id,
@@ -248,18 +256,29 @@ export class StudentOnboardingOrchestrator {
         }
       });
 
-      // 7. Optional: Enroll in specific class if provided
-      if (assignedClassId && academicYearId) {
+      // 7. Enroll in specific class if provided
+      if (classId) {
         await tx.classEnrollment.create({
           data: {
             studentId: student.id,
-            classId: assignedClassId,
+            classId,
             status: 'active',
           }
         });
       }
 
-      // 8. Update Registrant Status
+      // 8. Assign room if roomId provided
+      if (roomId && tx.roomAssignment) {
+        await tx.roomAssignment.create({
+          data: {
+            studentId: student.id,
+            roomId,
+            isActive: true,
+          },
+        });
+      }
+
+      // 9. Update Registrant Status
       await tx.registrant.update({
         where: { id: registrant.id },
         data: {
@@ -269,12 +288,7 @@ export class StudentOnboardingOrchestrator {
         }
       });
 
-      // Decrement the wave's `acceptedCount` to mirror `enrollRegistrant` in
-      // `apps/api/src/modules/admissions/service.ts`. Without this, every
-      // registrant onboarded through the orchestrator path leaves a stale
-      // ACCEPTED count behind, eventually overstating each wave's acceptance
-      // rate (see `ppdb-wave.service.ts` `getStats`). Clamped at 0 to avoid
-      // negatives in case of prior data drift.
+      // Decrement wave's acceptedCount
       if (registrant.waveId) {
         await tx.admissionWave.updateMany({
           where: { id: registrant.waveId, acceptedCount: { gt: 0 } },
@@ -282,8 +296,9 @@ export class StudentOnboardingOrchestrator {
         });
       }
 
-      // Auto-generate the registration-fee invoice if period charges a fee
-      if (period && Number(period.registrationFee) > 0 && tx.paymentType) {
+      // 10. Generate REG_FEE invoice ONLY IF the registration fee has not been paid yet
+      const isAlreadyPaid = registrant.registrationFeePaidAt != null || Number(period?.registrationFee ?? 0) === 0;
+      if (!isAlreadyPaid && period && Number(period.registrationFee) > 0 && tx.paymentType) {
         const paymentType = await tx.paymentType.findFirst({
           where: { unitId, code: 'REG_FEE' },
         });
@@ -296,7 +311,9 @@ export class StudentOnboardingOrchestrator {
               amount: Number(period.registrationFee),
               dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
               notes: `Biaya Pendaftaran ${registrant.fullName}`,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             tx as any
           );
         }
@@ -318,13 +335,12 @@ export class StudentOnboardingOrchestrator {
       };
     });
 
-    // 9. Distribute Reset Tokens asynchronously AFTER transaction commits successfully
-    // We do NOT generate plaintext passwords anymore. We notify users to set their passwords via tokens.
-    // Dispatching after commit guarantees the DB records exist when listeners fire.
+    // Asynchronous event distribution
     process.nextTick(async () => {
       try {
         const { eventBus } = await import('@/lib/event-bus');
-        const r = result as any; // Ignore types to access internal fields
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const r = result as any;
 
         eventBus.emit('student:created', {
           id: r.studentId,
@@ -352,14 +368,10 @@ export class StudentOnboardingOrchestrator {
           userId: r.userId,
         });
 
-        // The exact transport implementation for emails is handled externally via this bus event.
-        // We emit the `email:send_reset_token` which a separate microservice/mailer worker listens for.
         eventBus.emit('email:send_reset_token', {
           email: r.email,
           token: r.resetToken,
           userId: r.userId,
-          // `name` greets the recipient; `title` is the notification subject.
-          // They are not interchangeable — see EmailSendResetTokenEvent.
           name: r.studentName,
           title: 'Set Your Password',
           message: 'Please set your password using the link provided.',
@@ -392,8 +404,6 @@ export class StudentOnboardingOrchestrator {
         }
       } catch (err) {
         console.error('Failed to dispatch onboarding events:', err);
-        // Do not throw here, as the transaction has already committed successfully
-        // We want the HTTP request to succeed even if side-effect emissions fail.
       }
     });
 

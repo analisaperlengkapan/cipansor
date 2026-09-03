@@ -54,6 +54,7 @@ import {
 import { toast } from "sonner";
 import { format, differenceInDays } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
+import { api } from "@/lib/api";
 
 interface FormData {
   // Student info
@@ -274,21 +275,39 @@ export function SpmbForm({
     }
   };
 
+  const uploadSelectedDocuments = async (registrantId: string) => {
+    const fileEntries: { file: File | null; type: string }[] = [
+      { file: files.photo, type: "PHOTO" },
+      { file: files.ktp, type: "ID_CARD" },
+      { file: files.familyCard, type: "FAMILY_CARD" },
+      { file: files.birthCertificate, type: "BIRTH_CERTIFICATE" },
+    ];
+
+    for (const { file, type } of fileEntries) {
+      if (!file) continue;
+
+      try {
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = (err) => reject(err);
+          reader.readAsDataURL(file);
+        });
+
+        await api.post(`/admissions/public/registrants/${registrantId}/documents`, {
+          type,
+          base64,
+          fileName: file.name,
+        });
+      } catch (err) {
+        console.error(`Failed to upload ${type} document:`, err);
+      }
+    }
+  };
+
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      // Build a plain JSON payload matching the backend's
-      // `createRegistrantSchema` in `apps/api/src/modules/admissions/schema.ts`.
-      // Notes:
-      //   - The schema field is `admissionPeriodId`, not the legacy `periodId`.
-      //   - `birthDate` must be an ISO-8601 datetime string (`z.string().datetime()`),
-      //     so we promote the date-only `<input type="date">` value to UTC midnight.
-      //   - `memorizedJuz` / `graduationYear` are numeric on the backend.
-      //   - `unitId` is not part of the schema (the unit is derived from the
-      //     admission period), so it's intentionally omitted.
-      //   - Files are NOT submitted here: documents have a separate upload flow
-      //     under `/admissions/registrants/:id/documents`, and there is no
-      //     multipart middleware on `POST /admissions/registrants`.
       const admissionPeriodId = formData.periodId || activePeriod?.id;
       if (!admissionPeriodId) {
         toast.error("Periode pendaftaran tidak ditemukan");
@@ -311,8 +330,6 @@ export function SpmbForm({
         motherName: formData.motherName,
       };
 
-      // Optional fields — only include when set so empty strings don't
-      // trip schema validators that expect non-empty / typed values.
       if (formData.nickname) payload.nickname = formData.nickname;
       if (formData.nationalId) payload.nationalId = formData.nationalId;
       if (formData.familyCardNumber)
@@ -342,6 +359,11 @@ export function SpmbForm({
       if (formData.campaignId) payload.campaignId = formData.campaignId;
 
       const result = await createRegistration.mutateAsync(payload);
+      const createdRegistrantId = result?.id || result?.data?.id;
+
+      if (createdRegistrantId) {
+        await uploadSelectedDocuments(createdRegistrantId);
+      }
 
       setSuccessData({
         registrationNumber:

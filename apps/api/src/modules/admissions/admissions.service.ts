@@ -342,10 +342,11 @@ async function createRegistrantOnce(data: CreateRegistrantExtendedInput) {
     const parentEmail = data.fatherEmail && data.fatherEmail !== '' ? data.fatherEmail : undefined;
     const parentOccupation = data.fatherOccupation || data.motherOccupation;
 
-    // Look up active open wave for the period to auto-assign wave
+    // Look up all open waves for the period ordered by waveNumber asc
+    // to atomically claim a slot in the first wave that has capacity.
     const now = new Date();
-    const activeWave = tx.admissionWave
-      ? await tx.admissionWave.findFirst({
+    const candidateWaves = tx.admissionWave
+      ? await tx.admissionWave.findMany({
           where: {
             periodId: data.admissionPeriodId,
             status: 'OPEN',
@@ -354,11 +355,27 @@ async function createRegistrantOnce(data: CreateRegistrantExtendedInput) {
           },
           orderBy: { waveNumber: 'asc' },
         })
-      : null;
+      : [];
 
     let waveId: string | undefined = undefined;
-    if (activeWave && activeWave.registeredCount < activeWave.quota) {
-      waveId = activeWave.id;
+
+    for (const wave of candidateWaves) {
+      if (wave.registeredCount >= wave.quota) {
+        continue;
+      }
+      const claim = await tx.admissionWave.updateMany({
+        where: {
+          id: wave.id,
+          status: 'OPEN',
+          registeredCount: { lt: wave.quota },
+        },
+        data: { registeredCount: { increment: 1 } },
+      });
+
+      if (claim.count === 1) {
+        waveId = wave.id;
+        break;
+      }
     }
 
     const registrant = await tx.registrant.create({
@@ -386,13 +403,6 @@ async function createRegistrantOnce(data: CreateRegistrantExtendedInput) {
         campaignId: data.campaignId,
       },
     });
-
-    if (waveId && activeWave) {
-      await tx.admissionWave.updateMany({
-        where: { id: waveId, registeredCount: { lt: activeWave.quota } },
-        data: { registeredCount: { increment: 1 } },
-      });
-    }
 
     // Best Practice: Ensure a REG_FEE payment type exists so that the
     // registration-fee invoice can be created automatically at enrollment
@@ -703,7 +713,14 @@ export async function enrollRegistrant(
     registrantId,
     registrant.admissionPeriod.unitId,
     studentData.processedById || 'system',
-    studentData.classId
+    {
+      nis: studentData.nis,
+      nisn: studentData.nisn,
+      classId: studentData.classId,
+      assignedClassId: studentData.classId,
+      roomId: studentData.roomId,
+      academicYearId: registrant.admissionPeriod.academicYearId,
+    }
   );
 
   return result;

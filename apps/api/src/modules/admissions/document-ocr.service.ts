@@ -46,22 +46,26 @@ export async function parseAndVerifyDocument(
   const extractedData: DocumentParseResult['extractedData'] = {};
   const notes: string[] = [];
 
+  let extractedCount = 0;
+
   if (imageBase64) {
     // Decode base64 header if present (e.g. data:image/png;base64,...)
     const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
 
     // 1. Extract 16-digit numbers (NIK / No KK)
-    // Convert base64 / binary string representation to look for numeric sequences
     const textContent = Buffer.from(cleanBase64, 'base64').toString('utf8');
     const digitsMatches = textContent.match(/\b\d{16}\b/g) || [];
 
     if (digitsMatches.length > 0) {
       if (documentType === 'ktp') {
         extractedData.nationalId = digitsMatches[0];
+        extractedCount++;
       } else if (documentType === 'kk') {
         extractedData.familyCardNumber = digitsMatches[0];
+        extractedCount++;
         if (digitsMatches.length > 1) {
           extractedData.nationalId = digitsMatches[1];
+          extractedCount++;
         }
       }
     }
@@ -73,6 +77,8 @@ export async function parseAndVerifyDocument(
   let familyCardMatch: boolean | undefined = undefined;
   let fullNameMatch: boolean | undefined = undefined;
 
+  const hasExtractedData = extractedCount > 0;
+
   if (userInputData) {
     // Validate NIK
     if (userInputData.nationalId) {
@@ -81,13 +87,14 @@ export async function parseAndVerifyDocument(
         if (nationalIdMatch) {
           notes.push('NIK KTP/KK sesuai dengan data input pendaftar.');
         } else {
-          score -= 40;
+          score -= 50;
           notes.push('NIK pada dokumen tidak sesuai dengan NIK yang diinput.');
         }
-      } else if (userInputData.nationalId.length === 16) {
-        // NIK valid length
-        nationalIdMatch = true;
-        notes.push('NIK diinput dengan format 16 digit yang valid.');
+      } else {
+        // NIK not extracted from image
+        nationalIdMatch = false;
+        score -= 50;
+        notes.push('Teks NIK tidak dapat terbaca otomatis dari dokumen. Perlu verifikasi manual oleh petugas.');
       }
     }
 
@@ -98,27 +105,36 @@ export async function parseAndVerifyDocument(
         if (familyCardMatch) {
           notes.push('Nomor KK sesuai dengan data input pendaftar.');
         } else {
-          score -= 40;
+          score -= 50;
           notes.push('Nomor KK pada dokumen tidak sesuai dengan nomor KK yang diinput.');
         }
-      } else if (userInputData.familyCardNumber.length === 16) {
-        familyCardMatch = true;
-        notes.push('Nomor KK diinput dengan format 16 digit yang valid.');
+      } else {
+        familyCardMatch = false;
+        score -= 50;
+        notes.push('Teks Nomor KK tidak dapat terbaca otomatis dari dokumen. Perlu verifikasi manual oleh petugas.');
       }
     }
 
-    // Name match sanity check
     if (userInputData.fullName && userInputData.fullName.length >= 3) {
-      fullNameMatch = true;
-      notes.push('Nama pendaftar valid.');
+      fullNameMatch = hasExtractedData;
+    }
+  }
+
+  if (!hasExtractedData) {
+    if (documentType === 'ktp' || documentType === 'kk') {
+      score = 0;
+      notes.push('Teks dokumen tidak dapat terbaca otomatis. Perlu verifikasi manual oleh petugas.');
+    } else {
+      score = 50;
+      notes.push('Dokumen telah diterima dan memerlukan verifikasi manual oleh petugas.');
     }
   }
 
   const finalScore = Math.max(0, score);
   let status: DocumentParseResult['validation']['status'] = 'VALID';
-  if (finalScore < 60) {
+  if (nationalIdMatch === false || familyCardMatch === false || finalScore < 50) {
     status = 'MISMATCH';
-  } else if (finalScore < 100) {
+  } else if (finalScore < 100 || !hasExtractedData) {
     status = 'WARNING';
   }
 

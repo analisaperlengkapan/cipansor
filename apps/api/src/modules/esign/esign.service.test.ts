@@ -679,7 +679,11 @@ describe('menandatangani surat', () => {
 });
 
 describe('verifikasi publik', () => {
-  function signedFixture(nature: string, content = 'Isi rahasia yang tidak boleh bocor.') {
+  function signedFixture(
+    nature: string,
+    content = 'Isi rahasia yang tidak boleh bocor.',
+    authoringTrack: 'GENERATED' | 'UPLOADED' = 'GENERATED'
+  ) {
     const m = createKeyMaterial(PASS);
     const signedAt = new Date('2026-07-13T04:00:00Z');
     const payload: SignablePayload = {
@@ -715,6 +719,8 @@ describe('verifikasi publik', () => {
           nature,
           subject: payload.subject,
           content,
+          status: 'SIGNED',
+          authoringTrack,
           unitId: 'unit-1',
           unit: { name: 'Yayasan' },
         },
@@ -798,6 +804,48 @@ describe('verifikasi publik', () => {
       expect(((await EsignService.verifyByToken('tok')) as any).subject).toBeNull();
     }
   });
+
+  /**
+   * Jalur penyusunannya ikut dikembalikan, karena ia bagian dari jawabannya.
+   *
+   * Verifikasi membuktikan hal yang sama untuk kedua jalur — byte yang
+   * diunggah adalah byte yang ditandatangani. Yang berbeda adalah apa yang
+   * dapat dikatakannya tentang keterangan di buku agenda, dan halaman publik
+   * tidak dapat membedakannya kalau nilai ini tidak sampai ke sana.
+   */
+  it.each(['GENERATED', 'UPLOADED'] as const)(
+    'mengembalikan jalur penyusunan naskah (%s)',
+    async (track) => {
+      vi.mocked(prisma.letterSignature.findUnique).mockResolvedValue(
+        signedFixture('PUBLIC', 'Isi rahasia yang tidak boleh bocor.', track)
+          .fixture as any
+      );
+      const r: any = await EsignService.verifyByToken('tok');
+      expect(r.letter.authoringTrack).toBe(track);
+    }
+  );
+
+  /**
+   * Jalur penyusunan bukan isi surat, jadi kerahasiaan tidak menyembunyikannya.
+   *
+   * Perihal disembunyikan pada surat Terbatas ke atas karena ia mengungkap
+   * perkaranya. "Disusun sistem" atau "diunggah penyusun" tidak mengungkap
+   * apa pun tentang perkaranya — ia justru menerangkan seberapa jauh
+   * pemeriksaan yang baru saja dilakukan berlaku, dan itu perlu diketahui
+   * pembaca surat rahasia sama seperti pembaca surat biasa.
+   */
+  it.each(['LIMITED', 'CONFIDENTIAL', 'STRICTLY_CONFIDENTIAL'])(
+    'jalur penyusunan tetap disebut walau perihalnya disembunyikan (sifat %s)',
+    async (nature) => {
+      vi.mocked(prisma.letterSignature.findUnique).mockResolvedValue(
+        signedFixture(nature, 'Isi rahasia yang tidak boleh bocor.', 'UPLOADED')
+          .fixture as any
+      );
+      const r: any = await EsignService.verifyByToken('tok');
+      expect(r.letter.subject).toBeNull();
+      expect(r.letter.authoringTrack).toBe('UPLOADED');
+    }
+  );
 
   it('naskah yang diubah setelah ditandatangani tidak lagi sah', async () => {
     const { fixture } = signedFixture('PUBLIC');

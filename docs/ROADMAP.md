@@ -469,13 +469,27 @@ phases of the purge are correct and neither has ever run, which makes the
 retention window a stored column rather than a kept promise. It is a host
 change, not a code change.
 
+**§5b(a) DOCX authoring track — step 1 shipped (#454).** `Letter.authoringTrack`
+now records `GENERATED` vs `UPLOADED` and the public verification page states
+which assurance it is giving, because the two are not the same claim. Building
+it surfaced a defect nobody had reported: the create-letter form offers *"Upload
+File Naskah (PDF)"* on **outgoing** letters, the letter page showed that file as
+"Berkas naskah" under a "Pratinjau Naskah" heading — and the signing path never
+reads it. `generateLetterPdfBuffer` composes its own naskah from the form
+fields, and those are the bytes that are hashed, signed, archived and matched on
+public verification. Two documents, equal billing, one of them binding. The page
+now says so. What remains of the track is the part that makes the label earn
+itself: signing the uploaded bytes (with the TTE visualisation stamped onto
+them) instead of ignoring them, and a pre-filled DOCX template to start from.
+
 Then: PR-5 (PAdES B-B +
 RFC 3161 timestamps — the highest-value remaining feature, since without a
 timestamp there is no answer to *"was the key valid at the time of signing"*,
-which is exactly what revocation semantics need); the §5b(a) DOCX authoring
-track, which also answers PR-7 for most cases; PR-6 (a.n./u.b./Plt./Plh. —
-blocked on a governance decision); PR-7 (Arabic — needs an embedded Unicode font
-and a shaping engine); and KTP OCR, deliberately ranked last.
+which is exactly what revocation semantics need); the rest of the §5b(a) DOCX
+authoring track, which also answers PR-7 for most cases; PR-6
+(a.n./u.b./Plt./Plh. — blocked on a governance decision); PR-7 (Arabic — needs
+an embedded Unicode font and a shaping engine); and KTP OCR, deliberately ranked
+last.
 
 Three things from the audit that still change what you do next:
 

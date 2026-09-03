@@ -32,6 +32,7 @@ export async function verifyLetterByToken(token: string) {
           subject: true,
           content: true,
           status: true,
+          authoringTrack: true,
           unitId: true,
           unit: { select: { name: true } },
         },
@@ -130,6 +131,19 @@ export async function verifyLetterByToken(token: string) {
       date: l.date,
       status: l.status,
       unitName: l.unit?.name ?? '-',
+      /**
+       * Bukan rincian teknis, melainkan bagian dari jawabannya.
+       *
+       * Verifikasi ini membuktikan satu hal dengan pasti: byte yang diunggah
+       * pembaca adalah byte yang ditandatangani. Apa yang dibuktikannya
+       * *tentang buku agenda* berbeda menurut jalur penyusunannya — pada
+       * naskah GENERATED metadata dan isinya berasal dari satu sumber
+       * sehingga tidak mungkin berselisih, sedangkan pada naskah UPLOADED
+       * tidak ada pemeriksaan yang dapat menjamin itu. Halaman yang
+       * menampilkan keduanya dengan kalimat yang sama menjanjikan lebih
+       * daripada yang dibuktikannya.
+       */
+      authoringTrack: l.authoringTrack,
     },
     signedAt: signature.signedAt,
     algorithm: signature.algorithm,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -28,6 +28,7 @@ import {
 import { TwoFactorVerify } from "@/components/auth/TwoFactorVerify";
 import { TwoFactorSetup } from "@/components/auth/TwoFactorSetup";
 import { toast } from "sonner";
+import { authApi } from "@/lib/api";
 import {
   DEMO_ACCOUNTS,
   DEMO_TABS,
@@ -115,6 +116,7 @@ function LoginPageContent() {
   const router = useRouter();
   const {
     login,
+    ssoLogin,
     isLoading,
     error,
     clearError,
@@ -123,6 +125,33 @@ function LoginPageContent() {
     verifyTwoFactor,
     resetAuth,
   } = useAuthStore();
+
+  // Handle OIDC token callback in URL hash (e.g. #id_token=...)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const checkHashAndLogin = () => {
+      const hash = window.location.hash;
+      if (hash.includes("id_token=")) {
+        const params = new URLSearchParams(hash.substring(1));
+        const idToken = params.get("id_token");
+        const provider = (hash.includes("microsoft") || hash.includes("provider=microsoft")) ? "microsoft" : "google";
+        if (idToken) {
+          window.history.replaceState(null, "", window.location.pathname);
+          ssoLogin({ provider, idToken }).then(() => {
+            const state = useAuthStore.getState();
+            if (!state.requiresTwoFactor && !state.requiresTwoFactorSetup && state.isAuthenticated) {
+              router.push(landingRouteForCurrentUser());
+            }
+          }).catch(() => {});
+        }
+      }
+    };
+
+    checkHashAndLogin();
+    window.addEventListener("hashchange", checkHashAndLogin);
+    return () => window.removeEventListener("hashchange", checkHashAndLogin);
+  }, [ssoLogin, router]);
   const [showPassword, setShowPassword] = useState(false);
   const [selectedDemo, setSelectedDemo] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>(DEMO_TABS[0]?.key ?? "");
@@ -411,6 +440,81 @@ function LoginPageContent() {
                 Masuk
               </Button>
             </form>
+
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">
+                  Atau Masuk Dengan Akun Domain
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full flex items-center justify-center gap-2"
+                disabled={isLoading}
+                onClick={async () => {
+                  try {
+                    clearError();
+                    const configRes = await authApi.getSSOConfig();
+                    const config = configRes.data.data;
+                    if (!config.googleEnabled || !config.googleClientId) {
+                      toast.info(
+                        "Google Workspace SSO belum dikonfigurasi di server. Minta administrator menyetel GOOGLE_CLIENT_ID."
+                      );
+                      return;
+                    }
+                    const redirectUri = encodeURIComponent(window.location.origin + "/login");
+                    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=id_token&client_id=${config.googleClientId}&redirect_uri=${redirectUri}&scope=openid%20email%20profile&nonce=${Date.now()}`;
+                    window.location.href = authUrl;
+                  } catch {}
+                }}
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24">
+                  <path
+                    fill="currentColor"
+                    d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.761H12.545z"
+                  />
+                </svg>
+                Google Workspace
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full flex items-center justify-center gap-2"
+                disabled={isLoading}
+                onClick={async () => {
+                  try {
+                    clearError();
+                    const configRes = await authApi.getSSOConfig();
+                    const config = configRes.data.data;
+                    if (!config.microsoftEnabled || !config.microsoftClientId) {
+                      toast.info(
+                        "Microsoft 365 SSO belum dikonfigurasi di server. Minta administrator menyetel MICROSOFT_CLIENT_ID."
+                      );
+                      return;
+                    }
+                    const redirectUri = encodeURIComponent(window.location.origin + "/login");
+                    const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${config.microsoftClientId}&response_type=id_token&redirect_uri=${redirectUri}&scope=openid%20profile%20email&response_mode=fragment&nonce=${Date.now()}`;
+                    window.location.href = authUrl;
+                  } catch {}
+                }}
+              >
+                <svg className="h-4 w-4 text-blue-600" viewBox="0 0 23 23">
+                  <path fill="#f35325" d="M1 1h10v10H1z" />
+                  <path fill="#81bc06" d="M12 1h10v10H12z" />
+                  <path fill="#05a6f0" d="M1 12h10v10H1z" />
+                  <path fill="#ffba08" d="M12 12h10v10H12z" />
+                </svg>
+                Microsoft 365
+              </Button>
+            </div>
 
             {/* Mobile Demo Credentials */}
             {SHOW_DEMO_LOGIN && (

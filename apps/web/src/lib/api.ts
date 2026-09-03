@@ -14,6 +14,9 @@ import {
   User,
   LoginRequest,
   LoginResponse,
+  SSOLoginRequest,
+  SSOConfigResponse,
+  SSOLoginResult,
   UserRoleAssignment,
   Role,
   RoleAssignment,
@@ -274,6 +277,12 @@ api.interceptors.response.use(
 export const authApi = {
   login: (data: LoginRequest) =>
     api.post<ApiResponse<LoginResponse>>("/auth/login", data),
+
+  ssoLogin: (data: SSOLoginRequest) =>
+    api.post<ApiResponse<SSOLoginResult>>("/auth/sso/login", data),
+
+  getSSOConfig: () =>
+    api.get<ApiResponse<SSOConfigResponse>>("/auth/sso/config"),
 
   logout: () => api.post("/auth/logout"),
 

@@ -96,3 +96,11 @@ export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+
+// SSO Login Schema (Google & Microsoft 365)
+export const ssoLoginSchema = z.object({
+  provider: z.enum(['google', 'microsoft']),
+  idToken: z.string().min(1, 'Valid OAuth idToken is required'),
+});
+
+export type SSOLoginInput = z.infer<typeof ssoLoginSchema>;

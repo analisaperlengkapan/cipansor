@@ -19,7 +19,5 @@ export {
   donationConfig,
   galleryItems,
   galleryThumb,
-  PUBLIC_VERIFY_URL_PATH,
-  getPublicVerifyUrl,
 } from "@cipansor/shared";
 export type { GalleryPhoto } from "@cipansor/shared";

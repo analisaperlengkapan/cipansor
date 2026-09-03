@@ -113,3 +113,31 @@ export interface AssignRoleRequest {
   unitId?: string;
   isPrimary?: boolean;
 }
+
+export interface SSOLoginRequest {
+  provider: 'google' | 'microsoft';
+  idToken: string;
+}
+
+export interface SSOConfigResponse {
+  domain: string;
+  googleEnabled: boolean;
+  googleClientId: string | null;
+  microsoftEnabled: boolean;
+  microsoftClientId: string | null;
+}
+
+export interface SSOTwoFactorResponse {
+  requiresTwoFactor: true;
+  tempToken: string;
+}
+
+export interface SSOTwoFactorSetupResponse {
+  requiresTwoFactorSetup: true;
+  tempToken: string;
+}
+
+export type SSOLoginResult =
+  | LoginResponse
+  | SSOTwoFactorResponse
+  | SSOTwoFactorSetupResponse;

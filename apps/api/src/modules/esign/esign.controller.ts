@@ -1,15 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import { SigningKeyRequestStatus } from '@prisma/client';
 import { EsignService } from './esign.service';
-import { asyncHandler, Errors } from '@/middleware/error';
-import { ApiResponse } from '@/utils/response';
-import { generateCaptchaChallenge, verifyCaptchaAnswer } from '@/utils/captcha';
 
 export const EsignController = {
-  getCaptcha: asyncHandler(async (_req: Request, res: Response) => {
-    const challenge = generateCaptchaChallenge();
-    res.json(ApiResponse.success(challenge));
-  }),
   async myStatus(req: Request, res: Response, next: NextFunction) {
     try {
       res.json({ success: true, data: await EsignService.myStatus(req.user!.id) });
@@ -57,74 +50,9 @@ export const EsignController = {
     } catch (e) { next(e); }
   },
 
-  async listKeys(_req: Request, res: Response, next: NextFunction) {
-    try {
-      res.json({ success: true, data: await EsignService.listKeys() });
-    } catch (e) { next(e); }
-  },
-
   async revoke(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await EsignService.revokeKey(
-        req.params.userId, req.user!.id, req.body.reason, req.body.code
-      );
-      res.json({ success: true, data });
-    } catch (e) { next(e); }
-  },
-
-  /** Cabut tanda tangan pada surat — penandatangannya sendiri atau Super Admin. */
-  async revokeSignature(req: Request, res: Response, next: NextFunction) {
-    try {
-      const data = await EsignService.revokeLetterSignature(
-        req.params.letterId,
-        { id: req.user!.id, roleCode: req.user!.roleCode },
-        req.body.reason,
-        req.body.passphrase
-      );
-      res.json({ success: true, data });
-    } catch (e) { next(e); }
-  },
-
-  /** Ajukan pencabutan — siapa pun yang boleh membaca suratnya. */
-  async requestRevocation(req: Request, res: Response, next: NextFunction) {
-    try {
-      const data = await EsignService.requestRevocation(
-        req.params.letterId,
-        { id: req.user!.id, roleCode: req.user!.roleCode, unitId: req.user!.unitId },
-        req.body.reason,
-        req.body.attachmentUrl
-      );
-      res.status(201).json({ success: true, data });
-    } catch (e) { next(e); }
-  },
-
-  /** Antrean permohonan — disaring pada kewenangan pemanggilnya. */
-  async listRevocationRequests(req: Request, res: Response, next: NextFunction) {
-    try {
-      const data = await EsignService.listRevocationRequests(
-        { id: req.user!.id, roleCode: req.user!.roleCode },
-        req.query.status as never
-      );
-      res.json({ success: true, data });
-    } catch (e) { next(e); }
-  },
-
-  async decideRevocation(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { approve, note, passphrase, reason } = req.body;
-      const data = await EsignService.decideRevocation(
-        req.params.id,
-        { id: req.user!.id, roleCode: req.user!.roleCode },
-        approve,
-        { note, passphrase, reason }
-      );
-      res.json({ success: true, data });
-    } catch (e) { next(e); }
-  },
-
-  async withdrawRevocationRequest(req: Request, res: Response, next: NextFunction) {
-    try {
-      const data = await EsignService.withdrawRevocationRequest(req.params.id, req.user!.id);
+      const data = await EsignService.revokeKey(req.params.userId, req.body.reason);
       res.json({ success: true, data });
     } catch (e) { next(e); }
   },
@@ -132,33 +60,16 @@ export const EsignController = {
   async signLetter(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await EsignService.signLetter(
-        req.params.letterId, req.user!.id, req.body.passphrase, req.user!.roleCode
+        req.params.letterId, req.user!.id, req.body.passphrase
       );
       res.status(201).json({ success: true, data });
     } catch (e) { next(e); }
   },
 
   /** Publik: dipanggil halaman verifikasi setelah QR dipindai. */
-
-  /** Publik: dipanggil halaman verifikasi publik via upload PDF. */
-  verifyPdf: asyncHandler(async (req: Request, res: Response) => {
-    const captchaToken = req.body?.captchaToken;
-    const captchaAnswer = req.body?.captchaAnswer ?? req.body?.captcha;
-
-    if (!captchaToken || !captchaAnswer) {
-      throw Errors.badRequest('Verifikasi CAPTCHA (token dan jawaban) wajib diisi.');
-    }
-
-    const isValidCaptcha = verifyCaptchaAnswer(captchaToken, captchaAnswer);
-    if (!isValidCaptcha) {
-      throw Errors.badRequest('Jawaban CAPTCHA salah atau sesi verifikasi telah kedaluwarsa.');
-    }
-
-    if (!req.file || !req.file.buffer) {
-      throw Errors.badRequest('File PDF wajib diunggah.');
-    }
-
-    const result = await EsignService.verifyByPdfBuffer(req.file.buffer);
-    res.json(ApiResponse.success(result));
-  }),
+  async verify(req: Request, res: Response, next: NextFunction) {
+    try {
+      res.json({ success: true, data: await EsignService.verifyByToken(req.params.token) });
+    } catch (e) { next(e); }
+  },
 };

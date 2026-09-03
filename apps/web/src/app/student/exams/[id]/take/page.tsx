@@ -175,6 +175,10 @@ function ExamPlayer({
       setQuestions(attempt.exam.questionBank.questions);
     }
 
+    if ((attempt as any)?.tabSwitchCount) {
+      setTabSwitchCount((attempt as any).tabSwitchCount);
+    }
+
     // Restore initial answers from backend + local draft storage for offline resilience
     const initialAnswers: Record<string, any> = {};
     if (attempt?.answers) {
@@ -194,10 +198,12 @@ function ExamPlayer({
             const draftAnswers = savedDraft.answers || savedDraft;
             const draftTime = savedDraft.timestamp || 0;
             const attemptUpdatedTime = attempt.updatedAt ? new Date(attempt.updatedAt).getTime() : 0;
+            const attemptStartedTime = attempt.startedAt ? new Date(attempt.startedAt).getTime() : 0;
 
             for (const [qId, draftVal] of Object.entries(draftAnswers)) {
-              const hasServerAns = initialAnswers[qId] !== undefined;
-              if (!hasServerAns || draftTime > attemptUpdatedTime) {
+              const hasServerAns = initialAnswers[qId] !== undefined && initialAnswers[qId] !== "";
+              // Apply draft if newer than server updated_at, OR if unsaved on server and draft is newer than attempt started_at
+              if ((hasServerAns && draftTime > attemptUpdatedTime) || (!hasServerAns && draftTime > attemptStartedTime)) {
                 initialAnswers[qId] = draftVal;
               }
             }
@@ -234,17 +240,23 @@ function ExamPlayer({
       });
 
       if (unsyncedEntries.length > 0) {
-        await Promise.all(
+        const results = await Promise.allSettled(
           unsyncedEntries.map(([qId, ans]) =>
-            submitAnswer
-              .mutateAsync({
-                attemptId: attempt.id,
-                questionId: qId,
-                answer: ans,
-              })
-              .catch((e) => console.error("Failed to sync answer before finish", e))
+            submitAnswer.mutateAsync({
+              attemptId: attempt.id,
+              questionId: qId,
+              answer: ans,
+            })
           )
         );
+
+        const hasFailed = results.some((r) => r.status === "rejected");
+        if (hasFailed) {
+          toast.error(
+            "Beberapa jawaban gagal dikirim ke server. Mohon periksa koneksi internet Anda dan coba lagi."
+          );
+          return;
+        }
       }
 
       await finishExam.mutateAsync(attempt.id);
@@ -254,7 +266,7 @@ function ExamPlayer({
       toast.success("Ujian selesai!");
       router.push("/student/exams");
     } catch {
-      toast.error("Gagal menyelesaikan ujian");
+      toast.error("Gagal menyelesaikan ujian. Silakan coba lagi.");
     }
   }, [answers, attempt.answers, attempt.id, draftStorageKey, finishExam, router, submitAnswer]);
 

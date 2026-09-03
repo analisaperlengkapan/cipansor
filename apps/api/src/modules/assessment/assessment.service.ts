@@ -16,6 +16,7 @@ import {
   CreateReportCardInput,
   UpdateReportCardInput,
   ReportCardDetail,
+  calculateLetterGrade,
 } from '@cipansor/shared';
 import { Prisma } from '@prisma/client';
 import type { ExamQuery, GradeQuery, ReportCardQuery } from './assessment.schema';
@@ -308,14 +309,6 @@ export async function updateExamStatus(id: string, status: string): Promise<Exam
 // =====================================
 // GRADE SERVICES
 // =====================================
-
-function calculateLetterGrade(percentage: number): string {
-  if (percentage >= 90) return 'A';
-  if (percentage >= 80) return 'B';
-  if (percentage >= 70) return 'C';
-  if (percentage >= 60) return 'D';
-  return 'E';
-}
 
 export async function getGrades(query: GradeQuery): Promise<SharedPaginatedResponse<Grade>> {
   const { page, limit, studentId, subjectId, examId, academicYearId, type } = query;

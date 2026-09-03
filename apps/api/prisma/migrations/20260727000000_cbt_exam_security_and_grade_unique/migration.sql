@@ -19,12 +19,16 @@ CREATE INDEX "exam_security_logs_attempt_id_idx" ON "exam_security_logs"("attemp
 ALTER TABLE "exam_security_logs" ADD CONSTRAINT "exam_security_logs_attempt_id_fkey" FOREIGN KEY ("attempt_id") REFERENCES "exam_attempts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- Deduplicate existing grades before creating unique index
+-- Deduplicate existing grades before creating unique index (keep the most recent record based on updated_at)
 DELETE FROM "grades" g1
 USING "grades" g2
-WHERE g1.id > g2.id
-  AND g1.student_id = g2.student_id
+WHERE g1.student_id = g2.student_id
   AND g1.exam_id IS NOT NULL
-  AND g1.exam_id = g2.exam_id;
+  AND g1.exam_id = g2.exam_id
+  AND (
+    g1.updated_at < g2.updated_at
+    OR (g1.updated_at = g2.updated_at AND g1.id > g2.id)
+  );
 
 -- CreateIndex
 CREATE UNIQUE INDEX "grades_student_id_exam_id_key" ON "grades"("student_id", "exam_id");

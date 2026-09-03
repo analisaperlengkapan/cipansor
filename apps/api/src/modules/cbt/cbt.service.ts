@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { Prisma, QuestionType } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/client';
 import { Errors } from '@/middleware/error';
+import { calculateLetterGrade } from '@cipansor/shared';
 import type { JwtPayload } from '@/lib/jwt';
 
 /** Authenticated caller shape used for unit-scoping checks. */
@@ -892,6 +893,7 @@ export class CBTService {
         },
         attempts: {
           where: { status: { in: ['COMPLETED', 'NEEDS_REVIEW'] } },
+          orderBy: { createdAt: 'desc' },
           take: 1000, // Safety limit to prevent excessive memory usage
           include: {
             answers: {
@@ -1215,12 +1217,7 @@ export class CBTService {
     const maxScore = attempt.exam.maxScore ? Number(attempt.exam.maxScore) : 100;
     const numericScore = Number(attempt.score);
     const percentage = maxScore > 0 ? (numericScore / maxScore) * 100 : 0;
-
-    let letterGrade = 'E';
-    if (percentage >= 85) letterGrade = 'A';
-    else if (percentage >= 75) letterGrade = 'B';
-    else if (percentage >= 65) letterGrade = 'C';
-    else if (percentage >= 55) letterGrade = 'D';
+    const letterGrade = calculateLetterGrade(percentage);
 
     return db.grade.upsert({
       where: {

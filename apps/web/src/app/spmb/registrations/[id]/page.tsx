@@ -24,7 +24,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Loader2, Rocket, GraduationCap, Wallet, Check, X, FileText, Award } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Loader2, Rocket, GraduationCap, Wallet, Check, X, FileText, Award, Eye, ExternalLink } from "lucide-react";
 
 const STATUS_LABEL: Record<string, string> = {
   REGISTERED: "Mendaftar",
@@ -180,7 +181,8 @@ export default function RegistrationDetailPage({
   // Acceptance is an academic decision; daftar ulang is a separate one. The
   // API refuses to onboard an unpaid registrant, so the button reflects that
   // rather than offering an action that will fail.
-  const feeSettled = Boolean(registrant.registrationFeePaidAt);
+  const registrationFeeOwed = Number(registrant.admissionPeriod?.registrationFee ?? 0);
+  const feeSettled = registrationFeeOwed <= 0 || Boolean(registrant.registrationFeePaidAt);
   const canOnboard =
     registrant.status === "ACCEPTED" && !registrant.enrolledAt && feeSettled;
   const awaitingFee =
@@ -393,13 +395,46 @@ export default function RegistrationDetailPage({
                 {registrant.documents.map((doc: any) => (
                   <div
                     key={doc.id}
-                    className="flex items-center justify-between p-3 rounded-lg border bg-slate-50/50"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border bg-slate-50/50 gap-2"
                   >
                     <div>
                       <p className="font-semibold text-sm">{doc.name}</p>
                       <p className="text-xs text-muted-foreground">Tipe: {doc.type}</p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {doc.fileUrl && (
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button size="sm" variant="outline">
+                              <Eye className="h-4 w-4 mr-1" /> Preview
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-3xl max-h-[85vh] overflow-auto">
+                            <DialogHeader>
+                              <DialogTitle>{doc.name} ({doc.type})</DialogTitle>
+                            </DialogHeader>
+                            <div className="mt-2 flex flex-col items-center justify-center">
+                              {doc.fileUrl.startsWith("data:application/pdf") || doc.fileUrl.endsWith(".pdf") ? (
+                                <iframe src={doc.fileUrl} className="w-full h-[60vh] rounded border" />
+                              ) : (
+                                <img
+                                  src={doc.fileUrl}
+                                  alt={doc.name}
+                                  className="max-h-[60vh] w-auto object-contain rounded border"
+                                />
+                              )}
+                              <a
+                                href={doc.fileUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="mt-3 text-xs text-primary underline flex items-center gap-1"
+                              >
+                                Buka di tab baru <ExternalLink className="h-3 w-3" />
+                              </a>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      )}
                       <Badge variant={doc.isVerified ? "default" : "secondary"}>
                         {doc.isVerified ? "Terverifikasi" : "Belum Verifikasi"}
                       </Badge>

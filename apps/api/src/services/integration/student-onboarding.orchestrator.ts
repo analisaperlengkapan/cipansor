@@ -68,6 +68,8 @@ export class StudentOnboardingOrchestrator {
         select: { registrationFee: true, academicYearId: true },
       }));
 
+      const effectiveUnitId = period?.unitId || unitId;
+
       assertAdmissionFeeSettled({
         registrationFee: period?.registrationFee ?? null,
         registrationFeePaidAt: registrant.registrationFeePaidAt,
@@ -100,7 +102,7 @@ export class StudentOnboardingOrchestrator {
       if (!nis) {
         // Look up unit dynamically, fallback to UNK
         let unitCode = 'UNK';
-        const unit = await tx.unit.findUnique({ where: { id: unitId }, select: { type: true } });
+        const unit = await tx.unit.findUnique({ where: { id: effectiveUnitId }, select: { type: true } });
         if (unit && unit.type) {
           unitCode = unit.type.toUpperCase();
         }
@@ -120,7 +122,7 @@ export class StudentOnboardingOrchestrator {
         const results = await tx.$queryRaw<Array<{ max_seq: number | null }>>`
           SELECT MAX(CAST(substr(nis, ${prefixLen}) AS INTEGER)) as max_seq
           FROM "students"
-          WHERE "unit_id" = ${unitId} AND nis LIKE ${prefix + '%'} AND substr(nis, ${prefixLen}) ~ '^[0-9]+$'
+          WHERE "unit_id" = ${effectiveUnitId} AND nis LIKE ${prefix + '%'} AND substr(nis, ${prefixLen}) ~ '^[0-9]+$'
         `;
 
         let maxSeq = 0;
@@ -133,7 +135,7 @@ export class StudentOnboardingOrchestrator {
       }
 
       let unitCode = 'UNK';
-      const unit = await tx.unit.findUnique({ where: { id: unitId }, select: { type: true } });
+      const unit = await tx.unit.findUnique({ where: { id: effectiveUnitId }, select: { type: true } });
       if (unit && unit.type) {
         unitCode = unit.type.toUpperCase();
       }
@@ -149,7 +151,7 @@ export class StudentOnboardingOrchestrator {
           resetTokenHash: crypto.createHash('sha256').update(resetToken).digest('hex'),
           resetTokenExpiresAt: resetTokenExpiry,
           role: 'STUDENT',
-          unitId,
+          unitId: effectiveUnitId,
           isActive: true,
         },
       });
@@ -159,7 +161,7 @@ export class StudentOnboardingOrchestrator {
         data: {
           userId: user.id,
           status: 'active',
-          unitId,
+          unitId: effectiveUnitId,
           nis,
           nisn: nisn || undefined,
           entryYear: year,
@@ -300,7 +302,7 @@ export class StudentOnboardingOrchestrator {
       const isAlreadyPaid = registrant.registrationFeePaidAt != null || Number(period?.registrationFee ?? 0) === 0;
       if (!isAlreadyPaid && period && Number(period.registrationFee) > 0 && tx.paymentType) {
         const paymentType = await tx.paymentType.findFirst({
-          where: { unitId, code: 'REG_FEE' },
+          where: { unitId: effectiveUnitId, code: 'REG_FEE' },
         });
         if (paymentType) {
           const financeService = await import('../../modules/finance/finance.service');
@@ -331,7 +333,8 @@ export class StudentOnboardingOrchestrator {
         parentEmail: parentUser && parentResetToken ? parentUser.email : undefined,
         parentName: parentUser ? parentUser.name : undefined,
         parentResetToken,
-        studentName: registrant.fullName
+        studentName: registrant.fullName,
+        effectiveUnitId,
       };
     });
 
@@ -345,7 +348,7 @@ export class StudentOnboardingOrchestrator {
         eventBus.emit('student:created', {
           id: r.studentId,
           name: r.studentName,
-          unitId,
+          unitId: (result as any).effectiveUnitId || unitId,
           unitName: r.unitCode,
         });
 
@@ -358,7 +361,7 @@ export class StudentOnboardingOrchestrator {
           complaint: 'Initial Checkup',
           status: 'HEALTHY',
           recordedAt: new Date(),
-          unitId,
+          unitId: (result as any).effectiveUnitId || unitId,
         });
 
         eventBus.emit('notification:send', {

@@ -1,5 +1,6 @@
 import { randomBytes } from 'crypto';
 import bcrypt from 'bcryptjs';
+import { config } from '../../config';
 import { prisma } from '../../lib/prisma';
 import { Prisma, AdmissionStatus, Gender } from '@prisma/client';
 import * as financeService from '../finance/finance.service';
@@ -359,22 +360,30 @@ async function createRegistrantOnce(data: CreateRegistrantExtendedInput) {
 
     let waveId: string | undefined = undefined;
 
-    for (const wave of candidateWaves) {
-      if (wave.registeredCount >= wave.quota) {
-        continue;
-      }
-      const claim = await tx.admissionWave.updateMany({
-        where: {
-          id: wave.id,
-          status: 'OPEN',
-          registeredCount: { lt: wave.quota },
-        },
-        data: { registeredCount: { increment: 1 } },
-      });
+    if (candidateWaves.length > 0) {
+      let waveClaimed = false;
+      for (const wave of candidateWaves) {
+        if (wave.registeredCount >= wave.quota) {
+          continue;
+        }
+        const claim = await tx.admissionWave.updateMany({
+          where: {
+            id: wave.id,
+            status: 'OPEN',
+            registeredCount: { lt: wave.quota },
+          },
+          data: { registeredCount: { increment: 1 } },
+        });
 
-      if (claim.count === 1) {
-        waveId = wave.id;
-        break;
+        if (claim.count === 1) {
+          waveId = wave.id;
+          waveClaimed = true;
+          break;
+        }
+      }
+
+      if (!waveClaimed) {
+        throw Errors.badRequest('Semua gelombang pendaftaran pada periode ini telah penuh (kuota habis)');
       }
     }
 
@@ -779,6 +788,82 @@ export async function getRegistrantDocuments(registrantId: string) {
 export async function createRegistrantDocument(data: CreateRegistrantDocumentInput) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return prisma.registrantDocument.create({ data: data as any });
+}
+
+export async function createPublicRegistrantDocumentService(data: {
+  registrantId: string;
+  type: string;
+  url?: string;
+  base64?: string;
+  fileName?: string;
+  registrationToken?: string;
+}) {
+  const { registrantId, type, url, base64, fileName, registrationToken } = data;
+
+  const registrant = await prisma.registrant.findUnique({
+    where: { id: registrantId },
+    select: { id: true, registrationNo: true },
+  });
+
+  if (!registrant) {
+    throw Errors.notFound('Registrant');
+  }
+
+  // Token / Proof of Ownership Check
+  const crypto = await import('crypto');
+  const expectedToken = crypto.createHmac('sha256', config.jwt.secret).update(registrant.id).digest('hex').slice(0, 16);
+
+  if (!registrationToken || (registrationToken !== registrant.id && registrationToken !== expectedToken)) {
+    throw Errors.forbidden('Invalid registration token for document upload');
+  }
+
+  const docUrl = url || base64;
+  if (!docUrl) {
+    throw Errors.badRequest('Dokumen url/base64 wajib diisi');
+  }
+
+  // Validate base64 length & MIME
+  if (base64) {
+    if (base64.length > 4000000) { // ~3MB
+      throw Errors.badRequest('Ukuran berkas melebihi batas maksimum (3MB)');
+    }
+    const mimeMatch = base64.match(/^data:(image\/\w+|application\/pdf);base64,/);
+    if (!mimeMatch) {
+      throw Errors.badRequest('Tipe berkas tidak didukung. Hanya gambar (JPEG/PNG/WebP) dan PDF yang diperbolehkan');
+    }
+  }
+
+  // Cap document count (max 10 documents per registrant)
+  const existingDocCount = await prisma.registrantDocument.count({
+    where: { registrantId },
+  });
+  if (existingDocCount >= 10) {
+    throw Errors.badRequest('Jumlah dokumen pendaftar telah mencapai batas maksimum (10 dokumen)');
+  }
+
+  let schemaType: 'akta' | 'ijazah' | 'kk' | 'foto' | 'rapor' | 'lainnya' = 'lainnya';
+  const normalizedType = String(type).toLowerCase();
+  if (normalizedType.includes('foto') || normalizedType === 'photo') {
+    schemaType = 'foto';
+  } else if (normalizedType.includes('kk') || normalizedType === 'family_card') {
+    schemaType = 'kk';
+  } else if (normalizedType.includes('akta') || normalizedType === 'birth_certificate') {
+    schemaType = 'akta';
+  } else if (normalizedType.includes('rapor') || normalizedType === 'report_card') {
+    schemaType = 'rapor';
+  } else if (normalizedType.includes('ijazah') || normalizedType === 'diploma') {
+    schemaType = 'ijazah';
+  }
+
+  const createRegistrantDocumentSchema = (await import('./admissions.schema')).createRegistrantDocumentSchema;
+  const docData = createRegistrantDocumentSchema.parse({
+    registrantId,
+    name: fileName || `${schemaType}_${Date.now()}`,
+    type: schemaType,
+    fileUrl: docUrl,
+  });
+
+  return createRegistrantDocument(docData);
 }
 
 export async function verifyDocument(id: string, isVerified: boolean, notes?: string) {

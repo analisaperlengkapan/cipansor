@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { config } from '../../config';
 import * as service from './admissions.service';
 import {
   createAdmissionPeriodSchema,
@@ -326,45 +327,16 @@ export async function getPublicUnits(_req: Request, res: Response, next: NextFun
 export async function createPublicRegistrantDocument(req: Request, res: Response, next: NextFunction) {
   try {
     const { registrantId } = req.params;
-    const { type, url, base64, fileName } = req.body;
+    const { type, url, base64, fileName, registrationToken } = req.body;
 
-    const { prisma } = await import('../../lib/prisma');
-    const registrant = await prisma.registrant.findUnique({
-      where: { id: registrantId },
-      select: { id: true },
-    });
-
-    if (!registrant) {
-      throw Errors.notFound('Registrant');
-    }
-
-    const docUrl = url || base64;
-    if (!docUrl || !type) {
-      throw Errors.badRequest('Dokumen type dan url/base64 wajib diisi');
-    }
-
-    let schemaType: 'akta' | 'ijazah' | 'kk' | 'foto' | 'rapor' | 'lainnya' = 'lainnya';
-    const normalizedType = String(type).toLowerCase();
-    if (normalizedType.includes('foto') || normalizedType === 'photo') {
-      schemaType = 'foto';
-    } else if (normalizedType.includes('kk') || normalizedType === 'family_card') {
-      schemaType = 'kk';
-    } else if (normalizedType.includes('akta') || normalizedType === 'birth_certificate') {
-      schemaType = 'akta';
-    } else if (normalizedType.includes('rapor') || normalizedType === 'report_card') {
-      schemaType = 'rapor';
-    } else if (normalizedType.includes('ijazah') || normalizedType === 'diploma') {
-      schemaType = 'ijazah';
-    }
-
-    const data = createRegistrantDocumentSchema.parse({
+    const document = await service.createPublicRegistrantDocumentService({
       registrantId,
-      name: fileName || `${schemaType}_${Date.now()}`,
-      type: schemaType,
-      fileUrl: docUrl,
+      type,
+      url,
+      base64,
+      fileName,
+      registrationToken,
     });
-
-    const document = await service.createRegistrantDocument(data);
 
     res.status(201).json({ success: true, data: document });
   } catch (error) {
@@ -403,11 +375,15 @@ export async function createPublicRegistrant(req: Request, res: Response, next: 
     }
 
     const registrant = await service.createRegistrant(data);
+    const crypto = await import('crypto');
+    const registrationToken = crypto.createHmac('sha256', config.jwt.secret).update(registrant.id).digest('hex').slice(0, 16);
+
     res.status(201).json({
       success: true,
       data: {
         id: registrant.id,
         registrationNo: registrant.registrationNo,
+        registrationToken,
         fullName: registrant.fullName,
         status: registrant.status,
         createdAt: registrant.createdAt,

@@ -159,7 +159,7 @@ export function DocumentCaptureField({
 
       {isParsing && (
         <p className="text-xs text-muted-foreground flex items-center gap-1.5 animate-pulse mt-2">
-          <RefreshCw className="h-3 w-3 animate-spin" /> Memeriksa kecocokan data dokumen dengan AI/OCR...
+          <RefreshCw className="h-3 w-3 animate-spin" /> Memeriksa kecocokan data dokumen secara otomatis...
         </p>
       )}
 

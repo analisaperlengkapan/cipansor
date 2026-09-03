@@ -24,6 +24,10 @@ vi.mock('@/lib/prisma', () => ({
       create: vi.fn(),
       findFirst: vi.fn(),
     },
+    admissionWave: {
+      findMany: vi.fn().mockResolvedValue([]),
+      updateMany: vi.fn(),
+    },
     $transaction: vi.fn((cb) => cb(prisma)),
   },
 }));
@@ -47,6 +51,38 @@ vi.mock('@prisma/client', async (importOriginal) => {
 describe('Admissions Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('should reject document upload when registration token is invalid', async () => {
+    vi.mocked(prisma.registrant.findUnique).mockResolvedValue({ id: 'reg123', registrationNo: 'REG-001' } as any);
+
+    await expect(
+      service.createPublicRegistrantDocumentService({
+        registrantId: 'reg123',
+        type: 'PHOTO',
+        base64: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+        registrationToken: 'invalid_token_123',
+      })
+    ).rejects.toThrow('Invalid registration token');
+  });
+
+  it('should reject document upload when base64 exceeds size limit', async () => {
+    const crypto = await import('crypto');
+    const { config } = await import('../../../config');
+    const expectedToken = crypto.createHmac('sha256', config.jwt.secret).update('reg123').digest('hex').slice(0, 16);
+
+    vi.mocked(prisma.registrant.findUnique).mockResolvedValue({ id: 'reg123', registrationNo: 'REG-001' } as any);
+
+    const hugeBase64 = 'data:image/png;base64,' + 'A'.repeat(4500000);
+
+    await expect(
+      service.createPublicRegistrantDocumentService({
+        registrantId: 'reg123',
+        type: 'PHOTO',
+        base64: hugeBase64,
+        registrationToken: expectedToken,
+      })
+    ).rejects.toThrow('Ukuran berkas melebihi batas maksimum');
   });
 
   it('should generate registration number correctly and skip invoice creation at registration', async () => {

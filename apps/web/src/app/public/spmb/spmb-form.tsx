@@ -275,7 +275,7 @@ export function SpmbForm({
     }
   };
 
-  const uploadSelectedDocuments = async (registrantId: string) => {
+  const uploadSelectedDocuments = async (registrantId: string, registrationToken?: string) => {
     const fileEntries: { file: File | null; type: string }[] = [
       { file: files.photo, type: "PHOTO" },
       { file: files.ktp, type: "ID_CARD" },
@@ -298,8 +298,11 @@ export function SpmbForm({
           type,
           base64,
           fileName: file.name,
+          registrationToken,
         });
-      } catch (err) {
+      } catch (err: any) {
+        const errorMsg = err?.response?.data?.message || err?.message || "Gagal mengunggah berkas";
+        toast.error(`Gagal mengunggah ${type}: ${errorMsg}`);
         console.error(`Failed to upload ${type} document:`, err);
       }
     }
@@ -360,9 +363,10 @@ export function SpmbForm({
 
       const result = await createRegistration.mutateAsync(payload);
       const createdRegistrantId = result?.id || result?.data?.id;
+      const registrationToken = result?.registrationToken || result?.data?.registrationToken;
 
       if (createdRegistrantId) {
-        await uploadSelectedDocuments(createdRegistrantId);
+        await uploadSelectedDocuments(createdRegistrantId, registrationToken);
       }
 
       setSuccessData({
@@ -1027,7 +1031,7 @@ export function SpmbForm({
                               <Info className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
                               <div className="text-sm">
                                 <p className="font-medium text-blue-800">
-                                  Instruksi & Fitur Kamera / AI OCR:
+                                  Instruksi Unggah Dokumen:
                                 </p>
                                 <p className="text-blue-700">
                                   Anda dapat memilih file dari perangkat atau mengambil foto langsung dari kamera HP/laptop. Sistem secara otomatis memindai NIK & No. KK untuk memverifikasi kecocokan data.

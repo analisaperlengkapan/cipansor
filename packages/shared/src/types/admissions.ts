@@ -10,7 +10,7 @@ export interface DocumentOcrResult {
     status: "VALID" | "WARNING" | "MISMATCH";
     nationalIdMatch?: boolean;
     familyCardMatch?: boolean;
-    nameMatch?: boolean;
+    fullNameMatch?: boolean;
     notes: string[];
   };
 }

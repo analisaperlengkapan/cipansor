@@ -52,7 +52,7 @@ export async function parseAndVerifyDocument(
     // Decode base64 header if present (e.g. data:image/png;base64,...)
     const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
 
-    // 1. Extract 16-digit numbers (NIK / No KK)
+    // 1. Extract 16-digit numbers (NIK / No KK) from binary text content if ascii printable
     const textContent = Buffer.from(cleanBase64, 'base64').toString('utf8');
     const digitsMatches = textContent.match(/\b\d{16}\b/g) || [];
 
@@ -67,6 +67,18 @@ export async function parseAndVerifyDocument(
           extractedData.nationalId = digitsMatches[1];
           extractedCount++;
         }
+      }
+    }
+
+    // 2. Extract full name if text contains name indicators
+    const lines = textContent.split(/\r?\n/);
+    for (const line of lines) {
+      const trimmed = line.trim();
+      const nameMatch = trimmed.match(/(?:Nama|NAMA)\s*[:=]?\s*([A-Za-z\s]{3,50})/i);
+      if (nameMatch && nameMatch[1]) {
+        extractedData.fullName = nameMatch[1].trim();
+        extractedCount++;
+        break;
       }
     }
   }
@@ -116,7 +128,17 @@ export async function parseAndVerifyDocument(
     }
 
     if (userInputData.fullName && userInputData.fullName.length >= 3) {
-      fullNameMatch = hasExtractedData;
+      if (extractedData.fullName) {
+        const normInput = userInputData.fullName.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const normExtracted = extractedData.fullName.toLowerCase().replace(/[^a-z0-9]/g, '');
+        fullNameMatch = normInput.includes(normExtracted) || normExtracted.includes(normInput);
+        if (!fullNameMatch) {
+          score -= 30;
+          notes.push('Nama pada dokumen tidak sesuai dengan nama yang diinput.');
+        }
+      } else {
+        fullNameMatch = undefined; // Unknown / Not extracted from document image
+      }
     }
   }
 
@@ -132,7 +154,7 @@ export async function parseAndVerifyDocument(
 
   const finalScore = Math.max(0, score);
   let status: DocumentParseResult['validation']['status'] = 'VALID';
-  if (nationalIdMatch === false || familyCardMatch === false || finalScore < 50) {
+  if (nationalIdMatch === false || familyCardMatch === false || fullNameMatch === false || finalScore < 50) {
     status = 'MISMATCH';
   } else if (finalScore < 100 || !hasExtractedData) {
     status = 'WARNING';

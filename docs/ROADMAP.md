@@ -455,10 +455,21 @@ BSSN/BSrE, ANRI SRIKANDI, ETSI and CA/Browser Forum sources quoted in the plan
 NIP off the naskah, KTP uploaded through the system as the only proof of
 identity.
 
-**Still open:** the orphaned-KTP hole found by the walk (deleting a
-`UserIdentity` row leaves its scan on disk forever, unreachable by
-`db:purge-identity-documents`, and `User` deletion cascades into exactly that) —
-small, and it defeats any retention figure while it stands; PR-5 (PAdES B-B +
+The orphaned-KTP hole the walk found — deleting a `UserIdentity` row left its
+scan on disk forever, unreachable by a purge that reads the database — is
+**closed**: `db:purge-identity-documents` now runs a second phase from the disk
+side, and a file no row names is deleted once it is a day old. It mattered out
+of proportion to its size, because it defeated any retention figure the system
+quoted while it stood.
+
+**Still open, and it is the cheapest item on this list:** nothing schedules
+`db:purge-identity-documents`. Verified 2026-09-03 — the deploy user has no
+crontab and `/etc/cron.d` holds only `certbot`, `e2scrub_all` and `sysstat`. Both
+phases of the purge are correct and neither has ever run, which makes the
+retention window a stored column rather than a kept promise. It is a host
+change, not a code change.
+
+Then: PR-5 (PAdES B-B +
 RFC 3161 timestamps — the highest-value remaining feature, since without a
 timestamp there is no answer to *"was the key valid at the time of signing"*,
 which is exactly what revocation semantics need); the §5b(a) DOCX authoring

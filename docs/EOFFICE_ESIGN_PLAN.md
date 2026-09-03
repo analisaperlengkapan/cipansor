@@ -1099,15 +1099,52 @@ uploaded before a `--force-recreate` **survived it** (the point of #448), and
 verification still works after the signing key row is deleted, because the
 public key lives on the signature row — old letters stay verifiable forever.
 
-### Still open after the walk
+### The orphan hole the walk found, and how it was closed
 
-**Deleting a `UserIdentity` row does not delete its KTP file.**
-`db:purge-identity-documents` works from `ktpRetainUntil` in the database, so a
-file whose row is gone is unreachable by it — permanently. The relation is
-`onDelete: Cascade` from `User`, so deleting one user is enough to strand their
-KTP scan on disk. Not fixed. The fix is two-sided: identity deletion should call
-`deleteIdentityDocument`, and the purge script should sweep orphans by comparing
-the directory against the `ktpFileName` values still on record.
+**Deleting a `UserIdentity` row did not delete its KTP file.**
+`db:purge-identity-documents` worked from `ktpRetainUntil` in the database, so a
+file whose row was gone was unreachable by it — permanently. The relation is
+`onDelete: Cascade` from `User`, so deleting one user was enough to strand their
+KTP scan on disk.
+
+Fixed by adding a second phase to the same command that walks in the other
+direction: list the directory, subtract every `ktpFileName` still on record,
+delete what is left. Only that direction can find an orphan — a file no row
+names will never appear in any query, which is precisely why the database-driven
+phase could not be extended to cover it.
+
+Three ways a file reaches that state, none of which raises an error:
+
+- the cascade above, including `seed.ts`, which TRUNCATEs;
+- a process that dies between `storeIdentityDocument` and the
+  `prisma.userIdentity.update` that records the name — the file is written
+  first, and nothing outside the request knows it exists yet;
+- a database restored from a backup older than the volume.
+
+The second of those also sets the sweep's one parameter. A legitimate upload
+looks exactly like an orphan for the milliseconds between those two statements,
+so files are spared until they are a full day old (`IDENTITY_ORPHAN_GRACE_MS`).
+The asymmetry decides the direction: waiting longer leaves an orphan one day
+longer, while sweeping too early deletes a KTP someone just uploaded and leaves
+them to re-upload it without ever learning why.
+
+### Still open: nothing runs the purge
+
+Measured on the production host, 2026-09-03: `crontab -l` is empty for the
+deploy user and `/etc/cron.d` holds only `certbot`, `e2scrub_all` and
+`sysstat`. **`db:purge-identity-documents` has never been scheduled**, so both
+phases — the retention purge and the orphan sweep — exist and have never run.
+
+This is worth more than the hole it was written to close. `ktpRetainUntil` is
+computed and stored on every upload, the retention figure is documented, and the
+comment at the head of the script argues for a command over an in-process
+scheduler on the grounds that *"a command that was not run leaves a trace in
+crontab that can be inspected."* Inspecting it is what showed that the trace is
+absent. Until an entry exists, the retention window is a column, not a promise —
+and the code that would honour it being correct changes nothing about that.
+
+Scheduling it is a production change on the host, not a repository change, so it
+is listed here rather than done.
 
 ---
 

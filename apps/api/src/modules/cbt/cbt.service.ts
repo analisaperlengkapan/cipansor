@@ -786,6 +786,10 @@ export class CBTService {
     if (!attempt) throw Errors.notFound('Attempt');
     if (attempt.studentId !== student.id) throw Errors.forbidden('Access denied');
 
+    if (attempt.status !== 'IN_PROGRESS') {
+      throw Errors.badRequest('Cannot record security events for an attempt that is not in progress');
+    }
+
     const isTabSwitch = event.type === 'TAB_SWITCH' || event.type === 'FOCUS_LOST';
 
     const [log] = await prisma.$transaction([
@@ -1199,7 +1203,7 @@ export class CBTService {
       },
     });
 
-    if (!attempt || attempt.score === null || attempt.status !== 'COMPLETED') return null;
+    if (!attempt || attempt.score === null || attempt.status !== 'COMPLETED' || !attempt.exam?.teacherId) return null;
 
     const teacher = await db.teacher.findUnique({
       where: { id: attempt.exam.teacherId },

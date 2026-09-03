@@ -334,24 +334,33 @@ function ExamPlayer({
 
     const handleOnline = async () => {
       toast.success("Koneksi terhubung kembali. Meringkas sinkronisasi jawaban...");
-      for (const [qId, ans] of Object.entries(answers)) {
-        if (ans !== undefined && ans !== "") {
-          try {
-            await submitAnswer.mutateAsync({
-              attemptId: attempt.id,
-              questionId: qId,
-              answer: ans,
-            });
-          } catch (e) {
-            console.error("Failed to sync answer on reconnect", e);
-          }
-        }
+      const unsyncedEntries = Object.entries(answers).filter(([qId, ans]) => {
+        const serverAns = attempt.answers?.find((a: any) => a.questionId === qId)?.answer;
+        return (
+          ans !== undefined &&
+          ans !== "" &&
+          (serverAns === undefined || JSON.stringify(serverAns) !== JSON.stringify(ans))
+        );
+      });
+
+      if (unsyncedEntries.length > 0) {
+        await Promise.all(
+          unsyncedEntries.map(([qId, ans]) =>
+            submitAnswer
+              .mutateAsync({
+                attemptId: attempt.id,
+                questionId: qId,
+                answer: ans,
+              })
+              .catch((e) => console.error("Failed to sync answer on reconnect", e))
+          )
+        );
       }
     };
 
     window.addEventListener("online", handleOnline);
     return () => window.removeEventListener("online", handleOnline);
-  }, [answers, attempt.id, attempt.status, submitAnswer]);
+  }, [answers, attempt.answers, attempt.id, attempt.status, submitAnswer]);
 
   if (attempt.status !== "IN_PROGRESS") {
     return (
@@ -447,14 +456,29 @@ function ExamPlayer({
             onContextMenu={(e) => {
               e.preventDefault();
               toast.warning("Klik kanan dinonaktifkan demi keamanan ujian.");
+              recordSecurityLog.mutate({
+                attemptId: attempt.id,
+                eventType: "RIGHT_CLICK",
+                details: "Right-click context menu attempt detected",
+              });
             }}
             onCopy={(e) => {
               e.preventDefault();
               toast.warning("Menyalin teks dinonaktifkan demi keamanan ujian.");
+              recordSecurityLog.mutate({
+                attemptId: attempt.id,
+                eventType: "COPY",
+                details: "Copy text attempt detected",
+              });
             }}
             onPaste={(e) => {
               e.preventDefault();
               toast.warning("Tempel teks dinonaktifkan.");
+              recordSecurityLog.mutate({
+                attemptId: attempt.id,
+                eventType: "PASTE",
+                details: "Paste text attempt detected",
+              });
             }}
           >
             <CardHeader>

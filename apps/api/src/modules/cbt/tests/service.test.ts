@@ -594,6 +594,7 @@ describe('CBT Service', () => {
       const mockAttempt = {
         id: 'attempt-1',
         studentId: 'std-1',
+        status: 'IN_PROGRESS',
         tabSwitchCount: 1,
       };
 
@@ -628,6 +629,25 @@ describe('CBT Service', () => {
       });
     });
 
+    it('should reject recordSecurityLog if attempt is not IN_PROGRESS', async () => {
+      const mockStudent = { id: 'std-1', userId: 'user-std-1' };
+      const completedAttempt = {
+        id: 'attempt-1',
+        studentId: 'std-1',
+        status: 'COMPLETED',
+      };
+
+      vi.mocked(prisma.student.findUnique).mockResolvedValue(mockStudent as any);
+      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue(completedAttempt as any);
+
+      await expect(
+        CBTService.recordSecurityLog('attempt-1', 'user-std-1', {
+          type: 'TAB_SWITCH',
+          details: 'Late event after completion',
+        })
+      ).rejects.toThrow('Cannot record security events');
+    });
+
     it('should enforce strict duration limits and expire attempt if time exceeded', async () => {
       const pastTime = new Date(Date.now() - 90 * 60 * 1000); // 90 mins ago for a 60 min exam
       vi.mocked(prisma.examAttempt.findUnique).mockResolvedValueOnce({
@@ -656,7 +676,7 @@ describe('CBT Service', () => {
         status: 'COMPLETED',
         score: 100,
         startedAt: pastTime,
-        exam: { id: 'exam-1', duration: 60, questionBank: { questions: [] } },
+        exam: { id: 'exam-1', teacherId: 't-1', duration: 60, questionBank: { questions: [] } },
         answers: [],
       };
 

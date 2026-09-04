@@ -572,11 +572,22 @@ UU ITE Pasal 11, PP 71/2019, and PAdES.
   so lockfile drift passes locally and fails CI at the install step — which
   looks like several unrelated jobs failing within seconds.
 - **The Security job can go red on a PR that changed no code.** `audit:deps`
-  queries GitHub's live advisory endpoint, so a newly published advisory against
-  any transitive dependency fails every open PR at once, including `main` if
+  queries **npm's** live bulk advisory endpoint
+  (`registry.npmjs.org/-/npm/v1/security/advisories/bulk` — not GitHub's, as
+  this line said until 2026-09-04), so a newly published advisory against any
+  transitive dependency fails every open PR at once, including `main` if
   anything re-runs there. Read the failure before blaming the diff: the fix is
   almost always raising the matching pin in the root `package.json`
   `pnpm.overrides` (2026-09-02: `fast-uri` >=4.1.3, `qs` ^6.16.0), then
   `pnpm install` and `pnpm run audit:deps` to confirm 0 advisories.
+- **A green Security box no longer means the whole tree was checked.** Since
+  #460 the script retries a timing-out endpoint (`AUDIT_TIMEOUT_MS`,
+  `AUDIT_MAX_ATTEMPTS`) and then splits the two failures that used to share one
+  exit code: a **finding fails closed** (exit 1, even when part of the run never
+  answered), while an **exhausted endpoint fails open** (exit 0 plus
+  `::warning title=Dependency audit incomplete::N of M packages were NOT
+  audited`). Exit 2 stays reserved for our own bugs. So read the annotation
+  before trusting a pass, and set `AUDIT_FAIL_ON_UNREACHABLE=1` when a release
+  must not ship on an unverified tree.
 - **Never push to `main`** (also enforced by a repository ruleset requiring PRs)
   and never `Write` `schema.prisma` wholesale — edit it surgically.

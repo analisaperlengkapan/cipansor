@@ -11,8 +11,21 @@
 # any /compact within the next half hour — goes through unconditionally, so this
 # can nag but can never wedge: the escape is simply to run the command again.
 #
-# Auto-compaction is NEVER blocked. It fires when the context window is full,
-# and refusing it there would strand the session at the wall with no way out.
+# Auto-compaction is blocked ONLY when there is room to spare, and never
+# otherwise. Left at its default, Claude Code compacts when the conversation
+# reaches the model's context limit — refusing it there would strand the session
+# at the wall with no way out, which is why this hook used to ignore auto
+# entirely.
+#
+# Setting `autoCompactWindow` below the model's window changes that, and it is
+# the whole reason this branch exists. At 700k on a 1M-token model, auto-compact
+# fires with 300k still free: ample room to run the records pass and let the
+# retry through. So the interlock is the setting itself — no reduced window, no
+# blocking. Remove the setting and this hook silently goes back to never
+# touching auto, with nobody needing to remember to disarm it.
+#
+#   /autocompact 700k     (writes autoCompactWindow to your user settings)
+#   /autocompact auto     (back to the model's tuned window; auto stops being blocked)
 #
 # Fails open in every other respect — unparseable input, unwritable stamp
 # directory, anything unexpected — because a hook that breaks a session is worse
@@ -30,15 +43,52 @@ except Exception:
     sys.exit(0)  # unreadable -> allow
 
 # The field naming has moved around between versions; accept either, and treat
-# an absent trigger as "auto" so an unknown shape can never block.
+# an absent trigger as "auto" so an unknown shape takes the cautious branch.
 trigger = (
     data.get("trigger")
     or data.get("compaction_trigger")
     or data.get("hookSpecificOutput", {}).get("trigger")
     or "auto"
 )
+
+
+def reduced_window() -> int:
+    """The configured auto-compact window in tokens, or 0 when none is set.
+
+    Read in the same precedence Claude Code uses: the environment variable wins,
+    then the settings files from most specific to least. Anything unreadable
+    counts as "not set", which disarms the auto branch — the safe direction.
+    """
+    raw = os.environ.get("CLAUDE_CODE_AUTO_COMPACT_WINDOW")
+    if raw and raw.strip().isdigit():
+        return int(raw.strip())
+
+    project = os.environ.get("CLAUDE_PROJECT_DIR", "")
+    home = os.path.expanduser("~")
+    for path in (
+        os.path.join(project, ".claude", "settings.local.json"),
+        os.path.join(project, ".claude", "settings.json"),
+        os.path.join(home, ".claude", "settings.json"),
+    ):
+        try:
+            with open(path, encoding="utf-8") as handle:
+                value = json.load(handle).get("autoCompactWindow")
+            if isinstance(value, int) and value > 0:
+                return value
+        except Exception:
+            continue
+    return 0
+
+
 if trigger != "manual":
-    sys.exit(0)
+    # Blocking auto-compaction is only safe with headroom below it, and the
+    # only evidence of headroom available here is a window set well under the
+    # smallest model window this repo runs against (1M). Above the ceiling —
+    # or unset — auto is left alone, exactly as before.
+    HEADROOM_CEILING = 800_000
+    window = reduced_window()
+    if window == 0 or window > HEADROOM_CEILING:
+        sys.exit(0)
 
 # Explicit opt-out: `/compact skip-sync`.
 instructions = (data.get("custom_instructions") or "").lower()
@@ -70,8 +120,8 @@ except Exception:
     sys.exit(0)              # cannot track state -> never block
 
 sys.stderr.write(
-    "Compaction paused once, on purpose: the transcript is about to be "
-    "discarded and only files survive it.\n\n"
+    f"Compaction paused once ({trigger}), on purpose: the transcript is about "
+    "to be discarded and only files survive it.\n\n"
     "Run the `sync-records` skill now and carry out its pass. Correcting a "
     "memory that this session made WRONG matters more than adding a new one — "
     "a stale memory is trusted, a missing one is merely absent.\n\n"

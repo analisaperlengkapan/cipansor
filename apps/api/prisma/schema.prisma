@@ -6278,6 +6278,72 @@ model ChatbotUsageDaily {
   @@map("chatbot_usage_daily")
 }
 
+/// ChatbotConversation - satu sesi tanya-jawab dengan asisten publik.
+///
+/// Sampai sekarang isi percakapannya sengaja TIDAK disimpan: pengunjung
+/// mengetikkan hal pribadi ke kotak obrolan ("anak saya bernama…"), dan log
+/// adalah tempat yang salah untuk itu berakhir. Menyimpannya kini menjadi
+/// keputusan sadar dengan tiga pagar yang membuatnya bertanggung jawab:
+/// hanya Super Admin yang bisa membacanya, isinya dihapus otomatis setelah 90
+/// hari, dan tidak ada IP maupun sidik jari peramban yang ikut disimpan —
+/// cukup untuk memperbaiki jawaban yang keliru, tidak cukup untuk melacak
+/// orang.
+model ChatbotConversation {
+  id String @id @default(uuid())
+
+  /// Pengenal yang dibuat peramban, satu per jendela obrolan yang dibuka.
+  /// Unik supaya giliran kedua dan seterusnya menempel pada percakapan yang
+  /// sama alih-alih membuat baris baru.
+  clientId String @unique @map("client_id")
+
+  startedAt     DateTime @default(now()) @map("started_at")
+  lastMessageAt DateTime @default(now()) @map("last_message_at")
+
+  /// Dihitung saat menulis, bukan saat membaca: daftar percakapan mengurutkan
+  /// dan menyaring dengan angka ini, dan menghitung ulang relasi untuk setiap
+  /// baris di halaman daftar adalah kueri N+1 yang menunggu terjadi.
+  messageCount Int @default(0) @map("message_count")
+
+  messages ChatbotMessage[]
+
+  @@index([lastMessageAt])
+  @@map("chatbot_conversations")
+}
+
+/// ChatbotMessage - satu giliran, entah dari pengunjung atau dari asisten.
+model ChatbotMessage {
+  id             String              @id @default(uuid())
+  conversationId String              @map("conversation_id")
+  conversation   ChatbotConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  /// "user" atau "assistant". Peran "system" tidak pernah muncul di sini:
+  /// scaffold keamanan tinggal di kode dan tidak pernah datang dari peramban.
+  role    String
+  content String @db.Text
+
+  /// Sumber yang dikutip asisten, apa adanya seperti yang dikirim ke widget.
+  /// Disimpan supaya pertanyaan "dari mana angka itu?" masih bisa dijawab
+  /// berbulan-bulan kemudian, ketika korpusnya sudah berubah.
+  sources Json?
+
+  /// Benar bila jawabannya adalah penolakan yang ditulis tangan — pertanyaan
+  /// yang tidak menarik satu potongan pun. Inilah yang dibaca untuk menemukan
+  /// lubang di basis pengetahuan.
+  refused Boolean @default(false)
+
+  /// Benar bila jawabannya dilayani dari cache dan tidak menelan biaya.
+  fromCache Boolean @default(false) @map("from_cache")
+
+  /// Model yang menjawab, bila ada. Kosong untuk giliran pengunjung.
+  model String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([conversationId, createdAt])
+  @@index([createdAt])
+  @@map("chatbot_messages")
+}
+
 /// RaporPesantren - Rapor Pesantren Terintegrasi
 model RaporPesantren {
   id             String @id @default(uuid())

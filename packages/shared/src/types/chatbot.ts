@@ -94,3 +94,52 @@ export interface UpdateChatbotPersonaRequest {
   /** The new additive persona text. Bounded server-side. */
   persona: string;
 }
+
+/**
+ * Riwayat tanya-jawab, sebagaimana dibaca Super Admin.
+ *
+ * Isinya adalah kalimat yang benar-benar diketik pengunjung, jadi ia dibatasi
+ * tiga hal sekaligus: hanya SUPER_ADMIN yang boleh membacanya, ia terhapus
+ * otomatis setelah 90 hari, dan tidak ada IP maupun sidik jari peramban yang
+ * ikut disimpan. Lihat `apps/api/src/modules/chatbot/transcript.service.ts`.
+ */
+export interface ChatbotConversationSummary {
+  id: string;
+  startedAt: string;
+  lastMessageAt: string;
+  /** Jumlah giliran, pertanyaan dan jawaban dihitung terpisah. */
+  messageCount: number;
+  /** Berapa jawaban dalam percakapan ini yang berupa penolakan. */
+  refusedCount: number;
+  /** Pertanyaan pertama, untuk dikenali di daftar. */
+  firstQuestion: string;
+}
+
+export interface ChatbotTranscriptMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  sources: ChatSource[];
+  refused: boolean;
+  /** Dijawab dari cache — tidak menelan biaya, dan bukan kalimat baru. */
+  fromCache: boolean;
+  model?: string;
+  createdAt: string;
+}
+
+export interface ChatbotConversationDetail {
+  id: string;
+  startedAt: string;
+  lastMessageAt: string;
+  messageCount: number;
+  messages: ChatbotTranscriptMessage[];
+}
+
+export interface ChatbotConversationListResponse {
+  conversations: ChatbotConversationSummary[];
+  total: number;
+  page: number;
+  pageSize: number;
+  /** Berapa hari riwayat disimpan sebelum dihapus otomatis. */
+  retentionDays: number;
+}

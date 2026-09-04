@@ -337,6 +337,57 @@ personal data to a third-party inference endpoint. That needs a lawful basis,
 and region and data-residency become requirements rather than preferences. The
 public bot raises none of this — one more reason it goes first.
 
+> **Corrected 2026-09-04.** "The public bot raises none of this" stopped being
+> true the day it began storing what visitors type. It was written when the
+> widget kept nothing: `chatbot.controller.ts` logged *that* a question arrived
+> and whether it could be answered, deliberately never the text, because people
+> type "anak saya bernama…" into chat boxes.
+>
+> The transcript (§9) reverses that, on purpose and with the owner's decision.
+> The claim that survives is narrower and worth stating precisely: the public
+> bot processes **personal data volunteered by an adult visitor about their own
+> enquiry**, not children's records pulled from our database — which is a
+> different lawful basis and a far smaller blast radius than Phase 2. It is
+> still personal data, and it is governed as such.
+
+## 9. The transcript, and what makes storing it defensible
+
+Shipped 2026-09-04, at the owner's request: every question and answer is kept in
+`chatbot_conversations` / `chatbot_messages` so the pesantren can see what the
+public actually asks and where the assistant fails them.
+
+The objection that kept this out for six weeks was never wrong, so it is
+answered rather than dropped. Three constraints, each load-bearing:
+
+1. **One reader.** `GET /chatbot/admin/conversations` is `SUPER_ADMIN` only —
+   stricter in spirit than the persona editor beside it, which merely edits
+   house style. Opening a conversation writes an audit line naming who read it.
+2. **Ninety days, enforced by a job that proves it ran.**
+   `jobs/chatbot-transcript-purge.job.ts` deletes conversations whose last turn
+   is older than 90 days, nightly at 03:15 WIB, and writes an `audit_logs` row
+   **every run, including the runs that delete nothing**. That zero-row is the
+   whole point: a table that is empty because nothing expired and a table that
+   is empty because the purge died three months ago look identical, and only the
+   trail tells them apart. Retention is half of why storing this is defensible,
+   so it cannot be a promise nobody can check.
+3. **Nothing that identifies a person.** No IP, no user agent, no cookie. The
+   only key is a `conversationId` the browser mints per open widget, which
+   grants nothing and links to nobody. Enough to read a conversation as a
+   conversation; not enough to follow anyone.
+
+Two smaller decisions worth keeping:
+
+- **The transcript is not the usage ledger, and the difference is deliberate.**
+  `chatbot_usage_daily` records what was *paid for*; the transcript records what
+  was *said*. A cache hit costs nothing and is absent from the ledger, but the
+  visitor still read it, so it appears here — flagged `fromCache`, because a
+  wrong answer that turns out to be a replay is fixed by clearing the cache, not
+  by editing the persona.
+- **The answer is sent before the transcript is written.** `recordTurn` swallows
+  its own errors, but ordering it ahead of `res.json` would make a correctly
+  answered question depend on a bookkeeping write succeeding. After the
+  response, nothing below it can reach the visitor.
+
 ## 8. Phasing, and why the authenticated half waits
 
 **Phase 1 — public widget only.** RAG over the 19 public pages, the live SPMB

@@ -81,6 +81,20 @@ export interface AskOptions {
 }
 
 /**
+ * Apa yang `ask()` kembalikan ke dalam sistem — bukan apa yang dikirim ke
+ * peramban.
+ *
+ * `cached` adalah satu-satunya bedanya, dan ia dilucuti di controller sebelum
+ * jawabannya keluar. Riwayat percakapan menyimpannya karena ia menjawab
+ * pertanyaan yang sering muncul saat membaca jawaban yang keliru: apakah model
+ * baru saja mengarangnya, atau ini pemutaran ulang yang perlu dibersihkan dari
+ * cache? Pengunjung tidak punya urusan dengan jawaban itu.
+ */
+export interface AskResult extends PublicChatResponse {
+  cached?: boolean;
+}
+
+/**
  * A refusal the service produces itself, without consulting the model.
  *
  * Reached when retrieval and the live lookups both come back empty. Asking a
@@ -102,7 +116,7 @@ function groundedRefusal(): PublicChatResponse {
   };
 }
 
-export async function ask(options: AskOptions): Promise<PublicChatResponse> {
+export async function ask(options: AskOptions): Promise<AskResult> {
   const {
     question,
     history = [],
@@ -140,7 +154,7 @@ export async function ask(options: AskOptions): Promise<PublicChatResponse> {
     const hit = await readCached(cacheKey);
     if (hit) {
       logger.debug('Chatbot cache hit');
-      return hit;
+      return { ...hit, cached: true };
     }
   }
 

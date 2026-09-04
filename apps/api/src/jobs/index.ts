@@ -17,3 +17,9 @@ export {
   CHATBOT_SPEND_AUDIT_ENTITY,
   type ChatbotSpendCheckResult,
 } from './chatbot-spend.job';
+export {
+  runChatbotTranscriptPurge,
+  TRANSCRIPT_PURGE_AUDIT_ACTION,
+  TRANSCRIPT_PURGE_AUDIT_ENTITY,
+  type TranscriptPurgeSummary,
+} from './chatbot-transcript-purge.job';

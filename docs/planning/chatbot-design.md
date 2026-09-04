@@ -304,13 +304,16 @@ deterministic answers that never reach the model.
 >   start at 0. Production runs 0.19 / 0.51 / 0.028 USD per 1M tokens against a
 >   10 USD monthly budget, from the Azure AI Foundry price page for
 >   *DeepSeek-V4 Flash Global*.
-> - **The cached-input rate is wired but inert, so the figure leans high.** The
->   live deployment reports no cached-token count at all — its `usage` block is
->   `prompt_tokens`, `completion_tokens`, `total_tokens`, `audio_prompt_tokens`
->   (checked 2026-09-04) — so input tokens the provider billed at 0.028 are
->   estimated at 0.19. A budget alarm that rings early is the correct failure
->   direction, and the mail states which way it leans rather than presenting a
->   clean number.
+> - **The cached-input rate is live — CORRECTED 2026-09-04.** This bullet first
+>   claimed the deployment reports no cached-token count at all, so the rate was
+>   inert and every estimate an upper bound. That was one observation stretched
+>   too far: the response inspected simply had no cache hit, and the field is
+>   absent rather than always missing. Production the same day recorded **2,304
+>   of 8,589 prompt tokens as cached**, on real visitor traffic. The 0.028 rate
+>   is therefore applied, and the estimate is more accurate than promised, not
+>   less. What survives is the flag, not the claim: `cacheUnreported` is
+>   computed from the data, so a month with no reported cache still says out
+>   loud that its figure leans high — and now it says so only when true.
 > - **Unpriced does not mean silent.** With no price or no budget set, the job
 >   mails a configuration notice once a month — but only in a month the
 >   assistant was actually used. Going quiet when unconfigured is the exact

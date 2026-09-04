@@ -143,3 +143,48 @@ export interface ChatbotConversationListResponse {
   /** Berapa hari riwayat disimpan sebelum dihapus otomatis. */
   retentionDays: number;
 }
+
+/**
+ * Pemakaian dan taksiran biaya asisten publik bulan berjalan (WIB).
+ *
+ * Setiap bendera di sini ada karena angka yang terdengar pasti padahal tidak
+ * adalah jenis kekeliruan yang paling merugikan di sistem ini. Halaman yang
+ * menampilkannya WAJIB menyampaikan arah kemelesetannya, bukan hanya
+ * angkanya — lihat `estimateCost` di apps/api.
+ */
+export interface ChatbotUsageResponse {
+  /** `2026-09` — bulan WIB yang dijumlahkan. */
+  monthKey: string;
+  requests: number;
+  promptTokens: number;
+  completionTokens: number;
+  cachedPromptTokens: number;
+  /** Panggilan berhasil yang penyedianya tidak melaporkan tokennya. */
+  unmeteredRequests: number;
+  byModel: Array<{
+    model: string;
+    requests: number;
+    promptTokens: number;
+    completionTokens: number;
+    cachedPromptTokens: number;
+    unmeteredRequests: number;
+  }>;
+
+  cost: {
+    amount: number;
+    currency: string;
+    /** Salah bila harga belum diisi — angkanya tidak berarti apa-apa. */
+    priced: boolean;
+    /** Benar bila taksirannya BATAS ATAS: cache tidak dilaporkan penyedia. */
+    cacheUnreported: boolean;
+    /** Benar bila taksirannya batas BAWAH: ada panggilan tak terukur. */
+    incomplete: boolean;
+  };
+
+  /** Anggaran bulanan; 0 bila belum diatur. */
+  monthlyBudget: number;
+  /** Persen dari anggaran; null bila anggaran atau harga belum diatur. */
+  percentOfBudget: number | null;
+  /** Ke mana peringatan dikirim, supaya layarnya bisa menyebutkannya. */
+  alertTo: string;
+}

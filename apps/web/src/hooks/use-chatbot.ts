@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import type {
+  ChatbotUsageResponse,
   ChatbotConversationDetail,
   ChatbotConversationListResponse,
   ChatMessage,
@@ -80,6 +81,24 @@ export function useChatbotConversation(id: string | null) {
       return response.data.data;
     },
     enabled: Boolean(id),
+  });
+}
+
+/**
+ * Pemakaian dan taksiran biaya bulan berjalan (super admin).
+ *
+ * `staleTime` satu menit: angkanya bertambah sepanjang hari, tetapi tidak
+ * secepat itu, dan setiap pemuatan ulang adalah kueri agregat atas seluruh
+ * bulan.
+ */
+export function useChatbotUsage() {
+  return useQuery({
+    queryKey: ["chatbot", "usage"],
+    queryFn: async (): Promise<ChatbotUsageResponse> => {
+      const response = await api.get("/chatbot/admin/usage");
+      return response.data.data;
+    },
+    staleTime: 60 * 1000,
   });
 }
 

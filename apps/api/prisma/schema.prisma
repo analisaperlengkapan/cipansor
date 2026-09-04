@@ -6255,11 +6255,18 @@ model ChatbotUsageDaily {
   /// Bagian dari `promptTokens` yang dilayani dari cache milik PENYEDIA, yang
   /// ditagih jauh lebih murah (Azure: 0,028 lawan 0,19 USD per 1 juta).
   ///
-  /// Nol sepanjang deployment yang dipakai tidak melaporkannya — dan
-  /// DeepSeek-V4-Flash-0731 memang tidak (diperiksa 2026-09-04: `usage` hanya
-  /// berisi prompt/completion/total/audio). Kolomnya tetap ada supaya
-  /// penggantian model tidak menuntut migrasi, dan supaya taksirannya dapat
-  /// menyebut dirinya batas atas dengan alasan yang tertulis.
+  /// DIKOREKSI 2026-09-04: kolom ini semula didokumentasikan akan selalu nol,
+  /// karena satu jawaban yang diperiksa tidak memuat
+  /// `prompt_tokens_details.cached_tokens`. Kesimpulan itu terlalu luas dari
+  /// satu pengamatan — jawaban itu kebetulan tidak kena cache. Produksi hari
+  /// yang sama mencatat 2.304 dari 8.589 token masukan berasal dari cache,
+  /// jadi tarif cache memang terpakai dan medannya memang dilaporkan, hanya
+  /// tidak pada setiap jawaban.
+  ///
+  /// Nol tetap mungkin dan tetap bermakna: ia berarti "tidak ada yang kena
+  /// cache bulan ini", dan `estimateCost` membacanya sebagai tanda bahwa
+  /// taksirannya condong ke atas — bukan sebagai kepastian bahwa penyedianya
+  /// bisu.
   cachedPromptTokens Int @default(0) @map("cached_prompt_tokens")
 
   /// Panggilan berhasil yang jawabannya tidak menyertakan blok `usage`.

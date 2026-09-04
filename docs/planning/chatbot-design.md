@@ -87,6 +87,90 @@ precision silently.
 matching is the bottleneck — measure, then swap. The advice above applies at
 that moment, unchanged.
 
+### REVISED AGAIN (2026-09-04) — the corpus is sent whole, and retrieval no longer gates
+
+Measured: the public corpus is **2,513 characters, ~628 tokens** across 8
+entries. Less than one page.
+
+Retrieval exists to solve one problem — a corpus that does not fit in the
+prompt. Ours fits, with room to spare. Current practice puts the "just put it in
+the context" threshold around **100K tokens, or a few hundred documents**; we
+are two orders of magnitude below it. Selecting 4 entries out of 8 saved
+nothing measurable and cost a failure mode that reached a real visitor:
+
+> `ada`, `apa` and `saja` are all stopwords — deliberately, so BM25 does not
+> rank on sentence shape. That left **one** term, "informasi", which no entry
+> discusses. Zero chunks retrieved, and the service refused **without ever
+> calling the model**. The most natural question anyone can ask an assistant —
+> *what can you help with?* — was the one guaranteed to fail.
+
+So the pipeline changed shape:
+
+| Before | After |
+| --- | --- |
+| BM25 picks ≤4 entries | The **whole corpus** goes into every prompt |
+| 0 chunks ⇒ service refuses, model never called | Refusal is the **model's** to write, under scaffold rules 1, 2 and 5 |
+| `sources` = what BM25 ranked | `sources` = what the model **says it used** (rule 7), filtered against the real corpus, falling back to BM25 |
+| `refused` = "the service declined" | `refused` = `looksLikeRefusal(answer)` — see `refusal.ts`, whose patterns were tightened to require the *assistant* (or the *information*) as the subject, so "biaya tidak dapat dikembalikan" is no longer read as a refusal |
+
+`groundedRefusal()` survives, but only as a last line of defence for a state no
+question can reach: an empty corpus AND no live facts.
+
+**Techniques deliberately NOT adopted, and the reason:**
+
+- **Hybrid BM25 + dense embeddings with RRF.** The right answer for a large
+  mixed corpus — ~7.4% NDCG lift on WANDS (0.7497 vs 0.6983 / 0.6953), RRF at
+  k=60 as the zero-config default. Here it means standing up a vector index and
+  an embedding call per question **to rank 8 documents that are all being sent
+  anyway**. Ranking buys nothing when there is no selection.
+- **Query rewriting / HyDE.** The literature's diagnosis is exactly our bug —
+  *"most retrieval failures are query-shape failures; a short user question does
+  not sit in the same region as the answer documents"* — but the cure is an
+  extra model call per question, for a problem 600 tokens of context deletes.
+- **Agentic RAG** (the model drives retrieval and re-queries). 2–4× the calls
+  and latency on a path already measured at 8–33 s. Built for corpora that do
+  not fit.
+- **Letting the model browse the public site live.** Slower, and it turns page
+  content into an instruction channel — rule 4 exists precisely because context
+  is data, not commands. The site's content is already mirrored in the corpus.
+
+**Revisit trigger, so this is not re-litigated from taste:** when the corpus
+passes **~100K tokens or a few hundred documents** — indexing every site
+article, naskah dinas, and the full SPMB FAQ would do it — hybrid retrieval with
+RRF and a query-rewriting layer become the right spend. Not before.
+
+A detour worth recording, because it was decided and then reversed by
+measurement: `refused` was briefly gated on the model citing no sources —
+"if it named a source, it answered". A live run killed it. Rule 5 tells the
+model to list the available topics and give the contact number *when it
+declines*, so refusals cite `bantuan-ikhtisar` and `kontak` too. The signal
+separated nothing. What separates them is inside the sentence — its subject.
+
+**The cost this accepted:** an off-topic question now reaches the model, where
+it used to be refused for free. Prompt tokens per call rise by roughly the
+entries BM25 would have dropped. Turnstile plus the 10/minute per-IP limiter
+still bound the abuse case, and refusals are deliberately **not cached** so a
+wrong one cannot stick.
+
+Measured on the real model, same questions, same day:
+
+| Question | Before | After |
+| --- | ---: | ---: |
+| "ada informasi apa saja" | 999 prompt tokens | 3,300 |
+| "di mana lokasinya dan berapa biaya pendaftarannya?" | 1,385 | 3,317 |
+
+Production averaged **1,174 prompt tokens per call** before this. At the
+configured prices (0.19 USD / 1M input, 0.51 output) that is roughly **0.30 →
+0.70 USD per 1,000 questions**.
+
+The offsetting effect, which is a checkable prediction rather than a promise:
+sending a constant corpus makes the prompt **prefix** identical across every
+question for the first time, which is exactly the shape provider-side prompt
+caching rewards — billed at 0.028 rather than 0.19, **6.8× cheaper**. On
+2026-09-04, before this change, 2,304 of 10,566 prompt tokens were already
+served from that cache. `chatbot_usage_daily.cached_prompt_tokens` will show
+whether that share rises after deployment.
+
 ## 2. The central decision: RAG for public content, tools for private data
 
 The requirement says the logged-in assistant should reach "data sesuai

@@ -15,9 +15,10 @@ import type { ChatMessage, ChatSource, PublicChatResponse } from '@cipansor/shar
 import { config } from '@/config';
 import { logger } from '@/lib/logger';
 import { defaultRetriever, type Retriever } from './retrieval';
-import { topicLabels } from './knowledge-base';
+import { knowledgeBase, topicLabels, type KnowledgeEntry } from './knowledge-base';
+import { looksLikeRefusal } from './refusal';
 import { collectLiveFacts } from './live-facts';
-import { buildMessages } from './prompt';
+import { buildMessages, splitCitedSources } from './prompt';
 import { resolvePublicPersona } from './persona.service';
 import { cacheKeyFor, isCacheable, readCached, writeCached } from './cache';
 import { recordUsage } from './usage.service';
@@ -76,6 +77,12 @@ export interface AskOptions {
   /** Injected in tests; production resolves from config. */
   provider?: LlmProvider | null;
   retriever?: Retriever;
+  /**
+   * Korpus yang dikirim ke model. Produksi memakai seluruhnya; uji menyuntik
+   * korpus kosong untuk mencapai jalur pertahanan yang tidak bisa dijangkau
+   * pertanyaan mana pun.
+   */
+  entries?: KnowledgeEntry[];
   /** Additive persona text. Never able to remove a safety rule — see prompt.ts. */
   persona?: string;
   now?: Date;
@@ -98,9 +105,17 @@ export interface AskResult extends PublicChatResponse {
 /**
  * A refusal the service produces itself, without consulting the model.
  *
- * Reached when retrieval and the live lookups both come back empty. Asking a
- * model to decline politely when it has been given nothing is a request it can
- * decline to honour; not calling it at all is not.
+ * TIDAK LAGI dipicu oleh hasil pencarian. Dulu ia keluar setiap kali BM25
+ * pulang dengan tangan kosong, dan itulah cacatnya: pemotong kata henti
+ * menyisakan satu kata dari "ada informasi apa saja", tidak ada entri yang
+ * cocok, dan pertanyaan yang sebenarnya terjawab ditolak tanpa pernah menyentuh
+ * model.
+ *
+ * Sekarang ia hanya menjaga satu keadaan yang tidak bisa dicapai oleh
+ * pertanyaan apa pun: korpus benar-benar kosong DAN tidak ada fakta live —
+ * misalnya karena sebuah suntingan mengosongkan `knowledgeBase`. Meminta model
+ * menolak dengan sopan ketika ia tidak diberi apa-apa adalah permintaan yang
+ * bisa ia abaikan; tidak memanggilnya sama sekali tidak bisa.
  */
 function groundedRefusal(): PublicChatResponse {
   // Written out rather than generated so it matches the house style even though
@@ -146,10 +161,20 @@ export async function ask(options: AskOptions): Promise<AskResult> {
     throw new ChatbotUnavailableError('Chatbot is not configured');
   }
 
-  const chunks = retriever.search(question);
+  const entries = options.entries ?? knowledgeBase;
   const liveFacts = await collectLiveFacts(question, now);
 
-  if (chunks.length === 0 && liveFacts.length === 0) {
+  // SELURUH korpus ikut dikirim, dan pencarian tidak lagi punya hak veto.
+  //
+  // Korpusnya sekitar 628 token — kurang dari satu halaman. RAG ada untuk
+  // korpus yang tidak muat di dalam prompt; praktik terkini menaruh ambangnya
+  // di sekitar 100 ribu token, dua orde besaran di atas kita. Jadi memilih 4
+  // dari 8 entri tidak membeli apa pun, sementara harganya nyata: pemilih itu
+  // pernah memveto pertanyaan yang jelas-jelas terjawab.
+  //
+  // Yang tersisa di bawah ini bukan gerbang, melainkan pertahanan terakhir
+  // untuk keadaan yang tidak bisa dicapai lewat pertanyaan: korpus kosong.
+  if (entries.length === 0 && liveFacts.length === 0) {
     return groundedRefusal();
   }
 
@@ -178,7 +203,7 @@ export async function ask(options: AskOptions): Promise<AskResult> {
   // context window are ours, so the ceiling is enforced here.
   const trimmed = history.slice(-config.chatbot.maxHistoryTurns);
 
-  const messages = buildMessages({ question, chunks, liveFacts, persona, history: trimmed });
+  const messages = buildMessages({ question, entries, liveFacts, persona, history: trimmed });
 
   let result;
   try {
@@ -211,9 +236,24 @@ export async function ask(options: AskOptions): Promise<AskResult> {
   // menjadi chatbot yang rusak.
   await recordUsage({ model: result.model, usage: result.usage, now });
 
+  // Baris "SUMBER: ..." yang diminta aturan 7 dipotong di sini, sebelum apa pun
+  // menyentuh penanya, riwayat percakapan atau cache.
+  const { answer, citedIds } = splitCitedSources(result.text);
+
+  // Id yang disebut model DISARING terhadap korpus sungguhan: sebuah id
+  // karangan tidak boleh muncul sebagai sumber, karena sumber palsu lebih buruk
+  // daripada tidak ada sumber. Bila model lupa menyebutkannya sama sekali,
+  // peringkat BM25 dipakai sebagai cadangan — bukan sebagai kebenaran, hanya
+  // sebagai tebakan terbaik yang bisa dibuat tanpa bertanya lagi.
+  const byId = new Map(entries.map((entry) => [entry.id, entry]));
+  const cited = citedIds
+    .map((id) => byId.get(id))
+    .filter((entry): entry is KnowledgeEntry => Boolean(entry));
+  const attributed = cited.length > 0 ? cited : retriever.search(question).map((c) => c.entry);
+
   const sources: ChatSource[] = [
     ...liveFacts.map((fact) => ({ id: fact.id, title: fact.title, kind: 'live' as const })),
-    ...chunks.map(({ entry }) => ({
+    ...attributed.map((entry) => ({
       id: entry.id,
       title: entry.title,
       url: entry.url,
@@ -221,17 +261,37 @@ export async function ask(options: AskOptions): Promise<AskResult> {
     })),
   ];
 
+  // Penolakan sekarang ditulis MODEL, bukan layanan, jadi `refused` harus
+  // dibaca dari kalimatnya. Tanpa ini ia akan selalu `false`, dan dua hal ikut
+  // rusak diam-diam: hitungan penolakan di halaman Riwayat Percakapan — yang
+  // gunanya justru menemukan pertanyaan yang tidak terjawab — dan himpunan
+  // red-team di perangkat eval, yang menganggap penolakan sebagai kelulusan.
+  //
+  // Sempat dipagari dengan syarat "model tidak mengutip sumber". Dibatalkan
+  // oleh uji ke model sungguhan: aturan 5 menyuruh model menyebut daftar topik
+  // dan kontak ketika menolak, sehingga penolakan pun ikut mengutip. Yang
+  // memisahkan penolakan dari jawaban ada di dalam kalimatnya sendiri —
+  // subjeknya — dan itu dikerjakan `refusal.ts`.
+  const refused = looksLikeRefusal(answer);
+
   const response: PublicChatResponse = {
-    answer: result.text,
+    answer,
     sources,
-    refused: false,
+    refused,
     model: result.model,
   };
 
   // Written after the answer is built, and awaited so a test can observe it.
   // A failed write is logged and swallowed inside `writeCached` — a cache that
   // is down must never become a chatbot that is down.
-  if (cacheKey) await writeCached(cacheKey, response);
+  //
+  // PENOLAKAN TIDAK DISIMPAN. Dulu ia tidak pernah sampai ke sini karena
+  // layanan pulang lebih awal; sekarang ia sampai, jadi keputusannya harus
+  // dinyatakan. Penolakan murah dibuat ulang, dan penolakan yang KELIRU — yang
+  // baru saja kita perbaiki satu kasusnya — tidak boleh terpaku selama masa
+  // hidup cache. Perlindungan biaya terhadap pengulangan sudah dipegang
+  // Turnstile dan batas 10 per menit per IP.
+  if (cacheKey && !refused) await writeCached(cacheKey, response);
 
   return response;
 }

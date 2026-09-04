@@ -75,6 +75,26 @@ export const ask = asyncHandler(async (req: Request, res: Response) => {
     }
     return;
   } catch (error) {
+    if (error instanceof chatbotService.ChatbotBusyError) {
+      // 503 juga, tetapi dengan `Retry-After` — dan kalimat yang berbeda.
+      // "Sedang tidak tersedia" pada asisten yang sebenarnya hidup dan hanya
+      // ramai adalah kabar yang keliru: ia menyuruh penanya menyerah, padahal
+      // mencoba lagi sepuluh detik lagi hampir pasti berhasil.
+      res
+        .set('Retry-After', String(error.retryAfterSeconds))
+        .status(503)
+        .json(
+          // Urutannya pesan-dulu-baru-kode (`ApiResponse.error(message, code)`).
+          // Ketiga pemanggilan di berkas ini pernah tertukar, sehingga `code`
+          // berisi kalimat bahasa Indonesia dan `message` berisi konstanta —
+          // yang membalik gunanya: kode itulah yang dibaca mesin.
+          ApiResponse.error(
+            'Asisten sedang ramai. Mohon coba lagi sebentar lagi 🙏',
+            'CHATBOT_BUSY'
+          )
+        );
+      return;
+    }
     if (error instanceof chatbotService.ChatbotUnavailableError) {
       // 503, not 500: the assistant being switched off or its provider being
       // down is an expected state, and the widget renders a calm message with
@@ -83,8 +103,8 @@ export const ask = asyncHandler(async (req: Request, res: Response) => {
         .status(503)
         .json(
           ApiResponse.error(
-            'CHATBOT_UNAVAILABLE',
-            'Asisten sedang tidak tersedia. Silakan hubungi kami melalui telepon atau WhatsApp.'
+            'Asisten sedang tidak tersedia. Silakan hubungi kami melalui telepon atau WhatsApp.',
+            'CHATBOT_UNAVAILABLE'
           )
         );
       return;
@@ -179,7 +199,7 @@ export const getConversation = asyncHandler(async (req: Request, res: Response) 
   const conversation = await transcriptService.getConversation(req.params.id);
 
   if (!conversation) {
-    res.status(404).json(ApiResponse.error('NOT_FOUND', 'Percakapan tidak ditemukan'));
+    res.status(404).json(ApiResponse.error('Percakapan tidak ditemukan', 'NOT_FOUND'));
     return;
   }
 

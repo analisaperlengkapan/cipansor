@@ -5,6 +5,7 @@ vi.mock('@/lib/logger', () => ({
 }));
 
 import { OpenAiCompatibleProvider } from '../providers/openai-compatible';
+import { config } from '@/config';
 
 function respondWith(body: unknown) {
   const fetchMock = vi.fn(async () => ({
@@ -53,5 +54,102 @@ describe('OpenAiCompatibleProvider usage', () => {
     });
 
     expect((await provider().complete(request)).usage).toBeUndefined();
+  });
+});
+
+/**
+ * Jawaban galat, lengkap dengan header — bentuk yang dibaca jalur coba-ulang.
+ */
+function errorResponse(status: number, retryAfter?: string) {
+  return {
+    ok: false,
+    status,
+    headers: { get: (name: string) => (name.toLowerCase() === 'retry-after' ? retryAfter ?? null : null) },
+    json: async () => ({}),
+  };
+}
+
+function okResponse() {
+  return {
+    ok: true,
+    status: 200,
+    headers: { get: () => null },
+    json: async () => ({ choices: [{ message: { content: 'jawaban' } }], model: 'model-a' }),
+  };
+}
+
+describe('OpenAiCompatibleProvider ketika penyedianya sedang penuh', () => {
+  const asli = { ...config.chatbot.retry };
+
+  beforeEach(() => {
+    // Jeda dipangkas supaya ujinya cepat; yang diuji di sini adalah KEPUTUSAN
+    // mengulang atau tidak, bukan panjang jedanya — itu milik retry.test.ts.
+    Object.assign(config.chatbot.retry, {
+      maxAttempts: 3,
+      baseDelayMs: 1,
+      maxDelayMs: 2,
+      budgetMs: 5_000,
+    });
+  });
+  afterEach(() => Object.assign(config.chatbot.retry, asli));
+
+  it('mengulang 429 lalu membawa pulang jawabannya', async () => {
+    // Inilah alasan seluruh lapisan ini ada: Azure AI Foundry menjawab 429
+    // ketika batas per menitnya tersentuh. Tanpa pengulangan, jawaban yang
+    // sebenarnya tinggal menunggu setengah detik menjadi "asisten sedang tidak
+    // tersedia" di layar penanya.
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(errorResponse(429, '0'))
+      .mockResolvedValueOnce(errorResponse(429, '0'))
+      .mockResolvedValueOnce(okResponse());
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(provider().complete(request)).resolves.toMatchObject({ text: 'jawaban' });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('tidak pernah mengulang kunci yang salah', async () => {
+    // 401 tidak akan sembuh dengan menunggu, dan mengulanginya saat kuota ketat
+    // menghabiskan jatah untuk permintaan yang tidak mungkin berhasil.
+    const fetchMock = vi.fn().mockResolvedValue(errorResponse(401));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(provider().complete(request)).rejects.toThrow('401');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('tidak pernah mengulang permintaan yang cacat', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(errorResponse(400));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(provider().complete(request)).rejects.toThrow('400');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('berhenti mencoba ketika Retry-After lebih panjang dari anggarannya', async () => {
+    // Tidur lalu gagal adalah hasil terburuk. Penyedia yang meminta menunggu
+    // satu jam tidak akan pulih dalam anggaran kita, jadi katakan sekarang.
+    Object.assign(config.chatbot.retry, { budgetMs: 2_000 });
+    const fetchMock = vi.fn().mockResolvedValue(errorResponse(429, '3600'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(provider().complete(request)).rejects.toThrow('429');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('mengulang putus jaringan, tetapi tidak mengulang habis-waktu', async () => {
+    // Habis-waktu berarti panggilannya sudah memakan seluruh kesabaran penanya;
+    // mengulanginya meminta ia menunggu dua kali lipat untuk panggilan yang
+    // memang terlalu lambat. Putus jaringan lain sembuh dalam milidetik.
+    const putus = vi.fn().mockRejectedValueOnce(new Error('ECONNRESET')).mockResolvedValueOnce(okResponse());
+    vi.stubGlobal('fetch', putus);
+    await expect(provider().complete(request)).resolves.toMatchObject({ text: 'jawaban' });
+    expect(putus).toHaveBeenCalledTimes(2);
+
+    const habisWaktu = vi.fn().mockRejectedValue(Object.assign(new Error('timed out'), { name: 'TimeoutError' }));
+    vi.stubGlobal('fetch', habisWaktu);
+    await expect(provider().complete(request)).rejects.toThrow('timed out');
+    expect(habisWaktu).toHaveBeenCalledTimes(1);
   });
 });

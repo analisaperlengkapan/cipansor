@@ -17,6 +17,7 @@ import { logger } from '@/lib/logger';
 import { defaultRetriever, type Retriever } from './retrieval';
 import { knowledgeBase, topicLabels, type KnowledgeEntry } from './knowledge-base';
 import { looksLikeRefusal } from './refusal';
+import { ChatbotBusyError, createThrottle, type Throttle } from './throttle';
 import { collectLiveFacts } from './live-facts';
 import { buildMessages, splitCitedSources } from './prompt';
 import { resolvePublicPersona } from './persona.service';
@@ -25,6 +26,17 @@ import { recordUsage } from './usage.service';
 import type { LlmProvider } from './providers/types';
 import { OpenAiCompatibleProvider } from './providers/openai-compatible';
 import { StubProvider } from './providers/stub';
+
+/**
+ * Pembatas kesejajaran bersama untuk seluruh proses.
+ *
+ * Dibuat sekali di tingkat modul dengan sengaja: yang dilindunginya adalah
+ * kuota per menit MILIK SATU DEPLOYMENT, jadi ia harus dihitung sekali untuk
+ * seluruh proses, bukan sekali per permintaan.
+ */
+const throttle = createThrottle(config.chatbot.throttle);
+
+export { ChatbotBusyError };
 
 export class ChatbotUnavailableError extends Error {
   constructor(message: string) {
@@ -83,6 +95,12 @@ export interface AskOptions {
    * pertanyaan mana pun.
    */
   entries?: KnowledgeEntry[];
+  /**
+   * Pembatas kesejajaran. Produksi memakai satu milik proses; uji menyuntik
+   * miliknya sendiri, karena yang perlu dibuktikan adalah bahwa jalur cache dan
+   * jalur penolakan TIDAK ikut meminta giliran.
+   */
+  throttle?: Throttle;
   /** Additive persona text. Never able to remove a safety rule — see prompt.ts. */
   persona?: string;
   now?: Date;
@@ -154,6 +172,7 @@ export async function ask(options: AskOptions): Promise<AskResult> {
     provider = resolveProvider(),
     retriever = defaultRetriever,
     persona: personaOverride,
+    throttle: throttleOverride = throttle,
     now = new Date(),
   } = options;
 
@@ -207,12 +226,26 @@ export async function ask(options: AskOptions): Promise<AskResult> {
 
   let result;
   try {
-    result = await provider.complete({
-      messages,
-      maxTokens: config.chatbot.maxTokens,
-      temperature: config.chatbot.temperature,
-    });
+    // Pembatas kesejajaran melingkupi HANYA panggilan penyedia.
+    //
+    // Bukan seluruh `ask()`, dan itu penting: jawaban dari cache serta
+    // penolakan pertahanan-terakhir sudah pulang di atas sini tanpa pernah
+    // meminta giliran. Keduanya tidak memanggil siapa pun, jadi membuatnya
+    // mengantre hanya akan memperlambat justru jalur yang paling murah — dan
+    // pada saat sibuk, cache adalah katup pelepas tekanan, bukan beban.
+    result = await throttleOverride.run(() =>
+      provider.complete({
+        messages,
+        maxTokens: config.chatbot.maxTokens,
+        temperature: config.chatbot.temperature,
+      })
+    );
   } catch (error) {
+    // Sibuk bukan rusak. `ChatbotBusyError` naik apa adanya supaya permukaan
+    // HTTP dapat menjawab 503 dengan `Retry-After` — sebuah undangan untuk
+    // mencoba lagi sebentar lagi, bukan kabar bahwa asisten mati.
+    if (error instanceof ChatbotBusyError) throw error;
+
     // Log the message and name explicitly. A bare `{ error }` serialises an
     // Error to `{}`, which is what the first real provider run produced — an
     // outage report with nothing in it to act on.

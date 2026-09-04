@@ -294,6 +294,48 @@ export const config = {
     temperature: parseFloat(process.env.CHATBOT_TEMPERATURE || '0.2'),
     /** Turns of prior conversation replayed to the model, oldest dropped first. */
     maxHistoryTurns: parseInt(process.env.CHATBOT_MAX_HISTORY_TURNS || '6', 10),
+
+    /**
+     * Coba ulang ketika penyedia menjawab "sebentar", bukan "salah".
+     *
+     * Azure AI Foundry membatasi permintaan dan token per menit; sentuhan pada
+     * batas itu datang sebagai HTTP 429 dengan `Retry-After`. Tiga percobaan
+     * dengan backoff full-jitter menutup lonjakan pendek tanpa mengubah satu
+     * gangguan panjang menjadi penantian panjang — lihat `chatbot/retry.ts`
+     * untuk apa yang TIDAK diulang, dan kenapa.
+     */
+    retry: {
+      /** Termasuk percobaan pertama. Setel 1 untuk mematikan pengulangan. */
+      maxAttempts: parseInt(process.env.CHATBOT_RETRY_MAX_ATTEMPTS || '3', 10),
+      baseDelayMs: parseInt(process.env.CHATBOT_RETRY_BASE_MS || '500', 10),
+      maxDelayMs: parseInt(process.env.CHATBOT_RETRY_MAX_DELAY_MS || '8000', 10),
+      /**
+       * Batas waktu SELURUH rangkaian percobaan, bukan per percobaan.
+       *
+       * 90 detik dipilih dari langit-langit di atas kita, bukan dari selera:
+       * Cloudflare memutus permintaan yang belum dijawab pada 100 detik dengan
+       * galat 524, dan jawaban yang tiba sesudah itu tidak pernah sampai ke
+       * siapa pun. Anggaran ini harus tetap di bawahnya.
+       */
+      budgetMs: parseInt(process.env.CHATBOT_RETRY_BUDGET_MS || '90000', 10),
+    },
+
+    /**
+     * Pembatas kesejajaran di depan penyedia — lihat `chatbot/throttle.ts`.
+     *
+     * Coba ulang menolong satu permintaan yang menabrak batas; ini mencegah
+     * kita sendiri yang menyebabkan batas itu tersentuh.
+     */
+    throttle: {
+      maxConcurrent: parseInt(process.env.CHATBOT_MAX_CONCURRENT || '3', 10),
+      maxQueue: parseInt(process.env.CHATBOT_QUEUE_MAX || '20', 10),
+      /**
+       * Penanya menunggu di layar, jadi antriannya pendek dengan sengaja.
+       * Sesudah ini kita menjawab "sedang sibuk" — jawaban cepat yang jelas
+       * lebih baik daripada penantian panjang yang berakhir sama.
+       */
+      maxWaitMs: parseInt(process.env.CHATBOT_QUEUE_WAIT_MS || '10000', 10),
+    },
     /**
      * House style (greeting, tone, emoji, closing). Additive persona only — it
      * is appended below the safety scaffold and can never revoke a rule, so it

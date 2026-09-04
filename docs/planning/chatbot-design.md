@@ -331,6 +331,59 @@ code — `berita` included, which is not database-backed.
   was fixed in this system in July 2026. A bot that confidently quotes last
   year's fee to a prospective family is a real harm, not a cosmetic bug.
 
+## 6a. Surge: retry, and a queue that is deliberately short (2026-09-04)
+
+Azure AI Foundry caps requests and tokens per minute. Touching the cap comes
+back as **HTTP 429 with `Retry-After`** — "in a moment", not "you are wrong".
+Without a retry layer, an answer that was half a second away becomes "asisten
+sedang tidak tersedia" on the visitor's screen.
+
+Three decisions shape `chatbot/retry.ts`, because a retry fitted without
+thought is how an incident is made worse:
+
+1. **Only transient failures are retried** — 408, 425, 429, 5xx. A 400 means
+   our request is malformed and a 401 means the key is wrong; neither heals by
+   waiting, and retrying them spends the quota that is left on calls that
+   cannot succeed. This is enforced by *type* (`TransientUpstreamError`), not by
+   a deny-list, so the default for anything unclassified is "do not retry".
+2. **Timeouts are NOT retried.** A call that reached the 60-second ceiling has
+   already spent the visitor's patience; retrying asks them to wait two minutes
+   for a call that was too slow the first time. Other network faults — DNS,
+   connection refused, a dropped socket — heal in milliseconds and are retried.
+3. **`Retry-After` is obeyed, not clamped.** The server knows when its quota
+   returns; our backoff is a guess. An early draft capped the header at
+   `maxDelayMs`, which turned "wait 30 seconds" into "come back in 1 second" —
+   the exact behaviour that turns an outage into a worse one. It was caught by
+   the test that asserts we give up rather than sleep past the budget. The cap
+   belongs to our own guess; the server's instruction is honoured, and the time
+   budget decides whether we can afford it.
+
+Backoff uses **full jitter** (`random() × delay`), not a fixed wait: several
+requests rejected in the same second would otherwise wake in the same second
+and hit the same cap again.
+
+`chatbot/throttle.ts` handles the other half — stopping us from *causing* the
+cap. Ten visitors asking at once means ten concurrent calls; three at a time
+plus a short queue means the endpoint sees three.
+
+**Why the queue is short, and why that is not a compromise.** The visitor is
+watching a screen and their HTTP request dies around the minute mark. A queue
+that holds a question until quota returns produces a visitor who has already
+closed the tab. So waiting is capped at ten seconds, after which we answer
+honestly that the assistant is busy — **HTTP 503 with `Retry-After`**, and a
+different sentence from "unavailable", because "unavailable" tells someone to
+give up when trying again shortly would have worked.
+
+A **durable** queue is right for work nobody is watching — forwarding a
+question by email is the obvious case. Not for this.
+
+**No circuit breaker, deliberately.** It was considered and left out: a breaker
+is a stateful component whose own failure mode is an outage we cause (stuck
+open), and at nine questions a day it protects against nothing we have. Most of
+its benefit is already there for free — when `Retry-After` exceeds the remaining
+budget we fail immediately rather than sleeping, so a genuinely exhausted quota
+already fails fast. Revisit if sustained 429s ever appear in the logs.
+
 ## 7. Risks that are easy to miss
 
 **Prompt injection.** Both retrieved content and tool results (complaint text,

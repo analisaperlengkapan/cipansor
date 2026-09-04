@@ -36,7 +36,15 @@ export function usePublicChat() {
     mutationFn: async (
       request: PublicChatRequest,
     ): Promise<PublicChatResponse> => {
-      const response = await api.post("/chatbot/public/ask", request);
+      // `skipErrorToast`: widget menulis pesannya SENDIRI ke dalam gelembung
+      // percakapan, jadi toast global hanya menduplikasinya — dan toast itu
+      // menambahkan "Error Code: CHATBOT_BUSY" di bawahnya. Sebuah konstanta
+      // teknis di layar orang tua calon santri yang sedang bertanya biaya
+      // pendaftaran bukan informasi; ia hanya membuat halaman terasa rusak.
+      // Ditemukan dari tangkapan layar, bukan dari uji.
+      const response = await api.post("/chatbot/public/ask", request, {
+        skipErrorToast: true,
+      });
       return response.data.data;
     },
   });

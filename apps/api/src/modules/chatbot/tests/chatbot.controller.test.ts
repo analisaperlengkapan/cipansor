@@ -8,6 +8,11 @@ vi.mock('../chatbot.service', () => ({
   ask: vi.fn(),
   resolveProvider: vi.fn(),
   ChatbotUnavailableError: class extends Error {},
+  ChatbotBusyError: class extends Error {
+    constructor(readonly retryAfterSeconds: number) {
+      super('busy');
+    }
+  },
 }));
 vi.mock('../transcript.service', () => ({
   recordTurn: vi.fn(),
@@ -34,6 +39,11 @@ function fakeRes() {
   const res = {
     statusCode: 200,
     body: undefined as unknown,
+    headers: {} as Record<string, string>,
+    set(name: string, value: string) {
+      this.headers[name] = value;
+      return this;
+    },
     status(code: number) {
       this.statusCode = code;
       return this;
@@ -43,7 +53,10 @@ function fakeRes() {
       return this;
     },
   };
-  return res as unknown as Response & { body: { data?: Record<string, unknown> } };
+  return res as unknown as Response & {
+    body: { data?: Record<string, unknown>; error?: { code?: string; message?: string } };
+    headers: Record<string, string>;
+  };
 }
 
 function fakeReq(body: Record<string, unknown>) {
@@ -234,5 +247,39 @@ describe('GET /chatbot/admin/usage', () => {
     await getUsage({} as unknown as Request, res, vi.fn());
 
     expect(res.body.data?.alertTo).toBe(config.mail.replyTo);
+  });
+});
+
+describe('ask ketika asisten sedang ramai', () => {
+  it('menjawab 503 dengan Retry-After, dan kalimat yang berbeda dari "mati"', async () => {
+    // Perbedaannya penting bagi penanya. "Sedang tidak tersedia" menyuruh ia
+    // menyerah; pada asisten yang sebenarnya hidup dan hanya ramai, mencoba
+    // lagi sepuluh detik lagi hampir pasti berhasil. Header `Retry-After`
+    // menyampaikan itu kepada klien mana pun, bukan hanya kepada widget kami.
+    const BusyError = chatbotService.ChatbotBusyError as unknown as new (s: number) => Error;
+    askService.mockRejectedValueOnce(new BusyError(10));
+
+    const res = fakeRes();
+    await ask(fakeReq({ message: 'halo' }), res, vi.fn());
+
+    expect(res.statusCode).toBe(503);
+    expect(res.headers['Retry-After']).toBe('10');
+    expect(res.body.error?.code).toBe('CHATBOT_BUSY');
+    // Kode dibaca mesin, pesan dibaca orang. Ketiga pemanggilan
+    // `ApiResponse.error` di controller ini pernah tertukar urutannya sehingga
+    // keduanya bertukar tempat; baris di bawah memerah bila itu terulang.
+    expect(res.body.error?.message).toMatch(/sedang ramai/);
+  });
+
+  it('tidak menuliskan apa pun ke riwayat percakapan', async () => {
+    // Tidak ada pertanyaan yang terjawab, jadi tidak ada giliran untuk dicatat.
+    // Menuliskannya akan mengotori halaman Riwayat dengan baris kosong yang
+    // terbaca seolah asisten gagal menjawab, padahal ia tidak pernah ditanya.
+    const BusyError = chatbotService.ChatbotBusyError as unknown as new (s: number) => Error;
+    askService.mockRejectedValueOnce(new BusyError(10));
+
+    await ask(fakeReq({ message: 'halo' }), fakeRes(), vi.fn());
+
+    expect(recordTurn).not.toHaveBeenCalled();
   });
 });

@@ -45,6 +45,20 @@ const SUGGESTIONS = [
   "Di mana alamat pesantren?",
 ];
 
+/**
+ * Apakah galat ini berarti "sedang ramai", bukan "sedang mati"?
+ *
+ * Dibaca dari kode di badan jawaban, bukan dari status HTTP: keduanya 503, dan
+ * yang membedakan justru kodenya. Ditulis defensif karena bentuk galat axios
+ * bukan sesuatu yang pantas diandaikan benar di dalam komponen — bila
+ * bentuknya berubah, yang terjadi adalah kembali ke pesan lama, bukan layar
+ * yang rusak.
+ */
+function isBusyError(error: unknown): boolean {
+  const body = (error as { response?: { data?: { error?: { code?: string } } } })?.response?.data;
+  return body?.error?.code === "CHATBOT_BUSY";
+}
+
 export function ChatWidget() {
   const { data: available } = useChatbotAvailability();
   const [open, setOpen] = useState(false);
@@ -133,15 +147,25 @@ export function ChatWidget() {
         ...prev,
         { role: "assistant", content: result.answer, sources: result.sources },
       ]);
-    } catch {
+    } catch (error) {
       // Never invent a fallback answer. Point at a human instead — the phone
       // number is the honest answer when the assistant cannot respond.
+      //
+      // KECUALI ketika ia hanya sedang ramai. Menyuruh orang menelepon karena
+      // asisten sibuk sepuluh detik adalah nasihat yang keliru: ia memindahkan
+      // beban ke petugas yang menerima telepon, untuk pertanyaan yang akan
+      // terjawab sendiri pada percobaan berikutnya. Server memisahkan keduanya
+      // dengan kode `CHATBOT_BUSY`; sebelum ini widget menyamakan semuanya, dan
+      // pembedaan itu tidak pernah sampai ke pengunjung.
+      const busy = isBusyError(error);
       setTurns((prev) => [
         ...prev,
         {
           role: "assistant",
           failed: true,
-          content: `Maaf, asisten sedang tidak dapat menjawab. Silakan hubungi kami di ${siteConfig.contact.phone} atau melalui WhatsApp.`,
+          content: busy
+            ? "Maaf, asisten sedang ramai. Mohon coba lagi sebentar lagi 🙏"
+            : `Maaf, asisten sedang tidak dapat menjawab. Silakan hubungi kami di ${siteConfig.contact.phone} atau melalui WhatsApp.`,
         },
       ]);
     } finally {

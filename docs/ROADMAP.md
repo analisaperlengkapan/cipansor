@@ -300,6 +300,18 @@ container via #374). The public widget answers from RAG over the public pages
 with the live SPMB facts, cites its sources, caches structurally, and refuses
 requests for private data. Design and rationale: [`planning/chatbot-design.md`](./planning/chatbot-design.md).
 
+**Retrieval no longer selects, and that is settled** (#475, 2026-09-04). The
+corpus measured 2,513 characters — ~628 tokens across 8 entries — so the whole
+of it now goes into every prompt and BM25 has no veto. See
+[`planning/chatbot-design.md`](./planning/chatbot-design.md) §1 "REVISED AGAIN"
+for the numbers, the four techniques deliberately not adopted, and the trigger
+that would justify revisiting them. **Do not re-open this from taste.**
+
+**Merged 2026-09-04, none of it deployed yet** — one image rebuild is planned to
+carry all of it: #473 (usage/cost panel), #474 (the "ada informasi apa saja"
+refusal and its signpost), #475 (full corpus). A fourth PR adds retry with
+`Retry-After` plus a short concurrency queue in front of the provider.
+
 What the design asked for and we have not built, in the order it matters:
 
 1. ~~**No monthly spend alert.**~~ **Shipped 2026-09-04 — needs two numbers

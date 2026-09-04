@@ -4,6 +4,7 @@ import { StubProvider } from '../providers/stub';
 import { collectLiveFacts } from '../live-facts';
 import { knowledgeBase, knowledgeById, topicLabels } from '../knowledge-base';
 import { isCacheable, readCached, writeCached } from '../cache';
+import { ChatbotBusyError, createThrottle } from '../throttle';
 import { config } from '@/config';
 import type { LlmProvider } from '../providers/types';
 import { recordUsage } from '../usage.service';
@@ -424,6 +425,64 @@ describe('ask', () => {
     await expect(ask({ question: 'visi', provider: null })).rejects.toBeInstanceOf(
       ChatbotUnavailableError
     );
+  });
+});
+
+describe('ask ketika penyedianya sedang penuh', () => {
+  /** Pembatas yang slotnya sudah habis dipakai satu tugas yang menggantung. */
+  function fullThrottle() {
+    const throttle = createThrottle({ maxConcurrent: 1, maxQueue: 0, maxWaitMs: 50 });
+    void throttle.run(() => new Promise<never>(() => {}));
+    return throttle;
+  }
+
+  it('meneruskan "sedang sibuk" apa adanya, bukan menyamarkannya jadi "tidak tersedia"', async () => {
+    // Perbedaannya sampai ke layar penanya. "Tidak tersedia" menyuruh ia
+    // menyerah; "sedang ramai" mengundangnya mencoba lagi sebentar lagi — dan
+    // pada asisten yang sebenarnya hidup, undangan itu yang benar.
+    const provider = recordingProvider();
+    const throttle = fullThrottle();
+    await Promise.resolve();
+
+    await expect(
+      ask({ question: 'apa visi pesantren', provider, throttle })
+    ).rejects.toBeInstanceOf(ChatbotBusyError);
+    expect(provider.lastRequest).toBeUndefined();
+  });
+
+  it('tetap melayani jawaban dari cache meski semua slot terpakai', async () => {
+    // Pada saat ramai, cache adalah katup pelepas tekanan — bukan beban.
+    // Membuatnya ikut mengantre akan memperlambat justru jalur yang tidak
+    // memanggil siapa pun, tepat ketika perlambatan itu paling merugikan.
+    vi.mocked(readCached).mockResolvedValueOnce({
+      answer: 'dari cache',
+      sources: [],
+      refused: false,
+    });
+    const throttle = fullThrottle();
+    await Promise.resolve();
+
+    const result = await ask({
+      question: 'apa visi pesantren',
+      provider: recordingProvider(),
+      throttle,
+    });
+
+    expect(result.answer).toBe('dari cache');
+  });
+
+  it('tetap menjawab penolakan pertahanan-terakhir meski semua slot terpakai', async () => {
+    const throttle = fullThrottle();
+    await Promise.resolve();
+
+    const result = await ask({
+      question: 'apa pun',
+      provider: new StubProvider(),
+      entries: [],
+      throttle,
+    });
+
+    expect(result.refused).toBe(true);
   });
 });
 

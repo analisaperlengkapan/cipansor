@@ -115,8 +115,13 @@ function PublicVerifyContent() {
     }
 
     if (!turnstile.ready) {
+      // Dua sebab, dua saran. "Tunggu sesaat" hanya benar selama tantangannya
+      // masih berjalan; ketika widget-nya menyerah, menunggu tidak mengubah
+      // apa pun dan yang menolong ada di panel widget itu sendiri.
       setError(
-        "Verifikasi keamanan belum selesai. Tunggu sesaat, lalu coba lagi.",
+        turnstile.blocked
+          ? "Verifikasi keamanan tidak dapat dimuat. Ikuti petunjuk di kotak verifikasi di bawah."
+          : "Verifikasi keamanan belum selesai. Tunggu sesaat, lalu coba lagi.",
       );
       return;
     }

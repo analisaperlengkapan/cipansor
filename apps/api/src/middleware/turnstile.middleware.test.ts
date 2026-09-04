@@ -63,14 +63,32 @@ describe('requireTurnstile', () => {
     expect(error).toBeInstanceOf(Error);
   });
 
-  it('memberi pesan yang sama untuk token hilang dan token ditolak', async () => {
-    // Membedakan keduanya hanya berguna bagi penulis skrip yang sedang mencari
-    // tahu sejauh mana tebakannya berhasil.
+  /**
+   * Menggantikan uji yang dulu berbunyi "memberi pesan yang sama untuk token
+   * hilang dan token ditolak".
+   *
+   * Uji itu hijau selama dua PR dan memaku perilaku yang salah. Alasannya
+   * terdengar masuk akal — membedakan keduanya "hanya berguna bagi penulis
+   * skrip" — tetapi ia mengabaikan pengunjung yang jaringannya memblokir
+   * `challenges.cloudflare.com`: bagi orang itu tidak ada token yang pernah
+   * terkirim, dan satu-satunya saran yang ia terima adalah memuat ulang
+   * halaman, yang tidak akan pernah mengubah apa pun.
+   */
+  it('memberi saran yang berbeda untuk token hilang dan token ditolak', async () => {
     const missing = (await run({})) as Error;
     cloudflareSays(false, ['invalid-input-response']);
     const rejected = (await run({ turnstileToken: 'x' })) as Error;
 
-    expect(missing.message).toBe(rejected.message);
+    expect(missing.message).not.toBe(rejected.message);
+
+    // Yang hilang: sebabnya ada di sisi pengunjung, jadi sebutkan alamat yang
+    // harus diizinkan — dan JANGAN suruh memuat ulang halaman.
+    expect(missing.message).toContain('challenges.cloudflare.com');
+    expect(missing.message).not.toMatch(/muat ulang/i);
+
+    // Yang ditolak: tantangan yang kedaluwarsa memang sembuh dengan memuat
+    // ulang, jadi saran itu tetap benar di sini.
+    expect(rejected.message).toMatch(/muat ulang/i);
   });
 
   it('meneruskan seluruh permintaan ketika gerbangnya dimatikan', async () => {

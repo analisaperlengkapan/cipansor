@@ -365,6 +365,11 @@ const staffNavigation: NavGroup[] = [
     title: "Administrasi",
     items: [
       {
+        title: "SPMB (Penerimaan)",
+        href: "/spmb",
+        icon: UserPlus,
+      },
+      {
         title: "Keuangan",
         href: "/finance",
         icon: Wallet,
@@ -1119,8 +1124,8 @@ const adminNavigation: NavGroup[] = [
         icon: HeartHandshake,
       },
       {
-        title: "Admissions",
-        href: "/admissions",
+        title: "Admissions (SPMB)",
+        href: "/spmb",
         icon: UserPlus,
       },
       {

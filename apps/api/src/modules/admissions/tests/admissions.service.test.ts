@@ -14,6 +14,7 @@ vi.mock('@/lib/prisma', () => ({
       findMany: vi.fn(),
       findUnique: vi.fn(),
       create: vi.fn(),
+      delete: vi.fn(),
     },
     paymentType: {
       findFirst: vi.fn(),
@@ -142,6 +143,44 @@ describe('Admissions Service', () => {
         registrationToken: validToken,
       })
     ).rejects.toThrow('URL dokumen tidak valid');
+
+    // Rejecting private/loopback IP SSRF
+    await expect(
+      service.createPublicRegistrantDocumentService({
+        registrantId: 'reg123',
+        type: 'PHOTO',
+        url: 'http://10.0.0.1/doc.png',
+        registrationToken: validToken,
+      })
+    ).rejects.toThrow('URL dokumen tidak diizinkan');
+  });
+
+  it('should not reopen expired wave upon deleting registrant', async () => {
+    const expiredWave = {
+      id: 'w-expired',
+      status: 'FULL',
+      registeredCount: 50,
+      quota: 50,
+      startDate: new Date('2020-01-01'),
+      endDate: new Date('2020-12-31'), // Expired
+    };
+
+    vi.mocked(prisma.registrant.findUnique).mockResolvedValue({
+      id: 'r-1',
+      status: 'REGISTERED',
+      waveId: 'w-expired',
+    } as any);
+    vi.mocked(prisma.admissionWave.updateMany as any).mockResolvedValue({ count: 1 });
+    vi.mocked(prisma.admissionWave.findUnique as any).mockResolvedValue(expiredWave as any);
+    vi.mocked(prisma.registrant.delete as any).mockResolvedValue({ id: 'r-1' });
+
+    await service.deleteRegistrant('r-1');
+
+    // Verify wave was NOT updated to OPEN because it is expired
+    expect(prisma.admissionWave.update).not.toHaveBeenCalledWith({
+      where: { id: 'w-expired' },
+      data: { status: 'OPEN' },
+    });
   });
 
   it('should reject registration when all waves for a period are full', async () => {
@@ -229,12 +268,9 @@ describe('Admissions Service', () => {
     ]);
     vi.mocked(prisma.admissionWave.updateMany as any).mockResolvedValue({ count: 1 });
     // Re-reading updated wave shows concurrent increment pushed registeredCount to 10 (FULL)
-    vi.mocked(prisma.admissionWave.findUnique as any).mockResolvedValue({
-      id: 'w1',
-      quota: 10,
-      registeredCount: 10,
-      status: 'OPEN',
-    });
+    vi.mocked(prisma.admissionWave.findUnique as any)
+      .mockResolvedValueOnce({ id: 'w1', quota: 10, registeredCount: 8, status: 'OPEN' })
+      .mockResolvedValueOnce({ id: 'w1', quota: 10, registeredCount: 10, status: 'OPEN' });
     vi.mocked(prisma.registrant.count).mockResolvedValue(0);
     (vi.mocked(prisma.registrant.create) as any).mockImplementation(({ data }: any) =>
       Promise.resolve({ ...data, id: 'r1' })

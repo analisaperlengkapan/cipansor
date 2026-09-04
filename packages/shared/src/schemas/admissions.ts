@@ -35,6 +35,17 @@ export type CreatePublicRegistrantDocumentRequest = z.infer<
   typeof createPublicRegistrantDocumentSchema
 >;
 
+export const onboardRegistrantSchema = z.object({
+  registrantId: z.string().uuid("registrantId tidak valid"),
+  unitId: z.string().optional(),
+  classId: z.string().optional(),
+  assignedClassId: z.string().optional(),
+  roomId: z.string().optional(),
+  nis: z.string().optional(),
+  nisn: z.string().optional(),
+  academicYearId: z.string().optional(),
+});
+
 export interface RegistrantDTO {
   id: string;
   admissionPeriodId: string;

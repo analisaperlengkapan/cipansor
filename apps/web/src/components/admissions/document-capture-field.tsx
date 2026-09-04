@@ -67,16 +67,33 @@ export function DocumentCaptureField({
         if (data.extractedData && onOcrExtracted) {
           onOcrExtracted(data.extractedData);
         }
-        toast.success("Dokumen berhasil dipindai dan diverifikasi.");
+        if (onOcrResult && data.validation?.status && data.validation.status !== "VALID") {
+          onOcrResult({
+            status: data.validation.status,
+            notes: data.validation.notes || [],
+          });
+        }
+        if (data.validation?.status === "VALID") {
+          toast.success("Dokumen berhasil dipindai dan diverifikasi.");
+        } else if (data.validation?.status === "WARNING") {
+          toast.warning("Dokumen berhasil diunggah dan memerlukan verifikasi manual petugas.");
+        } else {
+          toast.error("Dokumen dipindai tetapi terdapat ketidakcocokan data.");
+        }
       }
     } catch (err) {
       console.error("Failed to parse document OCR:", err);
-      setOcrStatus({
-        status: "WARNING",
+      const fallbackStatus = {
+        status: "WARNING" as const,
         notes: [
           "Gagal melakukan verifikasi otomatis dokumen. Petugas akan memverifikasi secara manual.",
         ],
-      });
+      };
+      setOcrStatus(fallbackStatus);
+      if (onOcrResult) {
+        onOcrResult(fallbackStatus);
+      }
+      toast.warning("Gagal memverifikasi otomatis, dokumen akan diverifikasi manual oleh petugas.");
     } finally {
       setIsParsing(false);
     }

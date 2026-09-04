@@ -149,47 +149,77 @@ export class StudentOnboardingOrchestrator {
         unitCode = unit.type.toUpperCase();
       }
 
-      const email = `${cleanName}.${nis.toLowerCase()}@student.cipansor.local`;
+      // Determine student email: prefer real registrant.email, fallback to .local
+      const realEmail = registrant.email && registrant.email.trim() !== '' ? registrant.email.trim() : null;
+      const fallbackEmail = `${cleanName}.${nis.toLowerCase()}@student.cipansor.local`;
+      const email = realEmail || fallbackEmail;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const user = await (tx.user.create as any)({
-        data: {
-          name: registrant.fullName,
-          email,
-          passwordHash,
-          resetTokenHash: crypto.createHash('sha256').update(resetToken).digest('hex'),
-          resetTokenExpiresAt: resetTokenExpiry,
-          role: 'STUDENT',
-          unitId: effectiveUnitId,
-          isActive: true,
-        },
+      let user = await tx.user.findUnique({
+        where: { email },
       });
 
+      if (!user) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        user = await (tx.user.create as any)({
+          data: {
+            name: registrant.fullName,
+            email,
+            passwordHash,
+            resetTokenHash: crypto.createHash('sha256').update(resetToken).digest('hex'),
+            resetTokenExpiresAt: resetTokenExpiry,
+            role: 'STUDENT',
+            unitId: effectiveUnitId,
+            isActive: true,
+          },
+        });
+      }
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const student = await (tx.student.create as any)({
-        data: {
-          userId: user.id,
-          status: 'active',
-          unitId: effectiveUnitId,
-          nis,
-          nisn: nisn || undefined,
-          entryYear: year,
-
-          // Core Data mapping from registrant
-          gender: registrant.gender,
-          birthPlace: registrant.birthPlace,
-          birthDate: registrant.birthDate,
-          address: registrant.address,
-          parentName: registrant.parentName,
-          parentPhone: registrant.parentPhone,
-          parentEmail: registrant.parentEmail,
-
-          // Link back
-          registrant: {
-            connect: { id: registrant.id }
-          }
-        },
+      let student = await (tx.student.findUnique as any)({
+        where: { userId: user!.id },
       });
+
+      if (student) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        student = await (tx.student.update as any)({
+          where: { id: student.id },
+          data: {
+            unitId: effectiveUnitId,
+            nis: student.nis || nis,
+            nisn: nisn || student.nisn || undefined,
+            status: 'active',
+            registrant: {
+              connect: { id: registrant.id },
+            },
+          },
+        });
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        student = await (tx.student.create as any)({
+          data: {
+            userId: user!.id,
+            status: 'active',
+            unitId: effectiveUnitId,
+            nis,
+            nisn: nisn || undefined,
+            entryYear: year,
+
+            // Core Data mapping from registrant
+            gender: registrant.gender,
+            birthPlace: registrant.birthPlace,
+            birthDate: registrant.birthDate,
+            address: registrant.address,
+            parentName: registrant.parentName,
+            parentPhone: registrant.parentPhone,
+            parentEmail: registrant.parentEmail,
+
+            // Link back
+            registrant: {
+              connect: { id: registrant.id },
+            },
+          },
+        });
+      }
 
       // 4. Create Parent User Account
       let parentResetToken: string | undefined;
@@ -314,7 +344,7 @@ export class StudentOnboardingOrchestrator {
       return {
         success: true,
         studentId: student.id,
-        userId: user.id,
+        userId: user!.id,
         nis,
         email,
         unitCode,

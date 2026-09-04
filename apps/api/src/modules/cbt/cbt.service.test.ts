@@ -50,6 +50,9 @@ vi.mock('../../lib/prisma', () => ({
       findMany: vi.fn(),
       findUnique: vi.fn(),
     },
+    examSecurityLog: {
+      create: vi.fn(),
+    },
     grade: {
       upsert: vi.fn(),
       findUnique: vi.fn(),
@@ -267,6 +270,67 @@ describe('CBT Service', () => {
         update: expect.objectContaining({
           letterGrade: 'B',
         }),
+      });
+    });
+
+    it('should persist security log and validate student attempt ownership', async () => {
+      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue({
+        id: 'att-1',
+        studentId: 'std-1',
+      } as any);
+      vi.mocked(prisma.examSecurityLog.create as any).mockResolvedValue({
+        id: 'sec-1',
+        attemptId: 'att-1',
+        eventType: 'TAB_SWITCH',
+      });
+
+      const log = await CBTService.recordSecurityLog(
+        { attemptId: 'att-1', eventType: 'TAB_SWITCH' as any, details: { count: 1 } },
+        'std-1'
+      );
+
+      expect(prisma.examSecurityLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          attemptId: 'att-1',
+          eventType: 'TAB_SWITCH',
+        }),
+      });
+      expect(log).toEqual({ id: 'sec-1', attemptId: 'att-1', eventType: 'TAB_SWITCH' });
+
+      // Ownership mismatch rejected
+      await expect(
+        CBTService.recordSecurityLog(
+          { attemptId: 'att-1', eventType: 'TAB_SWITCH' as any },
+          'std-other'
+        )
+      ).rejects.toThrow('Access denied');
+    });
+
+    it('should retry gradebook sync if finishExamAttempt is called again on an already COMPLETED attempt', async () => {
+      const completedAttempt = {
+        id: 'attempt-completed',
+        studentId: 'std-1',
+        status: 'COMPLETED',
+        score: 90,
+        exam: {
+          id: 'exam-1',
+          subjectId: 'sub-1',
+          academicYearId: 'ay-1',
+          questionBank: { questions: [{ points: 100 }] },
+        },
+      };
+
+      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue(completedAttempt as any);
+      vi.mocked(prisma.grade.upsert).mockResolvedValue({ id: 'grade-1' } as any);
+
+      await CBTService.finishExamAttempt('attempt-completed', 'std-1');
+
+      expect(prisma.grade.upsert).toHaveBeenCalledWith({
+        where: {
+          studentId_examId: { studentId: 'std-1', examId: 'exam-1' },
+        },
+        create: expect.any(Object),
+        update: {},
       });
     });
 

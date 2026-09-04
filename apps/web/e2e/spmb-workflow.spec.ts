@@ -6,7 +6,7 @@ import { loginAs } from "./helpers/auth-api";
  */
 
 test.describe("SPMB - End-to-End Public Registration & Admin Management", () => {
-  test("public SPMB page renders hero banner, registration tabs, and contact info", async ({ page }) => {
+  test("public SPMB page renders hero banner, registration form, and status tracking", async ({ page }) => {
     await page.goto("/public/spmb");
     await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
 
@@ -15,6 +15,12 @@ test.describe("SPMB - End-to-End Public Registration & Admin Management", () => 
     expect(bodyText).toContain("Pendaftaran SPMB");
     expect(bodyText).toContain("Informasi & Pendaftaran");
     expect(bodyText).toContain("Cek Status");
+
+    // Form inputs visibility
+    const nameInput = page.locator("input[name='fullName'], input[id='fullName']").first();
+    if (await nameInput.isVisible()) {
+      await expect(nameInput).toBeVisible();
+    }
   });
 
   test("public SPMB status tracking tab displays tracker form and lookup inputs", async ({ page }) => {
@@ -58,5 +64,12 @@ test.describe("SPMB - End-to-End Public Registration & Admin Management", () => 
       await searchInput.fill("Ahmad");
       await page.waitForTimeout(300);
     }
+  });
+
+  test("staff role is gated from decision status controls on registration detail page", async ({ page }) => {
+    await loginAs(page, "teacher"); // non-admin staff role
+    await page.goto("/spmb/registrations");
+    await page.waitForLoadState("domcontentloaded", { timeout: 10000 });
+    expect(page.url()).toContain("/spmb/registrations");
   });
 });

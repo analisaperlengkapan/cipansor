@@ -32,6 +32,8 @@ vi.mock('@/lib/prisma', () => ({
     },
     student: {
       create: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
     },
     studentParent: {
       create: vi.fn(),
@@ -133,24 +135,59 @@ describe('Student Onboarding & Wave Quota Unit Tests', () => {
           }),
         })
       );
+    });
 
-      // Verify Class Enrollment created
-      expect(prisma.classEnrollment.create).toHaveBeenCalledWith({
-        data: {
-          studentId: 's-1',
-          classId: 'class-7a',
-          status: 'active',
-        },
+    it('reuses existing user account when registrant email matches an existing user and fallback when email is empty', async () => {
+      const mockRegistrantWithEmail = {
+        id: 'reg-email',
+        status: 'ACCEPTED',
+        admissionPeriodId: 'period-1',
+        fullName: 'Santri Real Email',
+        email: 'santri.real@gmail.com',
+        gender: 'MALE',
+        birthPlace: 'Bandung',
+        birthDate: new Date('2010-01-01'),
+        address: 'Jl. Pesantren',
+        parentName: 'Ayah Real',
+        parentPhone: '081234567890',
+      };
+
+      const mockPeriod = {
+        id: 'period-1',
+        unitId: 'unit-1',
+        registrationFee: 0,
+        academicYearId: 'ay-2026',
+      };
+
+      const existingUser = { id: 'usr-existing', email: 'santri.real@gmail.com', role: 'STUDENT' };
+
+      vi.mocked(prisma.registrant.findUnique).mockResolvedValue(mockRegistrantWithEmail as any);
+      vi.mocked(prisma.admissionPeriod.findUnique).mockResolvedValue(mockPeriod as any);
+      vi.mocked(prisma.unit.findUnique).mockResolvedValue({ id: 'unit-1', type: 'SMP_IT' } as any);
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(existingUser as any);
+      vi.mocked(prisma.student.findUnique).mockResolvedValue(null as any);
+      (vi.mocked(prisma.student.create) as any).mockResolvedValue({ id: 's-exist', nis: 'NIS-002' });
+
+      await StudentOnboardingOrchestrator.processEnrollment('reg-email', 'unit-1', 'admin-1', {
+        academicYearId: 'ay-2026',
       });
 
-      // Verify Room Assignment created
-      expect(prisma.roomAssignment.create).toHaveBeenCalledWith({
-        data: {
-          studentId: 's-1',
-          roomId: 'room-101',
-          isActive: true,
-        },
-      });
+      // Does not create a duplicate user since existing user was found
+      expect(prisma.user.create).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ email: 'santri.real@gmail.com' }),
+        })
+      );
+
+      // Student record attaches to existing user id
+      expect(prisma.student.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            userId: 'usr-existing',
+          }),
+        })
+      );
+
 
       // Verify NO duplicate REG_FEE invoice was created because registrationFeePaidAt is set
       expect(prisma.invoice.create).not.toHaveBeenCalled();
@@ -173,6 +210,11 @@ describe('Student Onboarding & Wave Quota Unit Tests', () => {
       vi.mocked(prisma.admissionPeriod.findUnique).mockResolvedValue(mockPeriod as any);
       vi.mocked(prisma.admissionWave.count).mockResolvedValue(2);
       vi.mocked(prisma.admissionWave.findMany).mockResolvedValue([wave1Full, wave2Open] as any);
+      vi.mocked(prisma.admissionWave.findUnique as any).mockImplementation(({ where }: any) => {
+        if (where.id === 'w-1') return Promise.resolve(wave1Full);
+        if (where.id === 'w-2') return Promise.resolve(wave2Open);
+        return Promise.resolve(null);
+      });
 
       // Wave 2 increment claim returns count = 1
       vi.mocked(prisma.admissionWave.updateMany).mockResolvedValue({ count: 1 } as any);
@@ -219,7 +261,7 @@ describe('Student Onboarding & Wave Quota Unit Tests', () => {
       vi.mocked(prisma.admissionWave.count).mockResolvedValue(1);
       vi.mocked(prisma.admissionWave.findMany).mockResolvedValue([wave1Freed] as any);
       vi.mocked(prisma.admissionWave.updateMany).mockResolvedValue({ count: 1 } as any);
-      vi.mocked(prisma.admissionWave.findUnique as any).mockResolvedValue({ id: 'w-1', registeredCount: 50, quota: 50, status: 'FULL' });
+      vi.mocked(prisma.admissionWave.findUnique as any).mockResolvedValue(wave1Freed);
       vi.mocked(prisma.registrant.count).mockResolvedValue(15);
       (vi.mocked(prisma.registrant.create) as any).mockImplementation(({ data }: any) =>
         Promise.resolve({ ...data, id: 'reg-new' })

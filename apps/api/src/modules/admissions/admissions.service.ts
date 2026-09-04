@@ -398,9 +398,19 @@ async function createRegistrantOnce(data: CreateRegistrantExtendedInput, isAdmin
           })
         : [];
 
+      if ((tx as any).$executeRaw) {
+        // Acquire row-level locks on candidate waves to prevent concurrent quota race conditions
+        await (tx as any).$executeRaw`SELECT id FROM "admission_waves" WHERE "period_id" = ${data.admissionPeriodId} FOR UPDATE`;
+      }
+
       let waveClaimed = false;
       for (const wave of candidateWaves) {
-        if (wave.registeredCount >= wave.quota) {
+        const freshWave = await tx.admissionWave.findUnique({
+          where: { id: wave.id },
+          select: { id: true, registeredCount: true, quota: true, status: true },
+        });
+
+        if (!freshWave || freshWave.registeredCount >= freshWave.quota) {
           continue;
         }
 
@@ -408,7 +418,7 @@ async function createRegistrantOnce(data: CreateRegistrantExtendedInput, isAdmin
           where: {
             id: wave.id,
             status: { in: ['OPEN', 'FULL'] },
-            registeredCount: { lt: wave.quota },
+            registeredCount: { lt: freshWave.quota },
           },
           data: {
             registeredCount: { increment: 1 },
@@ -816,9 +826,16 @@ export async function deleteRegistrant(id: string) {
 
       const wave = await tx.admissionWave.findUnique({
         where: { id: registrant.waveId },
-        select: { id: true, status: true, registeredCount: true, quota: true },
+        select: { id: true, status: true, registeredCount: true, quota: true, startDate: true, endDate: true },
       });
-      if (wave && wave.status === 'FULL' && wave.registeredCount < wave.quota) {
+      const now = new Date();
+      if (
+        wave &&
+        wave.status === 'FULL' &&
+        wave.registeredCount < wave.quota &&
+        wave.startDate <= now &&
+        wave.endDate >= now
+      ) {
         await tx.admissionWave.update({
           where: { id: wave.id },
           data: { status: 'OPEN' },
@@ -919,7 +936,25 @@ export async function createPublicRegistrantDocumentService(data: {
       if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
         throw new Error('Invalid protocol');
       }
-    } catch {
+      const hostname = parsedUrl.hostname.toLowerCase();
+      const isLoopback =
+        hostname === 'localhost' ||
+        hostname === '127.0.0.1' ||
+        hostname === '::1' ||
+        hostname.startsWith('127.');
+      const isPrivateIp =
+        hostname.startsWith('10.') ||
+        hostname.startsWith('192.168.') ||
+        /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname) ||
+        hostname === '169.254.169.254' ||
+        hostname.endsWith('.local') ||
+        hostname.endsWith('.internal');
+
+      if (isLoopback || isPrivateIp) {
+        throw Errors.badRequest('URL dokumen tidak diizinkan (host privat atau internal)');
+      }
+    } catch (err: any) {
+      if (err instanceof Errors.badRequest('').constructor || err?.name === 'ApiError' || err?.code) throw err;
       throw Errors.badRequest('URL dokumen tidak valid (harus diawali http:// atau https://)');
     }
   }

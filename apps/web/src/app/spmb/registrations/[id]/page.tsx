@@ -13,6 +13,7 @@ import {
   useVerifyRegistrantDocument,
 } from "@/hooks/use-admissions";
 import { useAuth } from "@/hooks/use-auth";
+import { getPrimaryRoleCode } from "@/lib/rbac";
 import { safeFormat } from "@/lib/date";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -60,6 +61,9 @@ export default function RegistrationDetailPage({
   const updateScore = useUpdateRegistrantScore();
   const updateStatus = useUpdateRegistrantStatus();
   const verifyDoc = useVerifyRegistrantDocument();
+
+  const userRole = getPrimaryRoleCode(user);
+  const canManageDecisions = userRole === "SUPER_ADMIN" || userRole === "UNIT_ADMIN";
 
   const [isOnboarding, setIsOnboarding] = useState(false);
   const [testScore, setTestScore] = useState<string>("");
@@ -311,6 +315,7 @@ export default function RegistrationDetailPage({
                     placeholder="0-100"
                     value={testScore}
                     onChange={(e) => setTestScore(e.target.value)}
+                    disabled={!canManageDecisions}
                   />
                 </div>
                 <div>
@@ -322,6 +327,7 @@ export default function RegistrationDetailPage({
                     placeholder="0-100"
                     value={interviewScore}
                     onChange={(e) => setInterviewScore(e.target.value)}
+                    disabled={!canManageDecisions}
                   />
                 </div>
                 <div>
@@ -333,10 +339,11 @@ export default function RegistrationDetailPage({
                     placeholder="0-100"
                     value={tahfidzScore}
                     onChange={(e) => setTahfidzScore(e.target.value)}
+                    disabled={!canManageDecisions}
                   />
                 </div>
               </div>
-              <Button onClick={handleSaveScores} disabled={updateScore.isPending} className="w-full">
+              <Button onClick={handleSaveScores} disabled={!canManageDecisions || updateScore.isPending} className="w-full">
                 {updateScore.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Simpan Nilai Seleksi
               </Button>
@@ -351,13 +358,18 @@ export default function RegistrationDetailPage({
               <p className="text-xs text-muted-foreground">
                 Ubah status pendaftaran calon santri berdasarkan kriteria seleksi:
               </p>
+              {!canManageDecisions && (
+                <p className="text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
+                  Hanya Admin Unit atau Super Admin yang berwenang mengubah nilai dan keputusan status seleksi.
+                </p>
+              )}
               <div className="flex flex-wrap gap-2">
                 <Button
                   size="sm"
                   variant={registrant.status === "ACCEPTED" ? "default" : "outline"}
                   className="bg-green-600 hover:bg-green-700 text-white"
                   onClick={() => handleStatusChange("ACCEPTED")}
-                  disabled={updateStatus.isPending}
+                  disabled={!canManageDecisions || updateStatus.isPending}
                 >
                   Terima (ACCEPTED)
                 </Button>
@@ -365,7 +377,7 @@ export default function RegistrationDetailPage({
                   size="sm"
                   variant={registrant.status === "REJECTED" ? "destructive" : "outline"}
                   onClick={() => handleStatusChange("REJECTED")}
-                  disabled={updateStatus.isPending}
+                  disabled={!canManageDecisions || updateStatus.isPending}
                 >
                   Tolak (REJECTED)
                 </Button>
@@ -373,7 +385,7 @@ export default function RegistrationDetailPage({
                   size="sm"
                   variant="outline"
                   onClick={() => handleStatusChange("TEST_SCHEDULED")}
-                  disabled={updateStatus.isPending}
+                  disabled={!canManageDecisions || updateStatus.isPending}
                 >
                   Jadwalkan Tes
                 </Button>

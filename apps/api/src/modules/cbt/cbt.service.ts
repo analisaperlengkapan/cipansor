@@ -914,6 +914,9 @@ export class CBTService {
     if (!attempt) throw Errors.notFound('Attempt');
     if (attempt.studentId !== studentId) throw Errors.forbidden('Access denied');
     if (attempt.status !== 'IN_PROGRESS') {
+      if (attempt.status === 'COMPLETED') {
+        await CBTService.syncGradeToAcademicGradebook(attemptId, false);
+      }
       // Strip sensitive fields before returning to the student to prevent leaking
       // correct answers and explanations. Only expose the same fields as getAttempt.
       if (attempt.exam?.questionBank?.questions) {
@@ -1055,12 +1058,13 @@ export class CBTService {
       throw Errors.forbidden('Access denied');
     }
 
-    return {
-      attemptId: input.attemptId,
-      eventType: input.eventType,
-      details: input.details ?? null,
-      recordedAt: new Date(),
-    };
+    return prisma.examSecurityLog.create({
+      data: {
+        attemptId: input.attemptId,
+        eventType: input.eventType as any,
+        details: input.details ? (input.details as any) : Prisma.JsonNull,
+      },
+    });
   }
 
   static async syncGradeToAcademicGradebook(attemptId: string, forceUpdate = false) {

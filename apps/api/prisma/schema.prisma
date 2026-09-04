@@ -7587,9 +7587,10 @@ model ExamAttempt {
   updatedAt  DateTime          @updatedAt @map("updated_at")
 
   // Relations
-  exam    Exam         @relation(fields: [examId], references: [id])
-  student Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  answers ExamAnswer[]
+  exam         Exam              @relation(fields: [examId], references: [id])
+  student      Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  answers      ExamAnswer[]
+  securityLogs ExamSecurityLog[]
 
   @@unique([examId, studentId])
   @@index([examId])
@@ -7614,6 +7615,29 @@ model ExamAnswer {
   @@unique([attemptId, questionId])
   @@index([attemptId])
   @@map("exam_answers")
+}
+
+enum SecurityEventType {
+  TAB_SWITCH
+  COPY_PASTE
+  RIGHT_CLICK
+  FULLSCREEN_EXIT
+  DEV_TOOLS
+}
+
+/// ExamSecurityLog - Catatan Kejadian Keamanan Ujian (Anti-Cheating)
+model ExamSecurityLog {
+  id        String            @id @default(uuid())
+  attemptId String            @map("attempt_id")
+  eventType SecurityEventType @map("event_type")
+  details   Json?
+  createdAt DateTime          @default(now()) @map("created_at")
+
+  // Relations
+  attempt ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@index([attemptId])
+  @@map("exam_security_logs")
 }
 
 // =====================================

@@ -107,6 +107,7 @@ router.post(
 router.post(
   '/letters/:letterId/sign',
   passphraseLimiter,
+  memoryUpload.single('file'),
   validate(signLetterSchema),
   EsignController.signLetter
 );

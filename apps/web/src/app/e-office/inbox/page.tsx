@@ -1,5 +1,5 @@
 "use client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { safeFormat } from "@/lib/date";
 import { useCorrespondence } from "@/hooks/use-correspondence";
 import { useAuth } from "@/hooks/use-auth";
@@ -39,6 +39,9 @@ interface InboxPageProps {
 
 export default function InboxPage({ defaultDirection = LetterDirection.INCOMING }: InboxPageProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const statusParam = searchParams.get("status") as LetterStatus | null;
+
   const { user } = useAuth();
   const [page, setPage] = useState(1);
   const [direction, setDirection] = useState<LetterDirection>(
@@ -52,6 +55,7 @@ export default function InboxPage({ defaultDirection = LetterDirection.INCOMING 
     page,
     limit: 10,
     direction,
+    status: statusParam ?? undefined,
     search,
     scope,
   });

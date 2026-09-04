@@ -1,4 +1,4 @@
-import { BlobServiceClient } from '@azure/storage-blob';
+import { BlobServiceClient, generateBlobSASQueryParameters, BlobSASPermissions, StorageSharedKeyCredential } from '@azure/storage-blob';
 import { logger } from '@/lib/logger';
 
 export interface StorageUploadResult {
@@ -35,7 +35,27 @@ export async function uploadToCloudStorage(
         },
       });
 
-      const azureBlobUrl = blockBlobClient.url;
+      let azureBlobUrl = blockBlobClient.url;
+
+      // If container is private, generate a SAS URL with 24-hour expiry
+      if (!isPublicContainer && process.env.AZURE_STORAGE_ACCOUNT && process.env.AZURE_STORAGE_KEY) {
+        const sharedKeyCredential = new StorageSharedKeyCredential(
+          process.env.AZURE_STORAGE_ACCOUNT,
+          process.env.AZURE_STORAGE_KEY
+        );
+        const sasToken = generateBlobSASQueryParameters(
+          {
+            containerName,
+            blobName: filename,
+            permissions: BlobSASPermissions.parse('r'),
+            startsOn: new Date(),
+            expiresOn: new Date(new Date().valueOf() + 24 * 60 * 60 * 1000),
+          },
+          sharedKeyCredential
+        ).toString();
+
+        azureBlobUrl = `${blockBlobClient.url}?${sasToken}`;
+      }
 
       logger.info('File uploaded to Azure Blob Storage', {
         filename,

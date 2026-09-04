@@ -60,7 +60,7 @@ export const EsignController = {
   async signLetter(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await EsignService.signLetter(
-        req.params.letterId, req.user!.id, req.body.passphrase
+        req.params.letterId, req.user!.id, req.body.passphrase, req.file?.buffer
       );
       res.status(201).json({ success: true, data });
     } catch (e) { next(e); }

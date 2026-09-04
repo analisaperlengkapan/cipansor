@@ -320,15 +320,16 @@ What the design asked for and we have not built, in the order it matters:
    client-side, so the table's row and its three columns are all a fetch can
    confirm — the values are the user's reading.
 
-   **The cached-input price will not be used, and the estimate is therefore an
-   upper bound.** The live deployment's `usage` block carries only
-   `prompt_tokens`, `completion_tokens`, `total_tokens` and
-   `audio_prompt_tokens` — no `prompt_tokens_details.cached_tokens`, no
-   `prompt_cache_hit_tokens` (checked against the live endpoint 2026-09-04). So
-   every input token is priced at 0.19 even when the provider billed 0.028. For
-   a budget alarm that is the right direction to be wrong in: it rings early,
-   never late. The column and the price are wired anyway, so swapping models
-   costs no migration, and the alert mail says which way the figure leans.
+   **CORRECTED 2026-09-04 — the cached-input price IS used.** This paragraph
+   first said the provider reports no cached-token count, so every input token
+   would be priced at 0.19 and the estimate would be a pure upper bound. That
+   came from inspecting a single response that happened to have no cache hit.
+   The live table shows otherwise on real visitor traffic: **2,304 of 8,589
+   prompt tokens cached** on the first day of recording. The 0.028 rate applies,
+   and the estimate is closer to the invoice than promised. The `cacheUnreported`
+   flag stays, because it is derived from the data rather than from an
+   assumption — a month that genuinely reports no cache still declares that its
+   figure leans high.
 
    Until the numbers are set the job does **not** go quiet — it mails a
    configuration notice once a month, and only in a month the assistant was

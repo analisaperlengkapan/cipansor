@@ -5,10 +5,13 @@ import { logger } from '@/lib/logger';
 import type {
   ChatbotConversationListResponse,
   ChatbotPersonaResponse,
+  ChatbotUsageResponse,
 } from '@cipansor/shared';
 import * as chatbotService from './chatbot.service';
 import * as personaService from './persona.service';
 import * as transcriptService from './transcript.service';
+import { estimateCost, monthToDateUsage } from './usage.service';
+import { config } from '@/config';
 import type { PublicChatBody, UpdatePersonaBody } from './chatbot.schema';
 
 /**
@@ -185,4 +188,51 @@ export const getConversation = asyncHandler(async (req: Request, res: Response) 
   logger.info('Chatbot transcript read', { by: req.user?.id, conversationId: conversation.id });
 
   res.json(ApiResponse.success(conversation));
+});
+
+/**
+ * Pemakaian dan taksiran biaya bulan berjalan (super admin).
+ * GET /api/chatbot/admin/usage
+ *
+ * Sampai sekarang angka-angka ini hanya keluar lewat surat peringatan bulanan,
+ * yang berarti tidak ada cara melihatnya sebelum ambang pertama terlewati —
+ * "berapa yang sudah terpakai" tidak dapat dijawab siapa pun sampai jawabannya
+ * sudah terlambat.
+ *
+ * Bendera `priced`, `cacheUnreported` dan `incomplete` ikut dikirim, bukan
+ * disaring di sini: layarnya yang harus menyampaikan arah kemelesetan, dan
+ * mengirim angka tanpa benderanya akan mengubah taksiran menjadi pernyataan.
+ */
+export const getUsage = asyncHandler(async (_req: Request, res: Response) => {
+  const usage = await monthToDateUsage();
+  const cost = estimateCost(usage);
+  const { monthlyBudget, alertTo } = config.chatbot.spend;
+
+  const percentOfBudget =
+    cost.priced && monthlyBudget > 0 ? (cost.amount / monthlyBudget) * 100 : null;
+
+  res.json(
+    ApiResponse.success({
+      monthKey: usage.monthKey,
+      requests: usage.requests,
+      promptTokens: usage.promptTokens,
+      completionTokens: usage.completionTokens,
+      cachedPromptTokens: usage.cachedPromptTokens,
+      unmeteredRequests: usage.unmeteredRequests,
+      byModel: usage.byModel,
+      cost: {
+        amount: cost.amount,
+        currency: cost.currency,
+        priced: cost.priced,
+        cacheUnreported: cost.cacheUnreported,
+        incomplete: cost.incomplete,
+      },
+      monthlyBudget,
+      percentOfBudget,
+      // Alamat tujuan peringatan jatuh ke alamat balasan surat resmi bila tidak
+      // diatur — sama seperti yang dilakukan pekerjaannya, supaya layar dan
+      // surat tidak pernah menyebut tujuan yang berbeda.
+      alertTo: alertTo || config.mail.replyTo,
+    } satisfies ChatbotUsageResponse)
+  );
 });

@@ -254,7 +254,9 @@ describe('estimateCost', () => {
   });
 
   it('menyatakan dirinya batas atas ketika penyedia tidak melaporkan token cache', () => {
-    // Ini keadaan normal pada deployment yang sekarang, bukan galat — tetapi
+    // Bukan galat, dan BUKAN pula keadaan normal: produksi ternyata melaporkan
+    // token cache (2.304 dari 8.589 pada hari pertama pencatatan). Yang diuji
+    // di sini adalah bulan yang benar-benar tidak melaporkannya — karena
     // "USD 7,10" dan "paling banyak USD 7,10" adalah dua pernyataan berbeda.
     Object.assign(config.chatbot.spend, {
       inputPricePerMillionTokens: 0.19,

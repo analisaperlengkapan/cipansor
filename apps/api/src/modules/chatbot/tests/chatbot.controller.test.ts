@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Request, Response } from 'express';
 
 vi.mock('@/lib/logger', () => ({
@@ -16,10 +16,16 @@ vi.mock('../transcript.service', () => ({
   TRANSCRIPT_RETENTION_DAYS: 90,
 }));
 vi.mock('../persona.service', () => ({}));
+vi.mock('../usage.service', () => ({
+  monthToDateUsage: vi.fn(),
+  estimateCost: vi.fn(),
+}));
 
+import { config } from '@/config';
 import * as chatbotService from '../chatbot.service';
+import { estimateCost, monthToDateUsage } from '../usage.service';
 import * as transcriptService from '../transcript.service';
-import { ask } from '../chatbot.controller';
+import { ask, getUsage } from '../chatbot.controller';
 
 const askService = vi.mocked(chatbotService.ask);
 const recordTurn = vi.mocked(transcriptService.recordTurn);
@@ -131,5 +137,102 @@ describe('POST /chatbot/public/ask', () => {
       data: { answer: 'ok', sources: [], refused: false },
     });
     expect(next).not.toHaveBeenCalled();
+  });
+});
+
+describe('GET /chatbot/admin/usage', () => {
+  const originalSpend = { ...config.chatbot.spend };
+
+  function stubUsage(over: Record<string, unknown> = {}) {
+    vi.mocked(monthToDateUsage).mockResolvedValue({
+      monthKey: '2026-09',
+      monthStart: new Date('2026-09-01T00:00:00Z'),
+      requests: 120,
+      promptTokens: 2_000_000,
+      completionTokens: 500_000,
+      cachedPromptTokens: 0,
+      unmeteredRequests: 0,
+      byModel: [],
+      ...over,
+    } as never);
+  }
+
+  beforeEach(() => {
+    Object.assign(config.chatbot.spend, { monthlyBudget: 10, alertTo: 'ops@example.test' });
+    stubUsage();
+    vi.mocked(estimateCost).mockReturnValue({
+      amount: 2.5,
+      currency: 'USD',
+      priced: true,
+      cacheUnreported: true,
+      incomplete: false,
+    });
+  });
+
+  afterEach(() => {
+    Object.assign(config.chatbot.spend, originalSpend);
+  });
+
+  it('melaporkan persen anggaran dari biaya dan anggaran yang berlaku', async () => {
+    const res = fakeRes();
+    await getUsage({} as unknown as Request, res, vi.fn());
+
+    expect(res.body.data).toMatchObject({
+      monthKey: '2026-09',
+      requests: 120,
+      monthlyBudget: 10,
+      percentOfBudget: 25,
+      alertTo: 'ops@example.test',
+    });
+  });
+
+  it('meneruskan bendera arah kemelesetan apa adanya, tidak menyaringnya', async () => {
+    // Mengirim angka tanpa benderanya mengubah taksiran menjadi pernyataan —
+    // bentuk kekeliruan yang paling merugikan di sistem ini.
+    const res = fakeRes();
+    await getUsage({} as unknown as Request, res, vi.fn());
+
+    expect(res.body.data?.cost).toEqual({
+      amount: 2.5,
+      currency: 'USD',
+      priced: true,
+      cacheUnreported: true,
+      incomplete: false,
+    });
+  });
+
+  it('TIDAK melaporkan persen apa pun ketika harganya belum diisi', async () => {
+    // Nol persen akan terbaca sebagai "belum ada yang terpakai", padahal yang
+    // benar adalah "belum bisa dihitung". Null memaksa layarnya diam.
+    vi.mocked(estimateCost).mockReturnValue({
+      amount: 0,
+      currency: 'USD',
+      priced: false,
+      cacheUnreported: false,
+      incomplete: false,
+    });
+
+    const res = fakeRes();
+    await getUsage({} as unknown as Request, res, vi.fn());
+
+    expect(res.body.data?.percentOfBudget).toBeNull();
+  });
+
+  it('tidak melaporkan persen ketika anggarannya belum diatur', async () => {
+    Object.assign(config.chatbot.spend, { monthlyBudget: 0 });
+
+    const res = fakeRes();
+    await getUsage({} as unknown as Request, res, vi.fn());
+
+    expect(res.body.data?.percentOfBudget).toBeNull();
+  });
+
+  it('jatuh ke alamat balasan surat resmi bila tujuan peringatan kosong', async () => {
+    Object.assign(config.chatbot.spend, { alertTo: '' });
+
+    const res = fakeRes();
+    await getUsage({} as unknown as Request, res, vi.fn());
+
+    expect(res.body.data?.alertTo).toBe(config.mail.replyTo);
   });
 });

@@ -54,7 +54,7 @@ router.post(
   // Pendaftaran SPMB terbuka bagi siapa pun tanpa kredensial, dan setiap
   // kiriman menjadi baris calon santri yang harus dibaca manusia. Pembatas
   // laju menahan satu mesin; Turnstile menahan yang tersebar.
-  requireTurnstile,
+  requireTurnstile('spmb-daftar'),
   controller.createPublicRegistrant
 );
 router.get(

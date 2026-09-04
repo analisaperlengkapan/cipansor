@@ -150,6 +150,36 @@ export const config = {
      * menunggu, bukan ketatnya pemeriksaan.
      */
     timeoutMs: parseInt(process.env.TURNSTILE_TIMEOUT_MS || '4000', 10),
+    /**
+     * Hostname yang boleh menerbitkan token, dan mengapa daftar ini wajib ada.
+     *
+     * Site key kita **publik** — ia dibakar ke dalam bundel web dan dapat
+     * dibaca siapa pun yang membuka Sumber Halaman. Tidak ada yang mencegah
+     * orang lain menempelkan widget dengan site key yang sama di domainnya
+     * sendiri, menyelesaikan tantangannya di sana, lalu membelanjakan
+     * tokennya ke API ini. Yang membedakan token itu dari token pengunjung
+     * kita hanyalah satu field yang dikembalikan siteverify: `hostname`,
+     * yaitu tempat tantangannya benar-benar diselesaikan. Membuangnya —
+     * seperti yang kita lakukan sampai 2026-09-04 — berarti site key publik
+     * itu sekaligus menjadi izin masuk bagi siapa saja yang mau memasangnya.
+     *
+     * **`localhost` sengaja TIDAK ada di daftar bawaan.** Menyertakannya akan
+     * membuka persis lubang yang daftar ini tutup: penyerang cukup menyajikan
+     * halaman berisi site key kita dari `localhost` miliknya sendiri, dan
+     * Cloudflare akan melaporkan hostname itu apa adanya. Pengembangan tidak
+     * membutuhkannya — tanpa `TURNSTILE_SECRET_KEY` gerbangnya mati sebelum
+     * pemeriksaan ini tercapai.
+     */
+    get allowedHostnames(): string[] {
+      const raw = process.env.TURNSTILE_ALLOWED_HOSTNAMES;
+      if (raw && raw.trim().length > 0) {
+        return raw
+          .split(',')
+          .map((h) => h.trim().toLowerCase())
+          .filter((h) => h.length > 0);
+      }
+      return ['cipansor.or.id', 'www.cipansor.or.id', 'portal.cipansor.or.id'];
+    },
   },
 
   log: {

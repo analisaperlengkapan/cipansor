@@ -57,7 +57,7 @@ const twoFactorLimiter = rateLimit({
 // di middleware/turnstile.ts. Halaman masuk adalah satu-satunya pintu ke
 // seluruh portal, dan `authLimiter` di app.ts membatasi per-IP: sebuah botnet
 // yang tersebar di ribuan IP tidak pernah menyentuh batas itu.
-router.post('/login', requireTurnstile, validate(loginSchema), controller.login);
+router.post('/login', requireTurnstile('login'), validate(loginSchema), controller.login);
 
 /**
  * @swagger
@@ -129,7 +129,7 @@ router.post(
   // sudah membawa token dari kotak masuk pemiliknya, tetapi endpoint ini
   // terbuka bagi siapa pun dan formnya diisi manusia — jadi ongkos gerbangnya
   // nol dan ia menutup penyapuan token.
-  requireTurnstile,
+  requireTurnstile('reset-password'),
   validate(resetPasswordSchema),
   controller.resetPassword,
 );

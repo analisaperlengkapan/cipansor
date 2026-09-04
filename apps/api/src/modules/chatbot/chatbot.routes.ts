@@ -49,7 +49,7 @@ router.get('/public/status', controller.status);
 router.post(
   '/public/ask',
   chatbotLimiter,
-  requireTurnstile,
+  requireTurnstile('chatbot-ask'),
   validate(publicChatSchema),
   controller.ask
 );

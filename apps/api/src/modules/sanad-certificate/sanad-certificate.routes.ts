@@ -140,7 +140,7 @@ router.get('/students/:studentId/summary', authenticate, controller.getStudentSa
 // dijaga. Tanpa gerbang ini ia menjadi oracle yang dapat disapu berulang.
 router.post(
   '/verify',
-  requireTurnstile,
+  requireTurnstile('verify-sanad'),
   validate(verifyCertificateSchema),
   controller.verifyCertificate
 );

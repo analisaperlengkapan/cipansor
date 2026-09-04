@@ -58,13 +58,96 @@ describe('verifyTurnstileToken', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('meloloskan ketika Cloudflare menjawab success', async () => {
-    siteverifyReplies({ success: true });
+  it('meloloskan ketika Cloudflare menjawab success dari hostname kita', async () => {
+    siteverifyReplies({ success: true, hostname: 'portal.cipansor.or.id' });
 
     await expect(verifyTurnstileToken('token-sah')).resolves.toEqual({
       ok: true,
       reason: 'verified',
     });
+  });
+
+  /**
+   * Pemeriksaan `hostname`, dan mengapa `success: true` saja tidak cukup.
+   *
+   * Site key kita publik — ia dibakar ke dalam bundel web. Siapa pun dapat
+   * menempelkan widget dengan site key yang sama di domainnya sendiri,
+   * menyelesaikan tantangannya di sana, dan menerima token yang `success`-nya
+   * benar-benar `true`. Yang membedakannya dari token pengunjung kita hanya
+   * satu field, dan sampai 2026-09-04 kita membuangnya.
+   */
+  it('MENGHENTIKAN token sah yang diterbitkan dari hostname orang lain', async () => {
+    siteverifyReplies({ success: true, hostname: 'phishing-cipansor.example' });
+
+    const outcome = await verifyTurnstileToken('token-sah');
+
+    expect(outcome).toMatchObject({ ok: false, reason: 'hostname-not-allowed' });
+    // Hostname-nya harus terbaca di log: sebab lain baris ini muncul adalah
+    // host baru yang lupa didaftarkan, dan itu mengunci semua pengunjungnya.
+    //
+    // Argumen keduanya diambil lewat `as unknown as`: tipe winston menyatakan
+    // `logger.error` bertanda tangan satu argumen, jadi `calls[0][1]` tidak
+    // ada menurut `tsc` walau ia benar-benar ada saat berjalan.
+    const [, meta] = vi.mocked(logger.error).mock.calls[0] as unknown as [
+      string,
+      Record<string, unknown>,
+    ];
+    expect(meta).toMatchObject({ hostname: 'phishing-cipansor.example' });
+  });
+
+  it('menerima hostname yang didaftarkan lewat TURNSTILE_ALLOWED_HOSTNAMES', async () => {
+    vi.stubEnv('TURNSTILE_ALLOWED_HOSTNAMES', 'pratinjau.contoh.test, portal.cipansor.or.id');
+    siteverifyReplies({ success: true, hostname: 'pratinjau.contoh.test' });
+
+    await expect(verifyTurnstileToken('token-sah')).resolves.toMatchObject({
+      ok: true,
+      reason: 'verified',
+    });
+  });
+
+  it('menghentikan hostname kosong — daftar yang tidak menyebutkannya berarti tidak', async () => {
+    siteverifyReplies({ success: true });
+
+    await expect(verifyTurnstileToken('token-sah')).resolves.toMatchObject({
+      ok: false,
+      reason: 'hostname-not-allowed',
+    });
+  });
+
+  /**
+   * Pemeriksaan `action`: mengikat token pada permukaan yang menerbitkannya.
+   *
+   * Tanpa ini, token yang dicetak di panel chat — permukaan termurah, yang
+   * tantangannya selesai sendiri tanpa klik — dapat dibelanjakan di
+   * `/auth/login`.
+   */
+  it('MENGHENTIKAN token yang diterbitkan untuk tindakan lain', async () => {
+    siteverifyReplies({
+      success: true,
+      hostname: 'portal.cipansor.or.id',
+      action: 'chatbot-ask',
+    });
+
+    await expect(verifyTurnstileToken('token-sah', undefined, 'login')).resolves.toMatchObject({
+      ok: false,
+      reason: 'action-mismatch',
+    });
+  });
+
+  it('meloloskan ketika tindakannya cocok', async () => {
+    siteverifyReplies({ success: true, hostname: 'portal.cipansor.or.id', action: 'login' });
+
+    await expect(verifyTurnstileToken('token-sah', undefined, 'login')).resolves.toMatchObject({
+      ok: true,
+      reason: 'verified',
+    });
+  });
+
+  it('menolak token yang terlalu panjang tanpa menukarkannya', async () => {
+    const outcome = await verifyTurnstileToken('x'.repeat(2049));
+
+    expect(outcome).toMatchObject({ ok: false, reason: 'rejected' });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('menghentikan ketika Cloudflare menjawab tidak, dan membawa kodenya', async () => {

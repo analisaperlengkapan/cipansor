@@ -78,6 +78,10 @@ services:
       # tampak sudah benar. Kosong = gerbang mati (sah untuk pengembangan).
       TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
       TURNSTILE_TIMEOUT_MS: ${TURNSTILE_TIMEOUT_MS:-4000}
+      # Dienumerasikan meski biasanya kosong: sebuah variabel yang ada di .env
+      # tapi tidak disebut di sini TIDAK PERNAH sampai ke kontainer, dan
+      # tuas yang tidak tersambung lebih buruk daripada tuas yang tidak ada.
+      TURNSTILE_ALLOWED_HOSTNAMES: ${TURNSTILE_ALLOWED_HOSTNAMES:-}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       # Marks the whole deployment as a demo, lifting the mandatory 2FA wall so

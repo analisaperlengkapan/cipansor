@@ -114,7 +114,7 @@ router.post(
   '/verify-pdf',
   publicVerifyLimiter,
   upload.single('file'),
-  requireTurnstile,
+  requireTurnstile('verify-letter'),
   EsignController.verifyPdf
 );
 

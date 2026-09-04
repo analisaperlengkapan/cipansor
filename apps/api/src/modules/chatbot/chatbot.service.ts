@@ -15,6 +15,7 @@ import type { ChatMessage, ChatSource, PublicChatResponse } from '@cipansor/shar
 import { config } from '@/config';
 import { logger } from '@/lib/logger';
 import { defaultRetriever, type Retriever } from './retrieval';
+import { topicLabels } from './knowledge-base';
 import { collectLiveFacts } from './live-facts';
 import { buildMessages } from './prompt';
 import { resolvePublicPersona } from './persona.service';
@@ -105,11 +106,26 @@ function groundedRefusal(): PublicChatResponse {
   // Written out rather than generated so it matches the house style even though
   // no model is involved: a visitor should not be able to tell that this
   // particular reply never reached one.
+  //
+  // RAMBU PETUNJUK, BUKAN JALAN BUNTU. Versi sebelumnya hanya meminta maaf lalu
+  // menyodorkan nomor telepon, dan itu jawaban yang salah untuk keluhan yang
+  // paling sering memicunya: seorang pengunjung yang bertanya "ada informasi
+  // apa saja?" tidak membutuhkan nomor telepon, ia membutuhkan daftar. Menyebut
+  // apa yang MEMANG bisa dijawab mengubah kebuntuan menjadi langkah berikutnya,
+  // dan tidak menelan satu token pun karena tidak ada model yang terlibat.
+  //
+  // Daftarnya diambil dari korpus (`topicLabels()`), bukan ditulis ulang di
+  // sini — dua daftar yang harus disepakati selamanya adalah cara sebuah rambu
+  // petunjuk mulai menunjuk ke tempat yang sudah tidak ada.
+  const topik = topicLabels().join(', ');
+
   return {
     answer:
-      'Mohon maaf, untuk pertanyaan tersebut saya belum memiliki informasinya 🙏 ' +
-      `Agar Bapak/Ibu mendapat jawaban yang tepat, silakan hubungi kami di ${siteConfig.contact.phone} 📞 ` +
-      `atau melalui WhatsApp ${siteConfig.contact.whatsapp} 💬\n\n` +
+      'Mohon maaf, untuk pertanyaan tersebut saya belum memiliki informasinya 🙏\n\n' +
+      `Yang bisa saya bantu: ${topik} — juga informasi pendaftaran santri baru ` +
+      '(SPMB) terkini seperti biaya dan tanggal penutupannya 📚\n\n' +
+      'Bila yang Bapak/Ibu cari tidak ada di daftar itu, silakan hubungi kami di ' +
+      `${siteConfig.contact.phone} 📞 atau melalui WhatsApp ${siteConfig.contact.whatsapp} 💬\n\n` +
       'Ada lagi yang ingin Bapak/Ibu tanyakan? 😊',
     sources: [],
     refused: true,

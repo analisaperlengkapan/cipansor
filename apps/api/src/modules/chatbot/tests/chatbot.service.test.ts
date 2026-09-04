@@ -159,7 +159,11 @@ describe('ask', () => {
 
     const result = await ask({ question: 'apa visi pesantren', provider });
 
-    expect(result).toEqual(cached);
+    // `cached` ditambahkan di sini dan dilucuti lagi di controller sebelum
+    // jawabannya keluar. Riwayat percakapan yang membutuhkannya: jawaban keliru
+    // yang ternyata pemutaran ulang diperbaiki dengan membersihkan cache, bukan
+    // dengan mengubah persona. Pelucutannya diuji di chatbot.controller.test.ts.
+    expect(result).toEqual({ ...cached, cached: true });
     expect(provider.lastRequest).toBeUndefined();
   });
 

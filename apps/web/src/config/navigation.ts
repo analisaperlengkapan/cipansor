@@ -38,6 +38,7 @@ import {
   BookCheck,
   ClipboardList,
   MessageSquare,
+  MessagesSquare,
   Languages,
   Sparkles,
   Trophy,
@@ -1399,6 +1400,17 @@ const adminNavigation: NavGroup[] = [
         title: "Asisten AI",
         href: "/settings/chatbot",
         icon: MessageSquare,
+        roleCodes: ["SUPER_ADMIN"],
+        roles: ["SUPER_ADMIN"],
+      },
+      {
+        // Riwayat tanya-jawab asisten publik. Dikunci ke SUPER_ADMIN dengan
+        // alasan yang lebih keras daripada persona di atasnya: isinya kalimat
+        // yang benar-benar diketik pengunjung, dan terhapus sendiri setelah 90
+        // hari.
+        title: "Riwayat Percakapan",
+        href: "/settings/chatbot/percakapan",
+        icon: MessagesSquare,
         roleCodes: ["SUPER_ADMIN"],
         roles: ["SUPER_ADMIN"],
       },

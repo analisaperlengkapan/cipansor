@@ -334,6 +334,21 @@ What the design asked for and we have not built, in the order it matters:
    configuration notice once a month, and only in a month the assistant was
    actually used. Deploying requires `db push` (additive table, no reseed) and a
    container restart; `.env` alone changes nothing until then.
+1b. ~~**No record of what visitors actually asked.**~~ **Shipped 2026-09-04.**
+   Every turn is kept in `chatbot_conversations` / `chatbot_messages` and read
+   at `/settings/chatbot/percakapan` (SUPER_ADMIN only), with a filter for
+   conversations the assistant could not answer — which is the knowledge-base
+   backlog, written by visitors themselves.
+
+   Storing it reverses a deliberate earlier decision (the controller logged that
+   a question arrived, never its text, because people type "anak saya bernama…"
+   into chat boxes), so three constraints carry the reversal: one reader, no IP
+   or browser fingerprint of any kind, and **90-day deletion by
+   `jobs/chatbot-transcript-purge.job.ts`** at 03:15 WIB — which writes an
+   `audit_logs` row on **every** run, including runs that delete nothing,
+   because an empty table proves nothing about whether the purge is alive.
+   Deploying requires `db push` (two additive tables, no reseed) and a container
+   restart.
 2. **The eval suite is not in CI** (§5). It exists — 36 golden and 23 red-team
    cases, `pnpm --filter api chatbot:eval` — and runs only when someone
    remembers. A leak regression is caught by nothing else. Real money per run,
@@ -342,8 +357,9 @@ What the design asked for and we have not built, in the order it matters:
    can change the public voice of the pesantren with no revision trail and no
    quality check; reverting means retyping.
 4. **The golden set is 36 cases against the 50–100 the design asked for.** Grow
-   it from questions visitors actually ask, which is the point of shipping
-   Phase 1 first.
+   it from questions visitors actually ask — which is now readable rather than
+   hypothetical: `/settings/chatbot/percakapan`, filtered to the unanswered
+   ones (see 1b), is that list.
 
 Phase 2 (the authenticated agent) stays deliberately parked. It must call the
 existing authorized endpoints as the logged-in user with their **active** role —

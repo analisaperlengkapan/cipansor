@@ -53,6 +53,36 @@ export function ChatWidget() {
   const chat = usePublicChat();
 
   /**
+   * Satu pengenal per widget yang dimuat, supaya giliran-giliran yang saling
+   * menyambung tersimpan sebagai SATU percakapan di riwayat super admin.
+   *
+   * Dibuat di peramban dan tidak membawa kewenangan apa pun: ia bukan sesi,
+   * tidak menandai siapa pun, dan server tidak memercayainya untuk hal lain
+   * selain mengelompokkan baris. Disimpan dalam ref, bukan state, karena
+   * berubahnya tidak boleh menyebabkan render ulang.
+   *
+   * Field `conversationId` sudah lama diterima API dan divalidasi skema, tetapi
+   * tidak pernah ada yang mengisinya — riwayatnya karena itu tidak akan pernah
+   * punya lebih dari satu giliran per baris tanpa baris ini.
+   */
+  const conversationId = useRef<string>("");
+
+  useEffect(() => {
+    // Dibuat di dalam efek, bukan saat render. `crypto.randomUUID()`,
+    // `Date.now()` dan `Math.random()` semuanya tidak murni, dan React Compiler
+    // menolaknya di badan komponen sebagai galat eslint — bukan galat tipe,
+    // sehingga `build`, `build:strict` dan seluruh uji tetap hijau dan hanya
+    // Lint yang memerah. Efek berjalan setelah render dan jauh sebelum
+    // pengunjung sempat mengirim apa pun.
+    if (!conversationId.current) {
+      conversationId.current =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `chat-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+  }, []);
+
+  /**
    * Satu token per pertanyaan, dimuat ulang begitu pertanyaan terkirim.
    *
    * Endpoint ini membelanjakan uang pada setiap panggilan, jadi ia dijaga
@@ -97,6 +127,7 @@ export function ChatWidget() {
         message: trimmed,
         history,
         turnstileToken: turnstile.token ?? undefined,
+        conversationId: conversationId.current || undefined,
       });
       setTurns((prev) => [
         ...prev,

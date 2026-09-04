@@ -73,4 +73,21 @@ router.delete(
   controller.resetPersona
 );
 
+// Riwayat tanya-jawab. Dikunci ke SUPER_ADMIN dengan alasan yang lebih keras
+// daripada persona: yang tersimpan di sini adalah kalimat yang benar-benar
+// diketik pengunjung, kadang berisi nama anak dan keadaan keluarganya. Satu
+// peran, satu pembaca — dan barisnya menghapus diri setelah 90 hari.
+router.get(
+  '/admin/conversations',
+  authenticate,
+  authorize(RoleCode.SUPER_ADMIN),
+  controller.listConversations
+);
+router.get(
+  '/admin/conversations/:id',
+  authenticate,
+  authorize(RoleCode.SUPER_ADMIN),
+  controller.getConversation
+);
+
 export default router;

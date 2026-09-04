@@ -10,6 +10,7 @@ import { runMonthlyAutoBilling } from './finance-billing.job';
 import { sendMonthlySppReminders } from './spp-reminder.job';
 import { purgeIdentityDocuments } from './identity-purge.job';
 import { runChatbotSpendCheck } from './chatbot-spend.job';
+import { runChatbotTranscriptPurge } from './chatbot-transcript-purge.job';
 import { prisma } from '@/lib/prisma';
 
 /**
@@ -221,6 +222,36 @@ export function initializeScheduler(): void {
   scheduledTasks.push(chatbotSpendTask);
   logger.info('[Scheduler] Chatbot spend check scheduled daily at 07:00 WIB');
 
+  /**
+   * Penyapuan riwayat percakapan asisten publik.
+   *
+   * Retensi 90 hari adalah separuh alasan mengapa menyimpan kalimat pengunjung
+   * dapat dipertanggungjawabkan sama sekali; kalau penyapunya berhenti, janji
+   * itu berhenti benar tanpa satu pun gejala yang terlihat. Karena itu ia
+   * menulis baris audit setiap kali berjalan, termasuk ketika tidak ada yang
+   * dihapus.
+   *
+   * Pukul 03:15 WIB: sesudah pembersihan snapshot pukul 03:00 dan jauh dari
+   * penyapuan KTP pukul 02:30, supaya dua penghapusan besar tidak berebut
+   * basis data yang sama.
+   */
+  const chatbotTranscriptTask = cron.schedule(
+    '15 3 * * *',
+    async () => {
+      logger.debug('[Scheduler] Running chatbot transcript purge');
+      try {
+        await runChatbotTranscriptPurge();
+      } catch (error) {
+        logger.error('[Scheduler] Chatbot transcript purge failed:', error);
+      }
+    },
+    {
+      timezone: 'Asia/Jakarta',
+    }
+  );
+  scheduledTasks.push(chatbotTranscriptTask);
+  logger.info('[Scheduler] Chatbot transcript purge scheduled daily at 03:15 WIB');
+
   logger.info(`[Scheduler] ${scheduledTasks.length} jobs scheduled successfully`);
 }
 
@@ -246,6 +277,7 @@ export async function runJob(
     | 'spp-reminder'
     | 'identity-purge'
     | 'chatbot-spend'
+    | 'chatbot-transcript-purge'
 ): Promise<void> {
   logger.info(`[Scheduler] Manually running job: ${jobName}`);
 
@@ -273,6 +305,9 @@ export async function runJob(
       break;
     case 'chatbot-spend':
       await runChatbotSpendCheck();
+      break;
+    case 'chatbot-transcript-purge':
+      await runChatbotTranscriptPurge();
       break;
     default:
       throw new Error(`Unknown job: ${jobName}`);

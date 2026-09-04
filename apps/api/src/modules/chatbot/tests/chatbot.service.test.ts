@@ -5,6 +5,7 @@ import { collectLiveFacts } from '../live-facts';
 import { isCacheable, readCached, writeCached } from '../cache';
 import { config } from '@/config';
 import type { LlmProvider } from '../providers/types';
+import { recordUsage } from '../usage.service';
 
 vi.mock('../live-facts', () => ({ collectLiveFacts: vi.fn() }));
 // The persona is resolved from the database in production; here we pin it so the
@@ -19,6 +20,11 @@ vi.mock('../cache', () => ({
 vi.mock('@/lib/logger', () => ({
   logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
+// Usage recording is a database write; its own suite covers what it writes. Here
+// it is mocked so these tests stay about orchestration — but it is asserted, not
+// merely silenced: a call that reaches the model and is never booked is exactly
+// the spend the monthly alert exists to catch.
+vi.mock('../usage.service', () => ({ recordUsage: vi.fn(async () => undefined) }));
 
 const mockLiveFacts = vi.mocked(collectLiveFacts);
 
@@ -139,6 +145,53 @@ describe('ask', () => {
 
     expect(result).toEqual(cached);
     expect(provider.lastRequest).toBeUndefined();
+  });
+
+  it('books a billed call against the month it was made in', async () => {
+    const provider: LlmProvider = {
+      name: 'metered',
+      complete: async () => ({
+        text: 'jawaban',
+        model: 'DeepSeek-V4-Flash',
+        usage: { promptTokens: 341, completionTokens: 16 },
+      }),
+    };
+    const now = new Date('2026-09-04T03:00:00Z');
+
+    await ask({ question: 'apa visi pesantren', provider, now });
+
+    expect(recordUsage).toHaveBeenCalledWith({
+      model: 'DeepSeek-V4-Flash',
+      usage: { promptTokens: 341, completionTokens: 16 },
+      now,
+    });
+  });
+
+  it('books nothing for an answer served from cache', async () => {
+    // The cache is a saving, not a spend. Counting hits here would inflate the
+    // month's estimate with calls that never reached the provider — and the
+    // figure the alert compares against would stop being a bill.
+    vi.mocked(readCached).mockResolvedValueOnce({
+      answer: 'dari cache',
+      sources: [],
+      refused: false,
+    });
+
+    await ask({ question: 'apa visi pesantren', provider: recordingProvider() });
+
+    expect(recordUsage).not.toHaveBeenCalled();
+  });
+
+  it('books nothing when the provider call fails', async () => {
+    const failing: LlmProvider = {
+      name: 'failing',
+      complete: () => Promise.reject(new Error('upstream 500')),
+    };
+
+    await expect(ask({ question: 'visi', provider: failing })).rejects.toBeInstanceOf(
+      ChatbotUnavailableError
+    );
+    expect(recordUsage).not.toHaveBeenCalled();
   });
 
   it('stores a fresh answer for the next visitor', async () => {

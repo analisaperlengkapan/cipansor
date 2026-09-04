@@ -6219,6 +6219,65 @@ model ChatbotPersona {
   @@map("chatbot_personas")
 }
 
+/// ChatbotUsageDaily — berapa banyak yang benar-benar dibelanjakan asisten
+/// publik, dijumlahkan per hari per model.
+///
+/// Endpoint `/api/chatbot/public/ask` terbuka untuk siapa pun di internet dan
+/// membelanjakan uang pada setiap panggilan. Pembatas 10/menit per IP dan
+/// Turnstile membatasi *laju*-nya; tidak ada satu pun dari keduanya yang
+/// memberi tahu bahwa tagihannya sedang menanjak. Tabel inilah yang menjawab
+/// itu, dan `chatbot-spend.job.ts` yang membacanya.
+///
+/// **Agregat harian, bukan satu baris per pertanyaan.** Satu baris per
+/// panggilan akan menumbuhkan tabel tanpa batas dan menyimpan jejak
+/// pertanyaan-demi-pertanyaan milik pengunjung anonim — data yang tidak kami
+/// perlukan untuk menjawab "berapa biayanya bulan ini". Bentuk ini terbatas
+/// dengan sendirinya: satu baris per hari per model.
+///
+/// Jawaban yang dilayani dari cache **tidak** dicatat di sini. Yang dihitung
+/// tabel ini adalah panggilan yang benar-benar sampai ke penyedia, karena
+/// hanya itu yang ditagih.
+model ChatbotUsageDaily {
+  id String @id @default(uuid())
+
+  /// Tanggal WIB pemakaiannya, bukan UTC — tagihan dibaca orang yang hidup di
+  /// Asia/Jakarta, dan pekerjaan penjadwalnya juga berjalan di zona itu.
+  date  DateTime @db.Date
+  /// Model yang menjawab, seperti yang dikembalikan penyedia. Menjadi bagian
+  /// kunci karena harganya melekat pada model, bukan pada layanannya.
+  model String
+
+  /// Panggilan yang sampai ke penyedia dan berhasil.
+  requests         Int @default(0)
+  promptTokens     Int @default(0) @map("prompt_tokens")
+  completionTokens Int @default(0) @map("completion_tokens")
+
+  /// Bagian dari `promptTokens` yang dilayani dari cache milik PENYEDIA, yang
+  /// ditagih jauh lebih murah (Azure: 0,028 lawan 0,19 USD per 1 juta).
+  ///
+  /// Nol sepanjang deployment yang dipakai tidak melaporkannya — dan
+  /// DeepSeek-V4-Flash-0731 memang tidak (diperiksa 2026-09-04: `usage` hanya
+  /// berisi prompt/completion/total/audio). Kolomnya tetap ada supaya
+  /// penggantian model tidak menuntut migrasi, dan supaya taksirannya dapat
+  /// menyebut dirinya batas atas dengan alasan yang tertulis.
+  cachedPromptTokens Int @default(0) @map("cached_prompt_tokens")
+
+  /// Panggilan berhasil yang jawabannya tidak menyertakan blok `usage`.
+  ///
+  /// Ada gerbang yang menghilangkannya. Tanpa kolom ini, panggilan seperti itu
+  /// akan tampak gratis dan taksiran biayanya menjadi bohong yang meyakinkan;
+  /// dengan kolom ini, taksirannya dapat dinyatakan apa adanya — sebagai batas
+  /// bawah, bukan angka pasti.
+  unmeteredRequests Int @default(0) @map("unmetered_requests")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([date, model])
+  @@index([date])
+  @@map("chatbot_usage_daily")
+}
+
 /// RaporPesantren - Rapor Pesantren Terintegrasi
 model RaporPesantren {
   id             String @id @default(uuid())

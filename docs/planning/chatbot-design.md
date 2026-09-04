@@ -287,9 +287,39 @@ cap, and a monthly spend alert. Cache aggressively — "berapa biaya
 pendaftaran?" will be asked hundreds of times, and the top FAQ entries deserve
 deterministic answers that never reach the model.
 
-> **Status 2026-07-25, updated 2026-07-31 — and the reason to check rather than
-> tick.** Token cap (700), history cap (6 turns) and the cache all shipped and
-> work. The spend alert still does not exist. The per-IP limiter — 10/minute,
+> **Status 2026-07-25, updated 2026-07-31 and 2026-09-04 — and the reason to
+> check rather than tick.** Token cap (700), history cap (6 turns) and the cache
+> all shipped and work. **The spend alert shipped 2026-09-04** and closes this
+> list: every billed call is booked into `chatbot_usage_daily` (a daily
+> aggregate per model, not one row per question — bounded, and it keeps no
+> per-visitor trail), and `jobs/chatbot-spend.job.ts` compares the month to date
+> against `CHATBOT_MONTHLY_BUDGET` every morning at 07:00 WIB, mailing at 50%,
+> 80% and 100%, each at most once a month. Three decisions in it are load-bearing:
+>
+> - **Token prices have no default.** They belong to the model and the region,
+>   both of which are env configuration precisely so the model stays swappable
+>   (§1), so a plausible default would produce an authoritative-looking figure
+>   that is simply wrong. `CHATBOT_PRICE_INPUT_PER_MTOK`,
+>   `CHATBOT_PRICE_OUTPUT_PER_MTOK` and `CHATBOT_PRICE_CACHED_INPUT_PER_MTOK`
+>   start at 0. Production runs 0.19 / 0.51 / 0.028 USD per 1M tokens against a
+>   10 USD monthly budget, from the Azure AI Foundry price page for
+>   *DeepSeek-V4 Flash Global*.
+> - **The cached-input rate is wired but inert, so the figure leans high.** The
+>   live deployment reports no cached-token count at all — its `usage` block is
+>   `prompt_tokens`, `completion_tokens`, `total_tokens`, `audio_prompt_tokens`
+>   (checked 2026-09-04) — so input tokens the provider billed at 0.028 are
+>   estimated at 0.19. A budget alarm that rings early is the correct failure
+>   direction, and the mail states which way it leans rather than presenting a
+>   clean number.
+> - **Unpriced does not mean silent.** With no price or no budget set, the job
+>   mails a configuration notice once a month — but only in a month the
+>   assistant was actually used. Going quiet when unconfigured is the exact
+>   failure this module has already had twice.
+> - **A call whose response carries no `usage` block is counted as unmetered,
+>   never as free.** Zeros would report a spend of zero against a real invoice;
+>   the estimate says out loud that it is a lower bound instead.
+>
+> The per-IP limiter — 10/minute,
 > the one item on this list aimed squarely at cost amplification — was **present
 > in code and inert in production** for six days: `trust proxy = 1` behind
 > Cloudflare *and* nginx made `req.ip` the rotating edge address, so 40+

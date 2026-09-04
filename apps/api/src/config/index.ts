@@ -37,6 +37,24 @@ export function resolveJwtSecret(secret: string | undefined, env: string | undef
   return secret || DEFAULT_JWT_SECRET;
 }
 
+/**
+ * Angka uang dari env, memaafkan koma desimal.
+ *
+ * `parseFloat('0,19')` bernilai **0**, bukan 0,19 — ia berhenti di koma. Nilai
+ * ini diisi tangan oleh orang yang menulis harga dalam bahasa Indonesia, di
+ * mana `0,19` adalah bentuk yang wajar, dan kekeliruannya tidak akan pernah
+ * kelihatan: harga nol berarti "belum berharga", dan sistemnya diam-diam
+ * berhenti membandingkan apa pun. Satu penggantian karakter menutup itu.
+ *
+ * Nilai yang tidak berbentuk angka sama sekali tetap menjadi 0, dan 0 adalah
+ * keadaan yang sudah punya perilakunya sendiri — pemberitahuan konfigurasi
+ * sebulan sekali, bukan kesenyapan.
+ */
+function parsePrice(raw: string | undefined): number {
+  const value = parseFloat((raw || '0').replace(',', '.'));
+  return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
 export const config = {
   env: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '3001', 10),
@@ -304,6 +322,48 @@ export const config = {
     rateLimit: {
       windowMs: parseInt(process.env.CHATBOT_RATE_LIMIT_WINDOW_MS || '60000', 10),
       maxRequests: parseInt(process.env.CHATBOT_RATE_LIMIT_MAX_REQUESTS || '10', 10),
+    },
+    /**
+     * What the assistant is allowed to cost in a month, and what a token costs.
+     *
+     * The limiter above caps the RATE. Nothing in it notices a bill climbing —
+     * a bounded rate sustained for a month is still a bill, and a rate we
+     * considered generous was chosen without ever having measured what a month
+     * of real traffic spends. This block is what `jobs/chatbot-spend.job.ts`
+     * compares against.
+     *
+     * **Prices are per one million tokens and default to 0 — deliberately not
+     * to a guess.** The price belongs to the model and the region, both of
+     * which are env configuration here (`chatbot-design.md` §1 keeps the model
+     * swappable on purpose), so this file cannot know it; a plausible default
+     * would produce an authoritative-looking figure that is simply wrong.
+     * Unpriced is therefore a state the job REPORTS rather than a state in
+     * which it goes quiet — see the job for what it sends instead.
+     */
+    spend: {
+      inputPricePerMillionTokens: parsePrice(process.env.CHATBOT_PRICE_INPUT_PER_MTOK),
+      outputPricePerMillionTokens: parsePrice(process.env.CHATBOT_PRICE_OUTPUT_PER_MTOK),
+      /**
+       * Harga token masukan yang dilayani dari cache milik PENYEDIA.
+       *
+       * Terpasang lengkap, dan hari ini tidak pernah terpakai: deployment
+       * DeepSeek-V4-Flash-0731 di Azure AI Foundry mengembalikan `usage` berisi
+       * `prompt_tokens`, `completion_tokens`, `total_tokens` dan
+       * `audio_prompt_tokens` saja — tidak ada `prompt_tokens_details`, tidak
+       * ada `prompt_cache_hit_tokens` (diperiksa langsung 2026-09-04). Selama
+       * begitu, setiap token masukan dihitung pada harga penuh dan taksirannya
+       * menjadi BATAS ATAS. Untuk sebuah peringatan anggaran, arah galat itu
+       * yang benar: ia berbunyi terlalu awal, bukan terlambat.
+       */
+      cachedInputPricePerMillionTokens: parsePrice(
+        process.env.CHATBOT_PRICE_CACHED_INPUT_PER_MTOK
+      ),
+      /** Label only — no conversion happens anywhere. Set it to whatever the invoice is in. */
+      currency: process.env.CHATBOT_PRICE_CURRENCY || 'USD',
+      /** 0 disables the budget comparison; the monthly volume report still goes out. */
+      monthlyBudget: parsePrice(process.env.CHATBOT_MONTHLY_BUDGET),
+      /** Empty falls back to `config.mail.replyTo`, which is a real monitored mailbox. */
+      alertTo: process.env.CHATBOT_SPEND_ALERT_TO || '',
     },
   },
 } as const;

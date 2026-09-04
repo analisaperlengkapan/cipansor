@@ -19,6 +19,7 @@ import { collectLiveFacts } from './live-facts';
 import { buildMessages } from './prompt';
 import { resolvePublicPersona } from './persona.service';
 import { cacheKeyFor, isCacheable, readCached, writeCached } from './cache';
+import { recordUsage } from './usage.service';
 import type { LlmProvider } from './providers/types';
 import { OpenAiCompatibleProvider } from './providers/openai-compatible';
 import { StubProvider } from './providers/stub';
@@ -169,6 +170,17 @@ export async function ask(options: AskOptions): Promise<PublicChatResponse> {
     });
     throw new ChatbotUnavailableError('Chatbot provider is unavailable');
   }
+
+  // Dicatat di sini, bukan di dalam penyedia, dan bukan sebelum panggilannya:
+  // hanya pada titik ini kita tahu panggilannya berhasil — dan hanya panggilan
+  // yang berhasil sampai ke penyedia yang ditagih. Jawaban dari cache sudah
+  // pulang belasan baris di atas tanpa pernah melewati sini, yang memang
+  // seharusnya: cache adalah penghematan, bukan belanja.
+  //
+  // Ditunggu (`await`) supaya dapat diamati uji, dan aman ditunggu karena
+  // `recordUsage` menelan galatnya sendiri. Pembukuan yang rusak tidak boleh
+  // menjadi chatbot yang rusak.
+  await recordUsage({ model: result.model, usage: result.usage, now });
 
   const sources: ChatSource[] = [
     ...liveFacts.map((fact) => ({ id: fact.id, title: fact.title, kind: 'live' as const })),

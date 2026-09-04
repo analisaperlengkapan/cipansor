@@ -302,9 +302,38 @@ requests for private data. Design and rationale: [`planning/chatbot-design.md`](
 
 What the design asked for and we have not built, in the order it matters:
 
-1. **No monthly spend alert** — the one remaining unmet item on the pre-launch
-   list. An open LLM endpoint on a public page is a cost-amplification target,
-   and nothing currently notices a bill climbing.
+1. ~~**No monthly spend alert.**~~ **Shipped 2026-09-04 — needs two numbers
+   before it can compare anything.** Every billed call is now booked into
+   `chatbot_usage_daily` (one aggregate row per day per model; cache hits are
+   deliberately not counted, because a saving is not a spend), and
+   `jobs/chatbot-spend.job.ts` runs daily at 07:00 WIB, mailing at 50%, 80% and
+   100% of `CHATBOT_MONTHLY_BUDGET` — the highest crossed level only, at most
+   once per level per month, and never in a month with no traffic.
+
+   **The numbers, supplied by the user 2026-09-04** and written into `.env`
+   (they still have **no defaults in code**: the price belongs to the model and
+   the region, both env configuration so the model stays swappable, so any
+   default would be an authoritative-looking figure that is simply wrong):
+   input **0.19**, output **0.51**, cached input **0.028** USD per 1M tokens for
+   *DeepSeek-V4 Flash Global* on Azure AI Foundry, budget **10 USD/month**,
+   alerts to `halo@cipansor.or.id`. The price page renders its figures
+   client-side, so the table's row and its three columns are all a fetch can
+   confirm — the values are the user's reading.
+
+   **The cached-input price will not be used, and the estimate is therefore an
+   upper bound.** The live deployment's `usage` block carries only
+   `prompt_tokens`, `completion_tokens`, `total_tokens` and
+   `audio_prompt_tokens` — no `prompt_tokens_details.cached_tokens`, no
+   `prompt_cache_hit_tokens` (checked against the live endpoint 2026-09-04). So
+   every input token is priced at 0.19 even when the provider billed 0.028. For
+   a budget alarm that is the right direction to be wrong in: it rings early,
+   never late. The column and the price are wired anyway, so swapping models
+   costs no migration, and the alert mail says which way the figure leans.
+
+   Until the numbers are set the job does **not** go quiet — it mails a
+   configuration notice once a month, and only in a month the assistant was
+   actually used. Deploying requires `db push` (additive table, no reseed) and a
+   container restart; `.env` alone changes nothing until then.
 2. **The eval suite is not in CI** (§5). It exists — 36 golden and 23 red-team
    cases, `pnpm --filter api chatbot:eval` — and runs only when someone
    remembers. A leak regression is caught by nothing else. Real money per run,

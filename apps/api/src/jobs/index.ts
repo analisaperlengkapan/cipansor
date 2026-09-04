@@ -11,3 +11,9 @@ export {
   IDENTITY_PURGE_AUDIT_ACTION,
   type IdentityPurgeSummary,
 } from './identity-purge.job';
+export {
+  runChatbotSpendCheck,
+  CHATBOT_SPEND_AUDIT_ACTION,
+  CHATBOT_SPEND_AUDIT_ENTITY,
+  type ChatbotSpendCheckResult,
+} from './chatbot-spend.job';

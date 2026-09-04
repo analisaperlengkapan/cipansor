@@ -2825,6 +2825,7 @@ model Grade {
   academicYear AcademicYear @relation(fields: [academicYearId], references: [id])
   gradedBy     User         @relation("GradeRecorder", fields: [gradedById], references: [id])
 
+  @@unique([studentId, examId])
   @@index([studentId])
   @@index([subjectId])
   @@index([examId])

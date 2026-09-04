@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Prisma, QuestionType } from '@prisma/client';
+import { SecurityEventType, RecordSecurityLogInput } from '@cipansor/shared';
 import { Decimal } from '@prisma/client/runtime/client';
 import { Errors } from '@/middleware/error';
 import type { JwtPayload } from '@/lib/jwt';
@@ -521,7 +522,7 @@ export class CBTService {
 
     for (let retryCount = 0; retryCount <= MAX_RETRIES; retryCount++) {
       try {
-        return await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx) => {
           // Re-check status inside the transaction to close the TOCTOU gap:
           // between the check above and entering this serializable transaction,
           // a concurrent operation could have changed the attempt's status.
@@ -601,6 +602,12 @@ export class CBTService {
             },
           });
         }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+
+        if (result && result.status === 'COMPLETED') {
+          await CBTService.syncGradeToAcademicGradebook(attemptId, true);
+        }
+
+        return result;
       } catch (error: any) {
         lastError = error;
         // Retry only on serialization failures (P2034) or deadlocks (40001/40P01)
@@ -1032,7 +1039,97 @@ export class CBTService {
 
     if (!finishedAttempt) throw Errors.notFound('Attempt');
 
+    if (finishedAttempt.status === 'COMPLETED') {
+      await CBTService.syncGradeToAcademicGradebook(attemptId, false);
+    }
+
     return finishedAttempt;
+  }
+
+  static async recordSecurityLog(input: RecordSecurityLogInput, studentId?: string) {
+    const attempt = await prisma.examAttempt.findUnique({
+      where: { id: input.attemptId },
+    });
+    if (!attempt) throw Errors.notFound('Attempt');
+    if (studentId && attempt.studentId !== studentId) {
+      throw Errors.forbidden('Access denied');
+    }
+
+    return {
+      attemptId: input.attemptId,
+      eventType: input.eventType,
+      details: input.details ?? null,
+      recordedAt: new Date(),
+    };
+  }
+
+  static async syncGradeToAcademicGradebook(attemptId: string, forceUpdate = false) {
+    const attempt = await prisma.examAttempt.findUnique({
+      where: { id: attemptId },
+      include: {
+        exam: {
+          include: {
+            teacher: { select: { id: true, userId: true } },
+            questionBank: {
+              include: { questions: { select: { points: true } } },
+            },
+          },
+        },
+      },
+    });
+
+    if (!attempt || attempt.status !== 'COMPLETED' || attempt.score === null) {
+      return null;
+    }
+
+    const { exam, studentId } = attempt;
+    const questions = exam.questionBank?.questions || [];
+    const bankTotalPoints = questions.reduce((sum, q) => sum + q.points, 0);
+    const maxScore = bankTotalPoints > 0 ? bankTotalPoints : Number(exam.maxScore) || 100;
+    const rawScore = Number(attempt.score);
+    const percentage = maxScore > 0 ? Math.min(100, Math.max(0, (rawScore / maxScore) * 100)) : 0;
+
+    let letterGrade = 'E';
+    if (percentage >= 90) letterGrade = 'A';
+    else if (percentage >= 80) letterGrade = 'B';
+    else if (percentage >= 70) letterGrade = 'C';
+    else if (percentage >= 60) letterGrade = 'D';
+
+    const gradedById = exam.teacher?.userId || exam.teacherId;
+
+    const gradeData = {
+      studentId,
+      subjectId: exam.subjectId,
+      examId: exam.id,
+      academicYearId: exam.academicYearId,
+      type: 'EXAM' as const,
+      score: new Decimal(rawScore),
+      maxScore: new Decimal(maxScore),
+      percentage: new Decimal(percentage),
+      letterGrade,
+      gradedById,
+      gradedAt: attempt.finishedAt || new Date(),
+    };
+
+    return prisma.grade.upsert({
+      where: {
+        studentId_examId: {
+          studentId,
+          examId: exam.id,
+        },
+      },
+      create: gradeData,
+      update: forceUpdate
+        ? {
+            score: gradeData.score,
+            maxScore: gradeData.maxScore,
+            percentage: gradeData.percentage,
+            letterGrade: gradeData.letterGrade,
+            gradedById: gradeData.gradedById,
+            gradedAt: gradeData.gradedAt,
+          }
+        : {},
+    });
   }
 
   /**

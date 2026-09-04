@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { CBTController } from './cbt.controller';
 import { authenticate, authorize } from '@/middleware/auth';
+import { validate } from '@/middleware/validate';
+import { recordSecurityLogSchema } from '@cipansor/shared';
 import { UserRole } from '@prisma/client';
 
 const router = Router();
@@ -136,6 +138,15 @@ router.post(
   authenticate,
   authorize(UserRole.STUDENT),
   CBTController.finishExam
+);
+
+// Record Security Log
+router.post(
+  '/attempts/:attemptId/security-log',
+  authenticate,
+  authorize(UserRole.STUDENT),
+  validate(recordSecurityLogSchema),
+  CBTController.recordSecurityLog
 );
 
 export const cbtRoutes = router;

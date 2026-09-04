@@ -16,6 +16,15 @@ export enum ExamStatus {
   GRADED = "GRADED",
 }
 
+export enum SecurityEventType {
+  TAB_SWITCH = "TAB_SWITCH",
+  COPY_PASTE = "COPY_PASTE",
+  RIGHT_CLICK = "RIGHT_CLICK",
+  FULLSCREEN_EXIT = "FULLSCREEN_EXIT",
+  DEV_TOOLS = "DEV_TOOLS",
+}
+
+
 export enum GradeType {
   EXAM = "EXAM",
   ASSIGNMENT = "ASSIGNMENT",

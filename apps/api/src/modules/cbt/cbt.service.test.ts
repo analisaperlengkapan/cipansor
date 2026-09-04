@@ -50,6 +50,12 @@ vi.mock('../../lib/prisma', () => ({
       findMany: vi.fn(),
       findUnique: vi.fn(),
     },
+    grade: {
+      upsert: vi.fn(),
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
     $transaction: vi.fn((callbackOrPromises, _options?) => {
       if (typeof callbackOrPromises === 'function') return callbackOrPromises(prisma);
       return Promise.resolve(callbackOrPromises);
@@ -216,6 +222,89 @@ describe('CBT Service', () => {
         data: { score: expect.anything(), status: 'COMPLETED' },
       });
       expect(result.score).toBe(30);
+    });
+
+    it('should upsert grade into academic gradebook with forceUpdate=true during essay grading', async () => {
+      const mockAttempt = {
+        id: 'attempt-1',
+        studentId: 'std-1',
+        status: 'COMPLETED',
+        score: 85,
+        finishedAt: new Date(),
+        exam: {
+          id: 'exam-1',
+          subjectId: 'sub-1',
+          academicYearId: 'ay-1',
+          maxScore: 100,
+          teacherId: 'teacher-1',
+          teacher: { id: 'teacher-1', userId: 'user-1' },
+          questionBank: {
+            questions: [
+              { points: 50 },
+              { points: 50 },
+            ],
+          },
+        },
+      };
+
+      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue(mockAttempt as any);
+      vi.mocked(prisma.grade.upsert).mockResolvedValue({ id: 'grade-1' } as any);
+
+      await CBTService.syncGradeToAcademicGradebook('attempt-1', true);
+
+      expect(prisma.grade.upsert).toHaveBeenCalledWith({
+        where: {
+          studentId_examId: {
+            studentId: 'std-1',
+            examId: 'exam-1',
+          },
+        },
+        create: expect.objectContaining({
+          studentId: 'std-1',
+          examId: 'exam-1',
+          letterGrade: 'B',
+        }),
+        update: expect.objectContaining({
+          letterGrade: 'B',
+        }),
+      });
+    });
+
+    it('should perform no-op update on upsert when forceUpdate=false for idempotent retry', async () => {
+      const mockAttempt = {
+        id: 'attempt-1',
+        studentId: 'std-1',
+        status: 'COMPLETED',
+        score: 85,
+        finishedAt: new Date(),
+        exam: {
+          id: 'exam-1',
+          subjectId: 'sub-1',
+          academicYearId: 'ay-1',
+          maxScore: 100,
+          teacherId: 'teacher-1',
+          teacher: { id: 'teacher-1', userId: 'user-1' },
+          questionBank: {
+            questions: [{ points: 100 }],
+          },
+        },
+      };
+
+      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue(mockAttempt as any);
+      vi.mocked(prisma.grade.upsert).mockResolvedValue({ id: 'grade-1' } as any);
+
+      await CBTService.syncGradeToAcademicGradebook('attempt-1', false);
+
+      expect(prisma.grade.upsert).toHaveBeenCalledWith({
+        where: {
+          studentId_examId: {
+            studentId: 'std-1',
+            examId: 'exam-1',
+          },
+        },
+        create: expect.any(Object),
+        update: {},
+      });
     });
 
     it('should calculate topic mastery analytics correctly', async () => {

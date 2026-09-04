@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, SharedPaginatedResponse } from "@/lib/api";
+import { SecurityEventType } from "@cipansor/shared";
 
 // Types
 export enum QuestionType {
@@ -56,6 +57,26 @@ export const useQuestionBanks = (params?: any) => {
     queryFn: async () => {
       const { data } = await api.get("/cbt/banks", { params });
       return data;
+    },
+  });
+};
+
+export const useRecordSecurityLog = () => {
+  return useMutation({
+    mutationFn: async ({
+      attemptId,
+      eventType,
+      details,
+    }: {
+      attemptId: string;
+      eventType: SecurityEventType;
+      details?: Record<string, unknown> | null;
+    }) => {
+      await api.post(`/cbt/attempts/${attemptId}/security-log`, {
+        attemptId,
+        eventType,
+        details: details ?? null,
+      });
     },
   });
 };

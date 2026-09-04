@@ -37,6 +37,24 @@ export class CBTController {
     }
   }
 
+  static async recordSecurityLog(req: Request, res: Response, next: NextFunction) {
+    try {
+      const user = requireUser(req);
+      const student = await prisma.student.findUnique({ where: { userId: user.id } });
+      const studentId = student?.id;
+      const attemptId = req.params.attemptId || req.body.attemptId;
+      const { eventType, details } = req.body;
+
+      const log = await CBTService.recordSecurityLog(
+        { attemptId, eventType, details },
+        studentId
+      );
+      res.json({ success: true, data: log });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async getTopicMasteryAnalytics(req: Request, res: Response, next: NextFunction) {
     try {
       const { examId } = req.params;

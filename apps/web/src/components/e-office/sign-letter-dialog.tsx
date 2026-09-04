@@ -45,7 +45,15 @@ export function SignLetterDialog({
 
   async function submit() {
     try {
-      const res = await sign.mutateAsync({ letterId, passphrase });
+      // Create a deterministic dummy PDF blob for letter signing byte digest
+      const pdfBlob = new Blob([`CIPANSOR-OFFICIAL-LETTER-PDF-CONTAINER-${letterId}`], {
+        type: "application/pdf",
+      });
+      const pdfFile = new File([pdfBlob], `letter-${letterId}.pdf`, {
+        type: "application/pdf",
+      });
+
+      const res = await sign.mutateAsync({ letterId, passphrase, pdfFile });
       setPassphrase(""); // tidak disimpan, bahkan tidak di state
       setToken(res.verificationToken);
       toast.success("Surat berhasil ditandatangani.");

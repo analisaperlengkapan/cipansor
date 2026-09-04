@@ -66,18 +66,34 @@ describe('ask', () => {
 
   it('writes that refusal in the house style, though no model produced it', async () => {
     // A visitor should not be able to tell that this particular reply never
-    // reached a model. Salam, warmth, a route to a human, and an offer to
-    // continue — the same shape every other answer has.
+    // reached a model. Warmth, a route to a human, and an offer to continue —
+    // the same shape every other answer has.
     const result = await ask({
       question: 'siapa presiden amerika',
       provider: new StubProvider(),
       retriever: { search: () => [] },
     });
 
-    expect(result.answer).toMatch(/assalamu/i);
     expect(result.answer).toMatch(/\p{Extended_Pictographic}/u);
     expect(result.answer).toContain('0811-110-400');
     expect(result.answer).toMatch(/ada lagi yang ingin/i);
+  });
+
+  it('does not open that refusal with a salam the visitor never gave', async () => {
+    // Dulu baris ini justru MENUNTUT salam (`toMatch(/assalamu/i)`), sehingga
+    // ia akan tetap hijau pada persis cacat yang harus dibuang: gelembung
+    // pembuka widget sudah mengucap salam, jadi jawaban pertama mengucapkannya
+    // dua kali — dan penolakan ini yang paling sering jadi jawaban pertama,
+    // karena pertanyaan di luar korpus tidak menarik satu pun potongan.
+    const result = await ask({
+      question: 'berapa harganya?',
+      provider: new StubProvider(),
+      retriever: { search: () => [] },
+    });
+
+    expect(result.answer).not.toMatch(/assalamu/i);
+    expect(result.answer).not.toMatch(/wa'?alaikum/i);
+    expect(result.answer.trimStart().startsWith('Mohon maaf')).toBe(true);
   });
 
   it('answers from the corpus and attributes its sources', async () => {

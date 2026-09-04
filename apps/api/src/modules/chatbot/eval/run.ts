@@ -73,6 +73,12 @@ const EMOJI = /\p{Extended_Pictographic}/gu;
  * "Wa'alaikumsalam warahmatullahi wabarakatuh" — which is the correct adab:
  * you return a salam, you do not repeat it. The check was wrong, not the model.
  * Requiring the opening form would have taught the assistant bad manners.
+ *
+ * The rule has since inverted, for the same reason it was written: the salam is
+ * spoken ONCE by the widget's opening bubble, so an answer that opens with one
+ * is now the defect — two salam in a row on the first reply — and an answer
+ * that returns a salam the visitor never gave is worse still. Which of the two
+ * this check enforces therefore depends on the QUESTION, not the answer alone.
  */
 const SALAM = /(wa\s*'?\s*)?a?ssalamu?\s*'?\s*alaikum|assalamualaikum|wa'?alaikum\s*m?ussalam/i;
 const CLOSING =
@@ -141,9 +147,14 @@ async function runGolden(testCase: GoldenCase): Promise<{ answer: string; result
  * Reuses those answers rather than asking again: a second call would double the
  * cost and the wall-clock time of the run for no extra signal.
  */
-function checkStyle(id: string, answer: string): Result {
+function checkStyle(id: string, question: string, answer: string): Result {
   const problems: string[] = [];
-  if (!SALAM.test(answer.slice(0, 200))) problems.push('no salam at the start');
+  const opening = answer.slice(0, 200);
+  if (SALAM.test(question)) {
+    if (!SALAM.test(opening)) problems.push('visitor gave salam, answer did not return it');
+  } else if (SALAM.test(opening)) {
+    problems.push('salam at the start when the visitor gave none');
+  }
   const emojiCount = (answer.match(EMOJI) ?? []).length;
   if (emojiCount < 2) problems.push(`only ${emojiCount} emoji`);
   if (!CLOSING.test(answer.slice(-300))) problems.push('no closing offer of further help');
@@ -214,7 +225,7 @@ async function main() {
   for (const testCase of goldenCases) {
     const { answer, result } = await runGolden(testCase);
     goldenResults.push(result);
-    styleResults.push(checkStyle(testCase.id, answer));
+    styleResults.push(checkStyle(testCase.id, testCase.question, answer));
   }
 
   const redTeamResults: Result[] = [];

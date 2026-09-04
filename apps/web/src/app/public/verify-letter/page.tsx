@@ -213,7 +213,14 @@ function PublicVerifyContent() {
             <Button
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
               onClick={handleVerify}
-              disabled={verifyPdfMutation.isPending || !selectedFile}
+              // `turnstile.ready` ikut di sini supaya halaman ini sejalan
+              // dengan enam permukaan lainnya. Tanpa itu tombolnya satu-satunya
+              // yang tetap terbuka ketika gerbangnya mati — penjaga di
+              // `handleVerify` memang menahannya, tapi tombol yang bisa ditekan
+              // dan selalu menolak adalah undangan untuk menekannya berulang.
+              disabled={
+                verifyPdfMutation.isPending || !selectedFile || !turnstile.ready
+              }
             >
               {verifyPdfMutation.isPending ? (
                 <>

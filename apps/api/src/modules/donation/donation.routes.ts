@@ -47,7 +47,7 @@ router.get('/campaigns/slug/:slug', campaignController.getBySlug);
 // catatan keuangan palsu, bukan sekadar gangguan.
 router.post(
   '/public',
-  requireTurnstile,
+  requireTurnstile('donasi'),
   validate(createPublicDonationSchema),
   donationController.createPublic
 );

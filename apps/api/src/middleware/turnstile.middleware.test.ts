@@ -25,20 +25,35 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function cloudflareSays(success: boolean, codes: string[] = []) {
+/**
+ * Jawaban siteverify yang lengkap.
+ *
+ * `hostname` dan `action` ikut karena keduanya sekarang diperiksa: sebuah
+ * jawaban `success: true` tanpa hostname yang terdaftar ditolak, jadi mock
+ * yang hanya membawa `success` akan menguji cabang yang salah.
+ */
+function cloudflareSays(success: boolean, codes: string[] = [], action = AKSI) {
   fetchMock.mockResolvedValue({
     ok: true,
     status: 200,
-    json: async () => ({ success, 'error-codes': codes }),
+    json: async () => ({
+      success,
+      'error-codes': codes,
+      hostname: 'portal.cipansor.or.id',
+      action,
+    }),
   });
 }
+
+/** Tindakan yang dipakai seluruh berkas ini; nilainya tidak penting, kecocokannya yang penting. */
+const AKSI = 'login';
 
 /** Jalankan middleware-nya dan tunggu sampai `next` benar-benar dipanggil. */
 function run(body: unknown): Promise<unknown> {
   return new Promise((resolve) => {
     const req = { body, ip: '203.0.113.7', path: '/uji' } as unknown as Request;
     const next = ((err?: unknown) => resolve(err)) as NextFunction;
-    requireTurnstile(req, {} as Response, next);
+    requireTurnstile(AKSI)(req, {} as Response, next);
   });
 }
 
@@ -91,6 +106,15 @@ describe('requireTurnstile', () => {
     expect(rejected.message).toMatch(/muat ulang/i);
   });
 
+  it('menghentikan token sah yang diterbitkan untuk permukaan lain', async () => {
+    // Token yang benar-benar diselesaikan — tapi di panel chat, bukan di sini.
+    cloudflareSays(true, [], 'chatbot-ask');
+
+    const error = await run({ turnstileToken: 'token-sah-tapi-salah-permukaan' });
+
+    expect(error).toBeInstanceOf(Error);
+  });
+
   it('meneruskan seluruh permintaan ketika gerbangnya dimatikan', async () => {
     vi.stubEnv('TURNSTILE_SECRET_KEY', '');
 
@@ -128,7 +152,7 @@ describe('urutan terhadap validate()', () => {
   it('LOLOS ketika requireTurnstile mendahului validate', async () => {
     cloudflareSays(true);
 
-    const response = await request(appWith(requireTurnstile, validate(schema)))
+    const response = await request(appWith(requireTurnstile(AKSI), validate(schema)))
       .post('/uji')
       .send({ email: 'a@b.c', turnstileToken: 'token-sah' });
 
@@ -138,7 +162,7 @@ describe('urutan terhadap validate()', () => {
   it('GAGAL ketika validate mendahului requireTurnstile, meski tokennya sah', async () => {
     cloudflareSays(true);
 
-    const response = await request(appWith(validate(schema), requireTurnstile))
+    const response = await request(appWith(validate(schema), requireTurnstile(AKSI)))
       .post('/uji')
       .send({ email: 'a@b.c', turnstileToken: 'token-sah' });
 

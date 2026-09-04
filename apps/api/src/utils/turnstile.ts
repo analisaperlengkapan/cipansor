@@ -32,12 +32,30 @@ const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverif
  */
 export type TurnstileOutcome =
   | { ok: true; reason: 'verified' | 'disabled' | 'unreachable' }
-  | { ok: false; reason: 'missing-token' | 'rejected'; codes: string[] };
+  | {
+      ok: false;
+      reason: 'missing-token' | 'rejected' | 'action-mismatch' | 'hostname-not-allowed';
+      codes: string[];
+    };
 
 interface SiteverifyResponse {
   success?: boolean;
   'error-codes'?: string[];
+  /** Nilai `action` yang dipasang widget saat tantangannya diterbitkan. */
+  action?: string;
+  /** Hostname halaman tempat tantangannya benar-benar diselesaikan. */
+  hostname?: string;
 }
+
+/**
+ * Batas panjang token, dari dokumentasi Cloudflare.
+ *
+ * Diperiksa sebelum memanggil siteverify: sebuah badan permintaan berisi
+ * megabyte sampah tidak perlu diubah menjadi panggilan keluar. Ini penjaga
+ * biaya dan bising, bukan penjaga keamanan — yang menentukan tetap jawaban
+ * Cloudflare.
+ */
+const MAX_TOKEN_LENGTH = 2048;
 
 /**
  * Tukarkan token ke Cloudflare.
@@ -57,7 +75,8 @@ interface SiteverifyResponse {
  */
 export async function verifyTurnstileToken(
   token: string | undefined | null,
-  remoteIp?: string
+  remoteIp?: string,
+  expectedAction?: string
 ): Promise<TurnstileOutcome> {
   if (!config.turnstile.enabled) {
     return { ok: true, reason: 'disabled' };
@@ -65,6 +84,13 @@ export async function verifyTurnstileToken(
 
   if (!token) {
     return { ok: false, reason: 'missing-token', codes: ['missing-input-response'] };
+  }
+
+  if (token.length > MAX_TOKEN_LENGTH) {
+    logger.warn('[Turnstile] token melebihi batas panjang, tidak ditukarkan', {
+      length: token.length,
+    });
+    return { ok: false, reason: 'rejected', codes: ['invalid-input-response'] };
   }
 
   const body = new URLSearchParams();
@@ -128,11 +154,58 @@ export async function verifyTurnstileToken(
       return { ok: true, reason: 'unreachable' };
     }
 
-    if (data?.success === true) {
-      return { ok: true, reason: 'verified' };
+    if (data?.success !== true) {
+      return { ok: false, reason: 'rejected', codes };
     }
 
-    return { ok: false, reason: 'rejected', codes };
+    /**
+     * `success: true` BELUM berarti token ini milik kita.
+     *
+     * Sampai 2026-09-04 modul ini berhenti di baris di atas, dan itu adalah
+     * separuh pemeriksaan. Cloudflare menjawab dua pertanyaan sekaligus:
+     * "apakah tantangan ini benar-benar diselesaikan" — dan, lewat `hostname`
+     * serta `action`, "di mana, dan untuk apa". Membuang dua jawaban terakhir
+     * membuat gerbangnya menerima token sah yang diterbitkan untuk keperluan
+     * lain.
+     */
+    const hostname = (data.hostname ?? '').toLowerCase();
+    const allowed = config.turnstile.allowedHostnames;
+    if (!allowed.includes(hostname)) {
+      /**
+       * Dicatat sebagai `error`, bukan `warn`, dan menyebut hostname yang
+       * teramati.
+       *
+       * Ada dua sebab baris ini muncul, dan keduanya menuntut tindakan:
+       * seseorang memakai site key kita dari domainnya sendiri, ATAU kita
+       * menambah host baru dan lupa memasukkannya ke daftar. Yang kedua
+       * mengunci seluruh pengunjung host itu, jadi hostname-nya harus terbaca
+       * di log — mendiagnosisnya tanpa itu berarti menebak.
+       */
+      logger.error('[Turnstile] token diterbitkan dari hostname di luar daftar', {
+        hostname: hostname || '(kosong)',
+        allowed,
+      });
+      return { ok: false, reason: 'hostname-not-allowed', codes };
+    }
+
+    /**
+     * `action` mengikat token pada permukaan yang menerbitkannya.
+     *
+     * Tanpa ini, token yang dicetak di permukaan paling murah — panel chat,
+     * yang tantangannya diselesaikan sendiri tanpa klik — dapat dibelanjakan
+     * di `/auth/login`. Tokennya sekali pakai, jadi ini bukan celah tak
+     * terbatas; tetapi ia menghapus perbedaan biaya antar permukaan, dan
+     * biaya itulah yang membuat gerbangnya berguna.
+     */
+    if (expectedAction && data.action !== expectedAction) {
+      logger.warn('[Turnstile] token diterbitkan untuk tindakan lain', {
+        expected: expectedAction,
+        received: data.action ?? '(kosong)',
+      });
+      return { ok: false, reason: 'action-mismatch', codes };
+    }
+
+    return { ok: true, reason: 'verified' };
   } catch (error) {
     // Termasuk timeout dari AbortSignal, DNS gagal, dan TLS gagal.
     logger.error('[Turnstile] siteverify tidak terjangkau', error);

@@ -1,6 +1,6 @@
 # Roadmap — outstanding work, most urgent first
 
-Ordered backlog as of **2026-09-02**. Companion to
+Ordered backlog as of **2026-09-04**. Companion to
 [`KNOWN_ISSUES.md`](./KNOWN_ISSUES.md) (which records *defects* in detail); this
 file records *what to do next and in what order*.
 
@@ -11,12 +11,31 @@ a visitor sees, then correctness work, then deliverables, then tidiness.
 
 ## Current deployment state
 
-- As of **2026-09-02** both containers were rebuilt and rolled from
-  `main @ b81c8ae4` (through #413) via `deploy-images.sh`. Production and `main`
-  are level. That deploy carried the Gmail API transport, the password-reset
-  flow and the honest mail-status card (§13), verified live after the roll:
-  a real message left through `gmail_api` with `delivered: true`.
-- Verified live the same day, and worth keeping straight because the previous
+- As of **2026-09-04** production runs `main @ ae62be89`, rolled in two steps
+  that day. First `deploy-images.sh` rebuilt **both** containers from
+  `main @ 84b44c16`, carrying the Turnstile fixes (§15). Then `deploy-web.sh`
+  rebuilt the **web image only** from `ae62be89` for the BIMI logo asset
+  (§13.1) — the API was untouched because
+  `git diff --name-only 84b44c16..HEAD` matched nothing under `apps/api/` or
+  `packages/shared/`. Production and `main` are level.
+- **A merge is not a deploy, and this section is how that gets caught.** Until
+  the 2026-09-04 roll, production was still serving a build that predated #462
+  — the containers were created 2026-09-03 23:49 UTC and both Turnstile PRs
+  merged after 03:37 UTC the next morning. The mitigation had been *described*
+  as live for hours while the running image knew nothing about it. Check the
+  container's creation time against the merge time before claiming a fix is in
+  production.
+- **Pick your in-image marker from what a change DELETED, not what it contains.**
+  The first probe for #462 grepped `challenges.cloudflare.com` and `"Coba lagi"`
+  — both of which already existed in the *old* build, so it answered "installed"
+  for a stale image. The markers that actually discriminate are the copy #462
+  removed (`Anda tetap dapat melanjutkan`, must be **0** occurrences) and the
+  string #464 added (`hostname di luar daftar`, must be **≥1**).
+- The 2026-09-02 roll before that came from `main @ b81c8ae4` (through #413) and
+  carried the Gmail API transport, the password-reset flow and the honest
+  mail-status card (§13), verified live: a real message left through `gmail_api`
+  with `delivered: true`.
+- Verified live 2026-09-02, and worth keeping straight because an earlier
   version of this section was months stale:
   `NEXT_PUBLIC_SHOW_DEMO_LOGIN` is **false** and built that way — the demo
   credential panel is gone from `/login`. `DEMO_MODE` is still `true` in the api
@@ -52,15 +71,26 @@ alone does nothing — the web image has to be rebuilt. `DEMO_MODE` is read at
 runtime and only needs a restart.
 
 **Seeded credentials are still the only credentials.** All 107 accounts come
-from the seed. Measured against production 2026-09-02: both super admins
-(`super.admin@` and `superadmin@cipansor.or.id`) sign in with the demo password
-`Cipansor123!`, and `SuperAdmin123!` — which `seed.ts` still prints for
-`superadmin@` on every run — is rejected.
+from the seed, and the live values have **drifted twice** — do not derive them
+from `seed.ts`:
 
-That is not drift: a 2026-08-14 bulk reset set every one of the 107 rows to a
-single password, and the value chosen was the demo one. So the seed's closing
-log advertises a credential that has not worked on production since. Fix the
-log line, or stop treating seed output as a description of the live system.
+| when | `super.admin@` / `superadmin@` | the other 105 |
+|---|---|---|
+| after the 2026-08-14 bulk reset | `Cipansor123!` | `Cipansor123!` |
+| **since 2026-09-03 (current)** | **`SuperAdmin123!`** | `Cipansor123!` |
+
+The 2026-09-03 change was made deliberately, at the user's request, so the
+e-signature chain could be walked end to end in production (§14). The user has
+since decided to leave it as it stands — *"ini belum production sebenarnya"* —
+so this is a recorded state, not an open action. What changes it is the first
+real santri or wali entering the system.
+
+The drift is visible without guessing at credentials:
+`select updated_at::date, count(*) from users group by 1 order by 1;` — the row
+that stands alone is the set someone changed by hand. Test against
+`/api/auth/login` before repeating any password: `seed.ts`'s closing log
+describes the seed, not the database, and believing it has already cost a
+corrected roadmap entry and a corrected PR comment.
 
 ## ✅ 2. CORS returned a comma-joined `Access-Control-Allow-Origin` — fixed
 
@@ -411,6 +441,44 @@ What #413 did **not** do, and is worth knowing:
   consults. The bus reads the real `preferences.service`; the screen does not
   yet write to it.
 
+### ✅ 13.1 BIMI — self-asserted, live 2026-09-04
+
+The domain now publishes a BIMI record, so participating mailbox providers can
+show the yayasan's crest beside every message from `noreply@cipansor.or.id`.
+Deliberately the **free** path: a self-hosted SVG and **no VMC**, hence no `a=`
+tag in the record.
+
+```
+_dmarc.cipansor.or.id         TXT  "v=DMARC1; p=quarantine; rua=mailto:…"
+default._bimi.cipansor.or.id  TXT  "v=BIMI1; l=https://cipansor.or.id/bimi/cipansor.svg;"
+```
+
+`pct` and `sp` are **absent on purpose** — BIMI rejects `pct<100`, and an absent
+tag already means `pct=100` with `sp` inheriting `p`. Adding them can only hurt.
+`p=reject` buys no additional BIMI benefit over `p=quarantine`; raise it only
+after the `rua` reports come back clean.
+
+**Gmail will not display this logo, and no change on our side fixes that.**
+Google's own documentation requires the record to point at a PEM file — a
+VMC/CMC, i.e. the paid path this project chose not to take (the same reasoning
+that deferred PSrE in §14). Providers that *do* honour a self-asserted logo:
+**Yahoo, Fastmail, La Poste**. Test by sending to a Yahoo account, not Gmail.
+
+The logo lives at `apps/web/public/bimi/cipansor.svg` and is **generated**, by
+`scripts/bimi-trace-logo.py` — do not hand-edit it; re-run the generator. Its
+README records the two traps that cost real time (a broken `P` in *KADIPATEN*
+in the source raster, and a morphological closing that then ate the thin outer
+ring on the left). Verified end to end on 2026-09-04: HTTP 200,
+`content-type: image/svg+xml`, **0 redirects**, SHA-256 of the served bytes
+identical to the repo file (which is what proves Cloudflare is not rewriting it),
+and 17/17 on the SVG Tiny P/S profile — 25,730 of the 32,768-byte budget.
+
+Two things remain, neither blocking: **nobody has sent a test message to a
+Yahoo mailbox yet**, and the SPF record still carries
+`include:spf.protection.outlook.com`, which is vestigial — the MX is
+`smtp.google.com`, there is no `selector1`/`selector2` Microsoft DKIM in DNS,
+and the application sends through the Gmail API. Removing it is the user's call.
+
 ---
 
 ## 🟡 14. E-Office & electronic signature — shipped AND deployed 2026-09-03, chain walked end-to-end in production
@@ -556,6 +624,46 @@ locked and unapproved keys. What it lacks is standards *form*: the signature
 lives in the database rather than inside the PDF, so no external party can
 verify a letter without visiting our site. See §4 of the plan for the mapping to
 UU ITE Pasal 11, PP 71/2019, and PAdES.
+
+---
+
+## 🟡 15. Cloudflare Turnstile — live 2026-09-04, one link unproven
+
+Seven credential-free endpoints are gated, each with its own `action` name —
+`login`, `reset-password`, `verify-letter`, `verify-sanad`, `donasi`,
+`spmb-daftar` and `chatbot-ask`. Two PRs closed the gaps that mattered:
+
+- **#462** removed a browser/server asymmetry — the widget could fail on the
+  client while the server still accepted the request.
+- **#464** made `siteverify` check **`hostname` and `action`**, not just
+  `success`. A `success: true` response alone proves a token is valid *somewhere*,
+  not that it was minted for us.
+
+Verified against production after the roll: a tokenless login returns **400**
+with the new advice, a bogus token returns **400** with *"muat ulang halaman"*,
+and the API log splits `reason:"missing-token"` from `reason:"rejected"`
+correctly. A browser with `challenges.cloudflare.com` blocked showed *Masuk*,
+*Verifikasi Dokumen* and *Verifikasi* all locked with a working retry.
+
+The obvious risk in #464 — a hostname allowlist that rejects every real visitor
+— was closed by **measurement, not assumption**: nginx's TLS blocks serve
+exactly `cipansor.or.id`, `www.cipansor.or.id` (`nginx.conf:102`) and
+`portal.cipansor.or.id` (`nginx.conf:226`), all three in the default allowlist,
+and `TURNSTILE_ALLOWED_HOSTNAMES` is empty in the production container, so
+the built-in default applies. Note that this host's
+nginx config is **inline in `/etc/nginx/nginx.conf`** — `sites-enabled/default`
+is stock Ubuntu (`server_name example.com`) and reading it will mislead you.
+
+**Still open:** a real human sign-in at `https://portal.cipansor.or.id/login` has
+not been confirmed. It cannot be: Turnstile treats a datacenter IP differently
+from a residential one, so no probe from this host can prove the happy path.
+Someone has to log in from an ordinary browser and say so.
+
+Also worth recording because it wastes time otherwise: **Cloudflare's dashboard
+warning that this site "never calls siteverify" is wrong.** The API log line
+proving the server-side call is the counter-evidence. And both keys are one
+switch — the site key is baked at **build** time, so changing `.env` alone does
+nothing; a wrong secret answers HTTP 400.
 
 ---
 

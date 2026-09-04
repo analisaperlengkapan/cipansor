@@ -61,10 +61,20 @@ export interface PublicChatResponse {
   answer: string;
   sources: ChatSource[];
   /**
-   * True when the assistant declined because the question falls outside what
-   * the public bot may discuss (private data, or nothing relevant retrieved).
-   * The eval harness asserts on this directly: for the red-team set, a refusal
-   * is the passing outcome.
+   * True when the assistant declined — wholly or in part.
+   *
+   * DIPERLUAS 2026-09-04. Dulu ini hanya berarti "LAYANAN menolak", yaitu
+   * pencarian pulang kosong dan model tidak pernah dipanggil. Sejak seluruh
+   * korpus selalu ikut dikirim, gerbang itu tidak ada lagi dan yang menolak
+   * adalah model, di bawah aturan 1, 2 dan 5 di `prompt.ts` — jadi nilainya
+   * kini dibaca dari kalimat jawabannya (`refusal.ts`).
+   *
+   * "Sebagian" disengaja: jawaban yang menyebut lokasi tetapi menolak menyebut
+   * biaya tetap ditandai, karena yang membaca angka ini sedang mencari
+   * pertanyaan yang belum terjawab — dan pertanyaan itu memang belum terjawab.
+   *
+   * Perangkat eval memeriksanya langsung: untuk himpunan red-team, penolakan
+   * adalah hasil yang LULUS.
    */
   refused: boolean;
   /** Which provider answered — useful when comparing candidate models. */

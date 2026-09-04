@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ask, ChatbotUnavailableError, resolveProvider } from '../chatbot.service';
 import { StubProvider } from '../providers/stub';
 import { collectLiveFacts } from '../live-facts';
-import { topicLabels } from '../knowledge-base';
+import { knowledgeBase, knowledgeById, topicLabels } from '../knowledge-base';
 import { isCacheable, readCached, writeCached } from '../cache';
 import { config } from '@/config';
 import type { LlmProvider } from '../providers/types';
@@ -50,15 +50,42 @@ beforeEach(() => {
 });
 
 describe('ask', () => {
-  it('refuses without calling the model when nothing was retrieved', async () => {
-    // Asking a model to decline politely when handed nothing is a request it
-    // can decline to honour. Not calling it at all is not.
+  it('mengirim SELURUH korpus, bukan hanya potongan yang diperingkat', async () => {
+    // Inti perombakannya. Korpusnya sekitar 628 token — memilih sebagian tidak
+    // menghemat apa pun yang berarti, dan pemilihnya pernah memveto pertanyaan
+    // yang sebenarnya terjawab.
+    const provider = recordingProvider();
+    await ask({ question: 'apa visi pesantren', provider, retriever: { search: () => [] } });
+
+    const system = provider.lastRequest!.messages.find((m) => m.role === 'system')!.content;
+    for (const entry of knowledgeBase) {
+      expect(system, `entri tidak ikut dikirim: ${entry.id}`).toContain(`[${entry.id}]`);
+    }
+  });
+
+  it('tetap memanggil model meski pencarian tidak menemukan apa pun', async () => {
+    // Uji regresi untuk cacat yang dilaporkan: "ada informasi apa saja" hanya
+    // menyisakan satu kata setelah kata henti dibuang, tidak ada entri yang
+    // cocok, dan layanan menolak tanpa pernah menyentuh model. Pencarian tidak
+    // lagi punya hak veto — baris ini memerah bila hak itu dikembalikan.
     const provider = recordingProvider();
     const result = await ask({
-      question: 'siapa presiden amerika',
+      question: 'ada informasi apa saja',
       provider,
       retriever: { search: () => [] },
     });
+
+    expect(provider.lastRequest).toBeDefined();
+    expect(result.refused).toBe(false);
+  });
+
+  it('refuses without calling the model only when the corpus itself is empty', async () => {
+    // Jalur ini TIDAK bisa dicapai oleh pertanyaan mana pun lagi; ia menjaga
+    // keadaan yang hanya bisa dibuat oleh suntingan yang mengosongkan korpus.
+    // Meminta model menolak dengan sopan saat tidak diberi apa-apa adalah
+    // permintaan yang bisa ia abaikan; tidak memanggilnya sama sekali tidak.
+    const provider = recordingProvider();
+    const result = await ask({ question: 'siapa presiden amerika', provider, entries: [] });
 
     expect(result.refused).toBe(true);
     expect(result.sources).toEqual([]);
@@ -72,7 +99,7 @@ describe('ask', () => {
     const result = await ask({
       question: 'siapa presiden amerika',
       provider: new StubProvider(),
-      retriever: { search: () => [] },
+      entries: [],
     });
 
     expect(result.answer).toMatch(/\p{Extended_Pictographic}/u);
@@ -88,7 +115,7 @@ describe('ask', () => {
     const result = await ask({
       question: 'ada informasi apa saja',
       provider: new StubProvider(),
-      retriever: { search: () => [] },
+      entries: [],
     });
 
     expect(result.refused).toBe(true);
@@ -104,17 +131,145 @@ describe('ask', () => {
     // Dulu baris ini justru MENUNTUT salam (`toMatch(/assalamu/i)`), sehingga
     // ia akan tetap hijau pada persis cacat yang harus dibuang: gelembung
     // pembuka widget sudah mengucap salam, jadi jawaban pertama mengucapkannya
-    // dua kali — dan penolakan ini yang paling sering jadi jawaban pertama,
-    // karena pertanyaan di luar korpus tidak menarik satu pun potongan.
+    // dua kali.
     const result = await ask({
       question: 'berapa harganya?',
       provider: new StubProvider(),
-      retriever: { search: () => [] },
+      entries: [],
     });
 
     expect(result.answer).not.toMatch(/assalamu/i);
     expect(result.answer).not.toMatch(/wa'?alaikum/i);
     expect(result.answer.trimStart().startsWith('Mohon maaf')).toBe(true);
+  });
+
+  describe('atribusi sumber', () => {
+    /** Penyedia yang menjawab dengan baris SUMBER seperti diminta aturan 7. */
+    function citing(text: string): LlmProvider {
+      return { name: 'citing', complete: async () => ({ text, model: 'citing-model' }) };
+    }
+
+    it('memakai id yang disebut model, bukan peringkat pencarian', async () => {
+      const result = await ask({
+        question: 'apa pun',
+        provider: citing('Jawabannya begitu.\nSUMBER: kontak'),
+        // Pencarian sengaja menunjuk ke entri LAIN. Bila peringkat yang menang,
+        // sumbernya akan salah sekaligus terlihat meyakinkan.
+        retriever: { search: () => [{ entry: knowledgeById.get('profil-umum')!, score: 9 }] },
+      });
+
+      expect(result.sources.map((s) => s.id)).toEqual(['kontak']);
+    });
+
+    it('membuang id yang tidak ada di korpus', async () => {
+      // Sumber palsu lebih buruk daripada tidak ada sumber: ia mengundang
+      // pembaca memeriksa sesuatu yang tidak pernah ada.
+      const result = await ask({
+        question: 'apa pun',
+        provider: citing('Jawabannya begitu.\nSUMBER: kontak, entri-karangan'),
+        retriever: { search: () => [] },
+      });
+
+      expect(result.sources.map((s) => s.id)).toEqual(['kontak']);
+    });
+
+    it('jatuh ke peringkat pencarian bila model lupa menyebut sumber', async () => {
+      const result = await ask({
+        question: 'apa pun',
+        provider: citing('Jawabannya begitu, tanpa baris sumber.'),
+        retriever: { search: () => [{ entry: knowledgeById.get('profil-umum')!, score: 9 }] },
+      });
+
+      expect(result.sources.map((s) => s.id)).toEqual(['profil-umum']);
+    });
+
+    it('tidak pernah membiarkan baris SUMBER sampai ke penanya', async () => {
+      // Barisnya untuk sistem. Bocor ke layar, ia terbaca sebagai kebocoran
+      // teknis di tengah kalimat yang seharusnya hangat.
+      const result = await ask({
+        question: 'apa pun',
+        provider: citing('Jawabannya begitu.\n\n**SUMBER: kontak, profil-umum**'),
+        retriever: { search: () => [] },
+      });
+
+      expect(result.answer).not.toMatch(/SUMBER/i);
+      expect(result.answer).toBe('Jawabannya begitu.');
+      expect(result.sources.map((s) => s.id)).toEqual(['kontak', 'profil-umum']);
+    });
+  });
+
+  describe('penolakan yang ditulis model', () => {
+    function declining(): LlmProvider {
+      return {
+        name: 'declining',
+        complete: async () => ({
+          text: 'Mohon maaf, saya belum memiliki informasinya.\nSUMBER: -',
+          model: 'declining-model',
+        }),
+      };
+    }
+
+    it('tetap tercatat sebagai penolakan', async () => {
+      // Sejak gerbangnya dibuang, penolakan ditulis MODEL. Bila `refused` tidak
+      // dibaca dari kalimatnya, ia selalu `false` — dan hitungan penolakan di
+      // halaman Riwayat Percakapan, yang gunanya justru menemukan pertanyaan
+      // tak terjawab, berhenti menghitung apa pun.
+      const result = await ask({ question: 'harga emas', provider: declining() });
+      expect(result.refused).toBe(true);
+    });
+
+    it('tidak menuduh jawaban bagus sebagai penolakan hanya karena bunyinya', async () => {
+      // Jebakan yang nyaris lolos. `looksLikeRefusal` lahir untuk menilai kasus
+      // red-team, dan salah satu polanya menangkap "(tidak|belum) (dapat|bisa)".
+      // Kalimat "biaya pendaftaran TIDAK DAPAT dikembalikan" adalah jawaban yang
+      // benar, bukan penolakan — dan menandainya `refused` akan mengotori
+      // hitungan pertanyaan tak terjawab sekaligus membuangnya dari cache.
+      const result = await ask({
+        question: 'apakah biaya pendaftaran bisa dikembalikan',
+        provider: {
+          name: 'menjawab',
+          complete: async () => ({
+            text: 'Biaya pendaftaran tidak dapat dikembalikan, Bapak/Ibu.\nSUMBER: spmb-cara-daftar',
+            model: 'menjawab-model',
+          }),
+        },
+        retriever: { search: () => [] },
+      });
+
+      expect(result.refused).toBe(false);
+      expect(result.sources.map((s) => s.id)).toEqual(['spmb-cara-daftar']);
+    });
+
+    it('tetap mengenali penolakan yang ikut mengutip sumber', async () => {
+      // Kalimat ini dipanen dari model sungguhan, dan ia membatalkan aturan yang
+      // sempat saya pakai — "mengutip sumber berarti menjawab". Aturan 5
+      // menyuruh model menyebut daftar topik dan kontak ketika menolak, jadi
+      // penolakan pun mengutip. Yang memisahkan keduanya ada di kalimatnya.
+      const result = await ask({
+        question: 'apakah biaya pendaftaran bisa dikembalikan',
+        provider: {
+          name: 'menolak-tapi-mengutip',
+          complete: async () => ({
+            text:
+              'Saya mohon maaf karena informasi tersebut tidak tersedia dalam ' +
+              'informasi resmi yang saya miliki.\nSUMBER: bantuan-ikhtisar, kontak',
+            model: 'menolak-model',
+          }),
+        },
+        retriever: { search: () => [] },
+      });
+
+      expect(result.refused).toBe(true);
+      expect(result.sources.map((s) => s.id)).toEqual(['bantuan-ikhtisar', 'kontak']);
+    });
+
+    it('tidak disimpan ke cache', async () => {
+      // Penolakan murah dibuat ulang, dan penolakan yang KELIRU tidak boleh
+      // terpaku selama masa hidup cache — cacat yang baru saja diperbaiki
+      // adalah penolakan keliru.
+      await ask({ question: 'harga emas', provider: declining() });
+      expect(writeCached).not.toHaveBeenCalled();
+    });
   });
 
   it('answers from the corpus and attributes its sources', async () => {

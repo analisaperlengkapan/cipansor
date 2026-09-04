@@ -48,8 +48,10 @@ describe('Cloud Storage Utility (Azure Blob Storage Provider)', () => {
 
   it('should upload file to Azure Blob Storage when AZURE_STORAGE_CONNECTION_STRING is configured', async () => {
     process.env.AZURE_STORAGE_CONNECTION_STRING = 'DefaultEndpointsProtocol=https;AccountName=cipansorstore;AccountKey=fakeKey;EndpointSuffix=core.windows.net';
+    process.env.AZURE_STORAGE_ACCOUNT = 'cipansorstore';
+    process.env.AZURE_STORAGE_KEY = 'fakeKey';
 
-    const result = await uploadToCloudStorage('/tmp/dummy.pdf', 'dummy.pdf', 'application/pdf', 'e-office-documents');
+    const result = await uploadToCloudStorage('/tmp/dummy.pdf', 'dummy.pdf', 'application/pdf', 'media-public');
     expect(result.provider).toBe('azure');
     expect(result.url).toBe('https://cipansorstore.blob.core.windows.net/e-office-documents/dummy.pdf');
     expect(mockUploadFile).toHaveBeenCalledWith('/tmp/dummy.pdf', {

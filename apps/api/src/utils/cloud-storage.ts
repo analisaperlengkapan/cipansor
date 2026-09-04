@@ -38,7 +38,11 @@ export async function uploadToCloudStorage(
       let azureBlobUrl = blockBlobClient.url;
 
       // If container is private, generate a SAS URL with 24-hour expiry
-      if (!isPublicContainer && process.env.AZURE_STORAGE_ACCOUNT && process.env.AZURE_STORAGE_KEY) {
+      if (!isPublicContainer) {
+        if (!process.env.AZURE_STORAGE_ACCOUNT || !process.env.AZURE_STORAGE_KEY) {
+          throw new Error('Kunci AZURE_STORAGE_KEY dan AZURE_STORAGE_ACCOUNT wajib dikonfigurasi untuk container privat.');
+        }
+
         const sharedKeyCredential = new StorageSharedKeyCredential(
           process.env.AZURE_STORAGE_ACCOUNT,
           process.env.AZURE_STORAGE_KEY
@@ -60,7 +64,7 @@ export async function uploadToCloudStorage(
       logger.info('File uploaded to Azure Blob Storage', {
         filename,
         container: containerName,
-        url: azureBlobUrl,
+        rawUrl: blockBlobClient.url,
       });
 
       return {

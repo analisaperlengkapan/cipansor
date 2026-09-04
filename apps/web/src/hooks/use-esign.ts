@@ -97,12 +97,23 @@ export function useEsignRequests(status?: "PENDING" | "APPROVED" | "REJECTED") {
 export function useSignLetter() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { letterId: string; passphrase: string }) =>
-      (
+    mutationFn: async (input: { letterId: string; passphrase: string; pdfFile?: Blob | File }) => {
+      if (input.pdfFile) {
+        const formData = new FormData();
+        formData.append("passphrase", input.passphrase);
+        formData.append("file", input.pdfFile);
+        return (
+          await api.post(`/esign/letters/${input.letterId}/sign`, formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+          })
+        ).data.data;
+      }
+      return (
         await api.post(`/esign/letters/${input.letterId}/sign`, {
           passphrase: input.passphrase,
         })
-      ).data.data,
+      ).data.data;
+    },
     onSuccess: (_d, v) => {
       queryClient.invalidateQueries({ queryKey: ["letters"] });
       queryClient.invalidateQueries({ queryKey: ["letter", v.letterId] });

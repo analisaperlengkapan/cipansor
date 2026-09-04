@@ -343,7 +343,7 @@ export default function EOfficeMainPage() {
 
         <Card
           className="cursor-pointer hover:bg-primary/5 transition-colors border-2 border-dashed"
-          onClick={() => router.push("/e-office/inbox?status=pending")}
+          onClick={() => router.push("/e-office/inbox?status=PENDING_REVIEW")}
         >
           <CardContent className="flex flex-col items-center justify-center p-6 gap-2">
             <div className="p-3 bg-yellow-100 rounded-full">

@@ -18,6 +18,8 @@ vi.mock('@/lib/prisma', () => ({
     admissionWave: {
       count: vi.fn(),
       findMany: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
       updateMany: vi.fn(),
     },
     unit: {
@@ -198,7 +200,7 @@ describe('Student Onboarding & Wave Quota Unit Tests', () => {
           status: { in: ['OPEN', 'FULL'] },
           registeredCount: { lt: 50 },
         },
-        data: { registeredCount: { increment: 1 }, status: 'OPEN' },
+        data: { registeredCount: { increment: 1 } },
       });
     });
 
@@ -217,6 +219,7 @@ describe('Student Onboarding & Wave Quota Unit Tests', () => {
       vi.mocked(prisma.admissionWave.count).mockResolvedValue(1);
       vi.mocked(prisma.admissionWave.findMany).mockResolvedValue([wave1Freed] as any);
       vi.mocked(prisma.admissionWave.updateMany).mockResolvedValue({ count: 1 } as any);
+      vi.mocked(prisma.admissionWave.findUnique as any).mockResolvedValue({ id: 'w-1', registeredCount: 50, quota: 50, status: 'FULL' });
       vi.mocked(prisma.registrant.count).mockResolvedValue(15);
       (vi.mocked(prisma.registrant.create) as any).mockImplementation(({ data }: any) =>
         Promise.resolve({ ...data, id: 'reg-new' })
@@ -240,7 +243,7 @@ describe('Student Onboarding & Wave Quota Unit Tests', () => {
           status: { in: ['OPEN', 'FULL'] },
           registeredCount: { lt: 50 },
         },
-        data: { registeredCount: { increment: 1 }, status: 'FULL' },
+        data: { registeredCount: { increment: 1 } },
       });
     });
   });

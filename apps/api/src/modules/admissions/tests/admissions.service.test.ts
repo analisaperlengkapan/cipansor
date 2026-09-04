@@ -27,6 +27,8 @@ vi.mock('@/lib/prisma', () => ({
     admissionWave: {
       count: vi.fn().mockResolvedValue(0),
       findMany: vi.fn().mockResolvedValue([]),
+      findUnique: vi.fn(),
+      update: vi.fn(),
       updateMany: vi.fn(),
     },
     $transaction: vi.fn((cb) => cb(prisma)),
@@ -208,5 +210,100 @@ describe('Admissions Service', () => {
     // real Student record exists. Creating it here would require a non-null
     // studentId that doesn't yet exist.
     expect(prisma.invoice.create).not.toHaveBeenCalled();
+  });
+
+  it('should set wave status to FULL when increment causes registeredCount to reach quota even if initial read showed remaining slots', async () => {
+    const mockPeriod = {
+      id: 'p1',
+      academicYear: { name: '2024/2025' },
+      unit: { name: 'SD IT' },
+      unitId: 'u1',
+      registrationFee: 100000,
+    };
+
+    vi.mocked(prisma.admissionPeriod.findUnique).mockResolvedValue(mockPeriod as any);
+    vi.mocked(prisma.admissionWave.count as any).mockResolvedValue(1);
+    // Initial read showed 8 out of 10 registered (so initial calculation might have assumed OPEN)
+    vi.mocked(prisma.admissionWave.findMany as any).mockResolvedValue([
+      { id: 'w1', quota: 10, registeredCount: 8, status: 'OPEN' },
+    ]);
+    vi.mocked(prisma.admissionWave.updateMany as any).mockResolvedValue({ count: 1 });
+    // Re-reading updated wave shows concurrent increment pushed registeredCount to 10 (FULL)
+    vi.mocked(prisma.admissionWave.findUnique as any).mockResolvedValue({
+      id: 'w1',
+      quota: 10,
+      registeredCount: 10,
+      status: 'OPEN',
+    });
+    vi.mocked(prisma.registrant.count).mockResolvedValue(0);
+    (vi.mocked(prisma.registrant.create) as any).mockImplementation(({ data }: any) =>
+      Promise.resolve({ ...data, id: 'r1' })
+    );
+
+    await service.createRegistrant(
+      {
+        admissionPeriodId: 'p1',
+        fullName: 'Concurrent Student',
+        gender: 'MALE',
+        birthPlace: 'Jakarta',
+        birthDate: new Date().toISOString(),
+        address: 'Test Address',
+        fatherName: 'Father',
+      } as any,
+      false
+    );
+
+    // Verify wave status was updated to FULL
+    expect(prisma.admissionWave.update).toHaveBeenCalledWith({
+      where: { id: 'w1' },
+      data: { status: 'FULL' },
+    });
+  });
+
+  it('should leave wave status unchanged when registeredCount remains below quota after increment', async () => {
+    const mockPeriod = {
+      id: 'p1',
+      academicYear: { name: '2024/2025' },
+      unit: { name: 'SD IT' },
+      unitId: 'u1',
+      registrationFee: 100000,
+    };
+
+    vi.mocked(prisma.admissionPeriod.findUnique).mockResolvedValue(mockPeriod as any);
+    vi.mocked(prisma.admissionWave.count as any).mockResolvedValue(1);
+    vi.mocked(prisma.admissionWave.findMany as any).mockResolvedValue([
+      { id: 'w1', quota: 10, registeredCount: 5, status: 'OPEN' },
+    ]);
+    vi.mocked(prisma.admissionWave.updateMany as any).mockResolvedValue({ count: 1 });
+    // Re-read shows 6/10 registered (still under quota)
+    vi.mocked(prisma.admissionWave.findUnique as any).mockResolvedValue({
+      id: 'w1',
+      quota: 10,
+      registeredCount: 6,
+      status: 'OPEN',
+    });
+    vi.mocked(prisma.registrant.count).mockResolvedValue(0);
+    (vi.mocked(prisma.registrant.create) as any).mockImplementation(({ data }: any) =>
+      Promise.resolve({ ...data, id: 'r2' })
+    );
+
+    await service.createRegistrant(
+      {
+        admissionPeriodId: 'p1',
+        fullName: 'Student 2',
+        gender: 'MALE',
+        birthPlace: 'Jakarta',
+        birthDate: new Date().toISOString(),
+        address: 'Test Address',
+        fatherName: 'Father',
+      } as any,
+      false
+    );
+
+    // Verify wave status was NOT updated to FULL
+    expect(prisma.admissionWave.update).not.toHaveBeenCalledWith({
+      where: { id: 'w1' },
+      data: { status: 'FULL' },
+    });
   });
 });

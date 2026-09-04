@@ -81,6 +81,18 @@ export function useAdmissionPeriods(params?: any) {
   });
 }
 
+export function useActiveAdmissionWaves(params?: any) {
+  return useQuery({
+    queryKey: ["active-admission-waves", params],
+    queryFn: async () => {
+      const response = await api.get("/admissions/waves", {
+        params: { status: "OPEN", ...params },
+      });
+      return response.data;
+    },
+  });
+}
+
 export function useUpdateRegistrantScore() {
   const queryClient = useQueryClient();
   return useMutation({

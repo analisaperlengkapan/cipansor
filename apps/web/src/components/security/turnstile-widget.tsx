@@ -31,11 +31,11 @@ export function isTurnstileEnabled(): boolean {
 /**
  * Keadaan Turnstile untuk satu form.
  *
- * Enam permukaan memakai pola yang sama: simpan token, minta tantangan baru
- * setelah tiap pengiriman, dan jangan mengunci tombol ketika widget-nya tidak
- * dapat dipakai. Ditulis ulang enam kali, pola itu akan salah di tempat yang
- * berbeda-beda — dan yang paling mudah terlewat justru cabang `blocked`, yang
- * hanya terlihat ketika Cloudflare tidak terjangkau.
+ * Tujuh permukaan memakai pola yang sama: simpan token, minta tantangan baru
+ * setelah tiap pengiriman, dan tampilkan keadaan yang sebenarnya ketika
+ * widget-nya tidak dapat dipakai. Ditulis ulang tujuh kali, pola itu akan
+ * salah di tempat yang berbeda-beda — jadi ini satu-satunya salinannya, dan
+ * `chat-widget.tsx` yang dulu menyalinnya sendiri sekarang ikut memakainya.
  */
 export function useTurnstile() {
   const [token, setToken] = useState<string | null>(null);
@@ -53,20 +53,39 @@ export function useTurnstile() {
   }, []);
 
   const onUnavailable = useCallback(() => setBlocked(true), []);
+  const onRetry = useCallback(() => setBlocked(false), []);
 
   return {
     token,
     required,
+    /**
+     * Widget-nya menyerah: skripnya tidak dapat dimuat, tantangannya kehabisan
+     * waktu, atau Cloudflare melaporkan galat. Dipakai untuk *menjelaskan*
+     * keadaan, tidak untuk melewatinya.
+     */
     blocked,
     /**
-     * Apakah form boleh dikirim. Perhatikan `blocked`: gerbang yang tidak
-     * dapat dimuat harus MEMBUKA tombolnya, bukan menguncinya — peladen sudah
-     * gagal-terbuka ketika Cloudflare tak terjangkau, dan tombol yang terkunci
-     * di peramban tidak dapat dibuka oleh siapa pun dari sisi peladen.
+     * Apakah form boleh dikirim.
+     *
+     * **`blocked` sengaja TIDAK ada di sini, dan versi sebelumnya salah.**
+     * Dulu barisnya berbunyi `token !== null || blocked`, dengan alasan bahwa
+     * peladen sudah gagal-terbuka ketika Cloudflare tak terjangkau. Alasan itu
+     * mencampur dua hal yang berbeda: peladen gagal-terbuka ketika *peladen*
+     * tidak dapat menghubungi siteverify, sedangkan `blocked` berarti
+     * *peramban* tidak dapat memuat widget-nya. Di jalur yang kedua tidak ada
+     * token yang terkirim sama sekali, dan `verifyTurnstileToken` menolak
+     * token yang hilang tanpa kecuali.
+     *
+     * Akibatnya tombolnya terbuka menuju tembok: pengunjung yang jaringannya
+     * menyaring `challenges.cloudflare.com` menekan "Masuk", menerima `400`,
+     * dan diberi saran memuat ulang halaman yang tidak akan pernah menolong
+     * karena yang menghalangi ada di sisinya. Mengunci tombolnya tidak
+     * menghilangkan akses siapa pun — akses itu memang sudah tidak ada — tapi
+     * mengubah kebuntuan diam menjadi keterangan yang bisa ditindaklanjuti.
      */
-    ready: !required || token !== null || blocked,
+    ready: !required || token !== null,
     refresh,
-    widgetProps: { onToken: setToken, onUnavailable, resetSignal },
+    widgetProps: { onToken: setToken, onUnavailable, onRetry, resetSignal },
   };
 }
 
@@ -132,6 +151,24 @@ function loadTurnstileScript(): Promise<void> {
   return scriptPromise;
 }
 
+/**
+ * Buang skrip yang gagal supaya percobaan berikutnya benar-benar mengunduh lagi.
+ *
+ * Tanpa ini tombol "Coba lagi" adalah tombol palsu. `scriptPromise` di tingkat
+ * modul hanya dikosongkan pada `script.onerror`; cabang `existing` memasang
+ * pendengar `load`/`error` pada tag yang sudah gagal, dan peristiwa itu sudah
+ * lewat — pendengarnya tidak akan pernah terpanggil, sehingga promise-nya
+ * menggantung selamanya. Membuang tag-nya membuat percobaan berikutnya
+ * menempuh jalur pemasangan yang segar.
+ */
+function resetTurnstileScript(): void {
+  if (typeof document === "undefined") return;
+  scriptPromise = null;
+  document
+    .querySelectorAll<HTMLScriptElement>(`script[src="${SCRIPT_SRC}"]`)
+    .forEach((tag) => tag.remove());
+}
+
 export interface TurnstileWidgetProps {
   /**
    * Dipanggil dengan token ketika tantangan selesai, dan dengan `null` ketika
@@ -152,6 +189,13 @@ export interface TurnstileWidgetProps {
    * peladen sendiri sudah gagal-terbuka ketika Cloudflare tak terjangkau.
    */
   onUnavailable?: () => void;
+  /**
+   * Dipanggil ketika pengunjung menekan "Coba lagi", sebelum pemuatan ulang
+   * dimulai. Pemanggil memakainya untuk membersihkan keadaan "menyerah" yang
+   * sudah terlanjur ia catat, supaya satu kegagalan sementara tidak menempel
+   * sepanjang sesi.
+   */
+  onRetry?: () => void;
   /** Label tindakan; muncul di analitik Turnstile untuk memisahkan form. */
   action?: string;
   /**
@@ -182,6 +226,7 @@ export interface TurnstileWidgetProps {
 export function TurnstileWidget({
   onToken,
   onUnavailable,
+  onRetry,
   action,
   size = "flexible",
   appearance = "always",
@@ -191,6 +236,9 @@ export function TurnstileWidget({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const widgetIdRef = useRef<string | undefined>(undefined);
   const [failed, setFailed] = useState(false);
+  // Dinaikkan oleh "Coba lagi"; ikut jadi dependensi efek pemasangan supaya
+  // widget-nya benar-benar dirender ulang, bukan sekadar pesannya hilang.
+  const [attempt, setAttempt] = useState(0);
 
   // Disimpan di ref supaya efek pemasangan tidak ikut berjalan ulang setiap
   // kali induknya membuat ulang fungsi callback-nya — memasang ulang widget
@@ -206,6 +254,11 @@ export function TurnstileWidget({
     onUnavailableRef.current = onUnavailable;
   }, [onUnavailable]);
 
+  const onRetryRef = useRef(onRetry);
+  useEffect(() => {
+    onRetryRef.current = onRetry;
+  }, [onRetry]);
+
   const emit = useCallback((token: string | null) => {
     onTokenRef.current(token);
   }, []);
@@ -213,6 +266,24 @@ export function TurnstileWidget({
   const giveUp = useCallback(() => {
     setFailed(true);
     onUnavailableRef.current?.();
+  }, []);
+
+  /**
+   * Coba muat ulang gerbangnya.
+   *
+   * Kegagalan yang paling sering terjadi bersifat sementara — satu unduhan
+   * yang putus, jaringan yang baru pulih, tab yang lama menganggur — dan
+   * sebelumnya satu-satunya jalan keluarnya adalah memuat ulang seluruh
+   * halaman, yang pada form panjang seperti SPMB berarti mengetik ulang
+   * semuanya.
+   */
+  const retry = useCallback(() => {
+    setFailed(false);
+    onRetryRef.current?.();
+    if (typeof window !== "undefined" && !window.turnstile) {
+      resetTurnstileScript();
+    }
+    setAttempt((n) => n + 1);
   }, []);
 
   useEffect(() => {
@@ -269,7 +340,7 @@ export function TurnstileWidget({
         widgetIdRef.current = undefined;
       }
     };
-  }, [action, size, appearance, emit, giveUp]);
+  }, [action, size, appearance, emit, giveUp, attempt]);
 
   useEffect(() => {
     // 0 adalah nilai awal, bukan permintaan reset — mereset di sini akan
@@ -286,14 +357,37 @@ export function TurnstileWidget({
 
   if (!isTurnstileEnabled()) return null;
 
+  /**
+   * Pesan gagal yang mengatakan yang sebenarnya.
+   *
+   * Yang sebelumnya berdiri di sini berbunyi "Anda tetap dapat melanjutkan;
+   * muat ulang halaman bila permintaan Anda ditolak" — dua janji yang keduanya
+   * keliru. Pengunjung TIDAK dapat melanjutkan (tanpa token peladen menjawab
+   * `400`), dan memuat ulang halaman tidak mengubah apa pun bila yang
+   * menghalangi ada di jaringannya sendiri. Sebuah pesan yang menyuruh
+   * mengulangi tindakan yang pasti gagal lebih buruk daripada diam: ia
+   * menghabiskan waktu orang dan menyembunyikan sebab yang sebenarnya.
+   */
   return (
     <div className={className}>
       <div ref={containerRef} />
       {failed && (
-        <p className="mt-2 text-sm text-muted-foreground">
-          Verifikasi keamanan tidak dapat diselesaikan. Anda tetap dapat
-          melanjutkan; muat ulang halaman bila permintaan Anda ditolak.
-        </p>
+        <div role="alert" className="mt-2 space-y-1 text-sm">
+          <p className="text-muted-foreground">
+            Verifikasi keamanan tidak dapat dimuat, jadi formulir ini belum bisa
+            dikirim. Penyebabnya hampir selalu ada di sisi Anda: pemblokir iklan
+            atau jaringan yang menyaring{" "}
+            <span className="font-mono text-xs">challenges.cloudflare.com</span>.
+            Izinkan alamat itu, atau coba jaringan lain.
+          </p>
+          <button
+            type="button"
+            onClick={retry}
+            className="rounded-sm font-medium text-primary underline underline-offset-4 hover:no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            Coba lagi
+          </button>
+        </div>
       )}
     </div>
   );

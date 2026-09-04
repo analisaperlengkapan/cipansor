@@ -115,8 +115,13 @@ function PublicVerifyContent() {
     }
 
     if (!turnstile.ready) {
+      // Dua sebab, dua saran. "Tunggu sesaat" hanya benar selama tantangannya
+      // masih berjalan; ketika widget-nya menyerah, menunggu tidak mengubah
+      // apa pun dan yang menolong ada di panel widget itu sendiri.
       setError(
-        "Verifikasi keamanan belum selesai. Tunggu sesaat, lalu coba lagi.",
+        turnstile.blocked
+          ? "Verifikasi keamanan tidak dapat dimuat. Ikuti petunjuk di kotak verifikasi di bawah."
+          : "Verifikasi keamanan belum selesai. Tunggu sesaat, lalu coba lagi.",
       );
       return;
     }
@@ -208,7 +213,14 @@ function PublicVerifyContent() {
             <Button
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
               onClick={handleVerify}
-              disabled={verifyPdfMutation.isPending || !selectedFile}
+              // `turnstile.ready` ikut di sini supaya halaman ini sejalan
+              // dengan enam permukaan lainnya. Tanpa itu tombolnya satu-satunya
+              // yang tetap terbuka ketika gerbangnya mati — penjaga di
+              // `handleVerify` memang menahannya, tapi tombol yang bisa ditekan
+              // dan selalu menolak adalah undangan untuk menekannya berulang.
+              disabled={
+                verifyPdfMutation.isPending || !selectedFile || !turnstile.ready
+              }
             >
               {verifyPdfMutation.isPending ? (
                 <>

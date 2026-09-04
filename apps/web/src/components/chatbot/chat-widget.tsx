@@ -6,7 +6,7 @@ import { siteConfig } from "@/config/site";
 import { useChatbotAvailability, usePublicChat } from "@/hooks/use-chatbot";
 import {
   TurnstileWidget,
-  isTurnstileEnabled,
+  useTurnstile,
 } from "@/components/security/turnstile-widget";
 import type { ChatMessage, PublicChatResponse } from "@/hooks/use-chatbot";
 import { Button } from "@/components/ui/button";
@@ -55,11 +55,7 @@ export function ChatWidget() {
    * hampir semua pengunjung, dan tantangan berikutnya sudah disiapkan selagi
    * orangnya mengetik pertanyaan berikutnya.
    */
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileResetSignal, setTurnstileResetSignal] = useState(0);
-  const turnstileRequired = isTurnstileEnabled();
-  // Widget tidak dapat dimuat: teruskan, biarkan peladen yang memutuskan.
-  const [turnstileBlocked, setTurnstileBlocked] = useState(false);
+  const turnstile = useTurnstile();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -79,7 +75,7 @@ export function ChatWidget() {
   async function send(question: string) {
     const trimmed = question.trim();
     if (trimmed.length < 2 || chat.isPending) return;
-    if (turnstileRequired && !turnstileToken && !turnstileBlocked) return;
+    if (!turnstile.ready) return;
 
     // Only the turns already exchanged are sent as history — never the turn
     // being added, and never anything the server did not produce.
@@ -94,7 +90,7 @@ export function ChatWidget() {
       const result = await chat.mutateAsync({
         message: trimmed,
         history,
-        turnstileToken: turnstileToken ?? undefined,
+        turnstileToken: turnstile.token ?? undefined,
       });
       setTurns((prev) => [
         ...prev,
@@ -114,8 +110,7 @@ export function ChatWidget() {
     } finally {
       // Tokennya sudah ditukarkan — berhasil atau tidak — jadi pertanyaan
       // berikutnya membutuhkan tantangan baru.
-      setTurnstileToken(null);
-      setTurnstileResetSignal((n) => n + 1);
+      turnstile.refresh();
     }
   }
 
@@ -220,9 +215,7 @@ export function ChatWidget() {
             action="chatbot-ask"
             appearance="interaction-only"
             size="flexible"
-            onToken={setTurnstileToken}
-            onUnavailable={() => setTurnstileBlocked(true)}
-            resetSignal={turnstileResetSignal}
+            {...turnstile.widgetProps}
             className="px-3"
           />
 
@@ -246,9 +239,7 @@ export function ChatWidget() {
               type="submit"
               size="icon"
               disabled={
-                chat.isPending ||
-                input.trim().length < 2 ||
-                (turnstileRequired && !turnstileToken && !turnstileBlocked)
+                chat.isPending || input.trim().length < 2 || !turnstile.ready
               }
             >
               <Send className="h-4 w-4" />

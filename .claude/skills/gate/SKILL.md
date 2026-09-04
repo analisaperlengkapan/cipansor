@@ -33,10 +33,18 @@ Notes:
   (a `.next.bak/` rollback copy, a service worker) are linted locally and never
   in CI's fresh checkout. Add them to `globalIgnores` rather than learning to
   skim past them.
-- **`audit:deps` can fail on a tree you did not touch.** It queries GitHub's
-  live advisory endpoint, so a newly published CVE reddens every open PR at
-  once. The fix is a pin in the root `package.json` `pnpm.overrides`, then
-  `pnpm install` (commit the lockfile — CI installs `--frozen-lockfile`).
+- **`audit:deps` can fail on a tree you did not touch.** It queries **npm's**
+  live bulk advisory endpoint (`registry.npmjs.org/-/npm/v1/security/advisories/bulk`
+  — not GitHub's, as this note wrongly said until 2026-09-04), so a newly
+  published CVE reddens every open PR at once. The fix is a pin in the root
+  `package.json` `pnpm.overrides`, then `pnpm install` (commit the lockfile —
+  CI installs `--frozen-lockfile`).
+- **But read the message before hunting for a pin.** The same endpoint returns
+  503 and hangs outright, and that failure carries no package name or
+  vulnerable range. The script now retries with backoff and gives up with
+  "unreachable after N attempts … re-run the job" — that line means npm was
+  down, not that a dependency is vulnerable. Tune with `AUDIT_TIMEOUT_MS` /
+  `AUDIT_MAX_ATTEMPTS` when debugging.
 - `api build` / `web build` can OOM tsc/next on the default heap; if you see
   exit 134, prefix with `NODE_OPTIONS=--max-old-space-size=4096`.
 - `web build` bakes `NEXT_PUBLIC_API_URL` (defaults to `http://localhost:3001`).

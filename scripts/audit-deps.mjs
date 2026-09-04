@@ -83,6 +83,66 @@ if (installed.size === 0) {
   process.exit(2);
 }
 
+const REQUEST_TIMEOUT_MS = Number(process.env.AUDIT_TIMEOUT_MS || 30_000);
+const MAX_ATTEMPTS = Number(process.env.AUDIT_MAX_ATTEMPTS || 4);
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * POST one chunk to the bulk endpoint, retrying transient failures.
+ *
+ * This runs in CI as the **Security** job, so its exit code is read as a
+ * statement about the dependency tree. Without a timeout and a retry it is
+ * really a statement about npm's uptime: the endpoint both returns 503 and
+ * **hangs outright**, and a single `fetch` with neither guard turns one
+ * hiccup into a red X on every open PR at once. Measured 2026-09-03: the
+ * first of three consecutive calls hung past 30s, the next two answered 200
+ * in ~4.5s, and two CI runs died at exactly 5m01s.
+ *
+ * Retried: network errors, timeouts, 429, and 5xx. A 4xx other than 429 is
+ * our own bad request and fails immediately — retrying it only wastes CI.
+ */
+async function fetchAdvisories(body) {
+  let lastError = "unknown";
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+    try {
+      const res = await fetch(`${REGISTRY}/-/npm/v1/security/advisories/bulk`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      });
+
+      if (res.ok) return await res.json();
+
+      if (res.status !== 429 && res.status < 500) {
+        console.error(`Bulk advisory endpoint returned ${res.status}`);
+        process.exit(2);
+      }
+      lastError = `HTTP ${res.status}`;
+    } catch (err) {
+      lastError = err?.name === "TimeoutError"
+        ? `timeout after ${REQUEST_TIMEOUT_MS}ms`
+        : String(err?.message ?? err);
+    }
+
+    if (attempt < MAX_ATTEMPTS) {
+      const backoff = 2 ** (attempt - 1) * 1000;
+      console.error(
+        `Bulk advisory endpoint failed (${lastError}) — attempt ${attempt}/${MAX_ATTEMPTS}, retrying in ${backoff}ms`,
+      );
+      await sleep(backoff);
+    }
+  }
+
+  console.error(
+    `Bulk advisory endpoint unreachable after ${MAX_ATTEMPTS} attempts (${lastError}). ` +
+      "This is npm's availability, not a vulnerability — re-run the job.",
+  );
+  process.exit(2);
+}
+
 // The bulk endpoint accepts {name: [versions]}; chunk to keep requests sane.
 const entries = [...installed.entries()].map(([n, v]) => [n, [...v]]);
 const CHUNK = 400;
@@ -91,16 +151,7 @@ const waived = [];
 
 for (let i = 0; i < entries.length; i += CHUNK) {
   const body = Object.fromEntries(entries.slice(i, i + CHUNK));
-  const res = await fetch(`${REGISTRY}/-/npm/v1/security/advisories/bulk`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    console.error(`Bulk advisory endpoint returned ${res.status}`);
-    process.exit(2);
-  }
-  const advisories = await res.json();
+  const advisories = await fetchAdvisories(body);
   for (const [name, advs] of Object.entries(advisories)) {
     for (const adv of advs) {
       const range = adv.vulnerable_versions ?? "*";

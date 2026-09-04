@@ -432,9 +432,11 @@ export const EsignService = {
     try {
       signed = signPayload(toMaterial(key!), passphrase, payload);
 
-      // Compute PDF byte hash and PDF signature if PDF buffer is provided or created from content
-      const bufferToHash = pdfBuffer ?? Buffer.from(letter.content ?? letter.subject ?? '', 'utf8');
-      pdfHashHex = computePdfHash(bufferToHash);
+      // Compute PDF byte hash and PDF signature directly from PDF buffer
+      if (!pdfBuffer) {
+        throw Errors.badRequest('Berkas PDF surat wajib diunggah untuk membuat tanda tangan digital');
+      }
+      pdfHashHex = computePdfHash(pdfBuffer);
       pdfSig = signPdfHash(toMaterial(key!), passphrase, pdfHashHex);
     } catch (error) {
       if (error instanceof EsignError) {

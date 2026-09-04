@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useCorrespondence } from "@/hooks/use-correspondence";
 import { useTeachers } from "@/hooks/use-teachers";
@@ -64,6 +64,11 @@ const letterSchema = z.object({
 
 export default function CreateLetterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialDirection = searchParams.get("direction") === "incoming"
+    ? LetterDirection.INCOMING
+    : LetterDirection.OUTGOING;
+
   const { user } = useAuth();
   const { createLetter } = useCorrespondence(user?.unitId);
   const { data: teachers } = useTeachers({
@@ -82,7 +87,7 @@ export default function CreateLetterPage() {
   const form = useForm<z.infer<typeof letterSchema>>({
     resolver: zodResolver(letterSchema),
     defaultValues: {
-      direction: LetterDirection.OUTGOING,
+      direction: initialDirection,
       type: LetterType.SURAT_DINAS,
       date: new Date().toISOString().split("T")[0],
       urgency: LetterUrgency.NORMAL,

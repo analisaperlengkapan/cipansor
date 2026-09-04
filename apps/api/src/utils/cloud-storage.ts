@@ -37,15 +37,26 @@ export async function uploadToCloudStorage(
 
       let azureBlobUrl = blockBlobClient.url;
 
+      // Extract account name and key from connection string if env vars are not set
+      let accountName = process.env.AZURE_STORAGE_ACCOUNT;
+      let accountKey = process.env.AZURE_STORAGE_KEY;
+
+      if (!accountName || !accountKey) {
+        const accountNameMatch = connectionString.match(/AccountName=([^;]+)/);
+        const accountKeyMatch = connectionString.match(/AccountKey=([^;]+)/);
+        if (accountNameMatch) accountName = accountNameMatch[1];
+        if (accountKeyMatch) accountKey = accountKeyMatch[1];
+      }
+
       // If container is private, generate a SAS URL with 24-hour expiry
       if (!isPublicContainer) {
-        if (!process.env.AZURE_STORAGE_ACCOUNT || !process.env.AZURE_STORAGE_KEY) {
-          throw new Error('Kunci AZURE_STORAGE_KEY dan AZURE_STORAGE_ACCOUNT wajib dikonfigurasi untuk container privat.');
+        if (!accountName || !accountKey) {
+          throw new Error('Kunci kredensial Azure Storage wajib dikonfigurasi untuk container privat.');
         }
 
         const sharedKeyCredential = new StorageSharedKeyCredential(
-          process.env.AZURE_STORAGE_ACCOUNT,
-          process.env.AZURE_STORAGE_KEY
+          accountName,
+          accountKey
         );
         const sasToken = generateBlobSASQueryParameters(
           {

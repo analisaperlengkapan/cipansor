@@ -236,7 +236,8 @@ describe('menandatangani surat', () => {
       id: 'sig-1', verificationToken: 'tok', signedAt: new Date(),
     } as any);
 
-    const out = await EsignService.signLetter('letter-1', 'ketua', PASS);
+    const pdfBuf = Buffer.from('Official PDF Content', 'utf8');
+    const out = await EsignService.signLetter('letter-1', 'ketua', PASS, pdfBuf);
 
     expect(out.verificationToken).toBe('tok');
     expect(prisma.letter.update).toHaveBeenCalledWith({

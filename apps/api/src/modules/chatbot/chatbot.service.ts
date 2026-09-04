@@ -93,7 +93,6 @@ function groundedRefusal(): PublicChatResponse {
   // particular reply never reached one.
   return {
     answer:
-      "Assalamu'alaikum warahmatullahi wabarakatuh 🙏\n\n" +
       'Mohon maaf, untuk pertanyaan tersebut saya belum memiliki informasinya 🙏 ' +
       `Agar Bapak/Ibu mendapat jawaban yang tepat, silakan hubungi kami di ${siteConfig.contact.phone} 📞 ` +
       `atau melalui WhatsApp ${siteConfig.contact.whatsapp} 💬\n\n` +

@@ -72,9 +72,21 @@ describe('buildMessages', () => {
     it('is applied by default, so answers sound like the pesantren', () => {
       const system = systemOf(buildMessages({ question: 'halo', chunks: [chunk], liveFacts: [] }));
       expect(system).toContain('GAYA KOMUNIKASI');
-      expect(system).toContain("Assalamu'alaikum");
       expect(system).toMatch(/emoji/i);
       expect(system).toContain('Ada lagi yang ingin');
+    });
+
+    it('tells the model NOT to open with salam, and to answer a salam only when one was given', () => {
+      // Ini yang menggantikan `toContain("Assalamu'alaikum")` yang lama. Uji itu
+      // menuntut prompt memuat salam, sehingga ia akan tetap hijau justru pada
+      // perilaku yang harus dibuang — persis pola "uji yang mengunci cacat"
+      // yang sudah tiga kali terjadi di repo ini.
+      const system = systemOf(buildMessages({ question: 'halo', chunks: [chunk], liveFacts: [] }));
+
+      expect(system).toContain('JANGAN mengawali jawaban dengan salam');
+      // Menjawab salam tetap boleh — yang dilarang hanya memulainya sendiri.
+      expect(system).toContain("Wa'alaikumussalam");
+      expect(system).toContain('HANYA bila penanya benar-benar mengucap salam');
     });
 
     it('is replaced wholesale by an explicit persona', () => {

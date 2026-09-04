@@ -29,8 +29,14 @@ interface Turn extends ChatMessage {
   failed?: boolean;
 }
 
+// Satu-satunya salam dalam percakapan ini, dan karena itu diucapkan lengkap.
+// Model sengaja TIDAK lagi mengawali jawabannya dengan salam (lihat
+// DEFAULT_PERSONA di apps/api): salam yang ditaruh oleh kode diucapkan tepat
+// sekali dan tidak bisa salah menebak apakah ia sedang menyapa atau menjawab
+// sapaan — yang mana model pernah salah, dan menjawab "Wa'alaikumussalam"
+// kepada pengunjung yang tidak mengucap apa pun.
 const GREETING =
-  "Assalamu'alaikum. Saya asisten informasi Pesantren Cipansor. Ada yang bisa saya bantu seputar profil, program, atau pendaftaran?";
+  "Assalamu'alaikum warahmatullahi wabarakatuh. Saya asisten informasi Pesantren Cipansor. Ada yang bisa saya bantu seputar profil, program, atau pendaftaran?";
 
 const SUGGESTIONS = [
   "Bagaimana cara mendaftar?",

@@ -6,10 +6,10 @@
 # first, and in practice it only got there because the user remembered to ask —
 # every time. This hook asks instead.
 #
-# It blocks the first MANUAL /compact of a session (exit 2, message shown to the
-# model), which hands control back so the records can be brought level. The
-# second /compact goes through unconditionally, so this can nag but can never
-# wedge: the escape is simply to run the command again.
+# It blocks a MANUAL /compact (exit 2, message shown to the model), which hands
+# control back so the records can be brought level. The retry that follows —
+# any /compact within the next half hour — goes through unconditionally, so this
+# can nag but can never wedge: the escape is simply to run the command again.
 #
 # Auto-compaction is NEVER blocked. It fires when the context window is full,
 # and refusing it there would strand the session at the wall with no way out.
@@ -22,7 +22,7 @@ set -uo pipefail
 input="$(cat 2>/dev/null || true)"
 
 python3 - "$input" <<'PY'
-import json, os, sys, tempfile
+import json, os, sys, tempfile, time
 
 try:
     data = json.loads(sys.argv[1]) if sys.argv[1].strip() else {}
@@ -45,15 +45,27 @@ instructions = (data.get("custom_instructions") or "").lower()
 if "skip-sync" in instructions or "nosync" in instructions:
     sys.exit(0)
 
+# The stamp is what makes this ask once instead of every time — but it has to
+# expire. A session here runs for days and compacts several times, and a stamp
+# that never ages turns "ask once per compaction" into "ask once, ever": the
+# second compaction, a day later, discards an entirely new window of work
+# without ever asking. It did exactly that on 2026-09-04. So the stamp silences
+# only the RETRY the model just asked the user for; anything later asks again.
+RETRY_WINDOW_SECONDS = 30 * 60
+
 session = str(data.get("session_id") or "unknown")
 stamp_dir = os.path.join(tempfile.gettempdir(), "claude-precompact-sync")
 stamp = os.path.join(stamp_dir, session)
 
 try:
     os.makedirs(stamp_dir, exist_ok=True)
-    if os.path.exists(stamp):
-        sys.exit(0)          # already asked this session -> let it through
+    if (
+        os.path.exists(stamp)
+        and time.time() - os.path.getmtime(stamp) < RETRY_WINDOW_SECONDS
+    ):
+        sys.exit(0)          # this IS the retry we asked for -> let it through
     open(stamp, "w").close()
+    os.utime(stamp, None)    # a later compaction must age out of the window
 except Exception:
     sys.exit(0)              # cannot track state -> never block
 
@@ -63,8 +75,8 @@ sys.stderr.write(
     "Run the `sync-records` skill now and carry out its pass. Correcting a "
     "memory that this session made WRONG matters more than adding a new one — "
     "a stale memory is trusted, a missing one is merely absent.\n\n"
-    "Then tell the user it is level and to run /compact again; the second one "
-    "is never blocked. If nothing changed, say so plainly instead of inventing "
+    "Then tell the user it is level and to run /compact again; the retry is "
+    "never blocked. If nothing changed, say so plainly instead of inventing "
     "an edit.\n\n"
     "To skip deliberately: /compact skip-sync\n"
 )

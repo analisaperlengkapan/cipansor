@@ -9,6 +9,7 @@ import { aggregateDashboardMetrics } from './dashboard-metrics.job';
 import { runMonthlyAutoBilling } from './finance-billing.job';
 import { sendMonthlySppReminders } from './spp-reminder.job';
 import { purgeIdentityDocuments } from './identity-purge.job';
+import { runChatbotSpendCheck } from './chatbot-spend.job';
 import { prisma } from '@/lib/prisma';
 
 /**
@@ -189,6 +190,37 @@ export function initializeScheduler(): void {
   scheduledTasks.push(identityPurgeTask);
   logger.info('[Scheduler] Identity document purge job scheduled daily at 02:30 WIB');
 
+  /**
+   * Peringatan belanja chatbot — setiap hari pukul 07:00 WIB.
+   *
+   * Harian, bukan bulanan, meskipun anggarannya bulanan: peringatan yang datang
+   * pada tanggal 1 hanya bisa mengabarkan uang yang sudah habis. Pukul 07:00
+   * dipilih supaya suratnya berada di kotak masuk sebelum jam kerja, bukan
+   * bersama pekerjaan tengah malam yang tidak dibaca siapa pun.
+   *
+   * Pekerjaan ini menahan diri sendiri: satu tingkat ambang hanya dikirim sekali
+   * per bulan, dan bulan tanpa pemakaian tidak mengirim apa pun.
+   */
+  const chatbotSpendTask = cron.schedule(
+    '0 7 * * *',
+    async () => {
+      logger.debug('[Scheduler] Running chatbot spend check');
+      try {
+        const result = await runChatbotSpendCheck();
+        if (result.sent) {
+          logger.warn(`[Scheduler] Chatbot spend alert sent: ${result.sent}`);
+        }
+      } catch (error) {
+        logger.error('[Scheduler] Chatbot spend check failed:', error);
+      }
+    },
+    {
+      timezone: 'Asia/Jakarta',
+    }
+  );
+  scheduledTasks.push(chatbotSpendTask);
+  logger.info('[Scheduler] Chatbot spend check scheduled daily at 07:00 WIB');
+
   logger.info(`[Scheduler] ${scheduledTasks.length} jobs scheduled successfully`);
 }
 
@@ -213,6 +245,7 @@ export async function runJob(
     | 'auto-billing'
     | 'spp-reminder'
     | 'identity-purge'
+    | 'chatbot-spend'
 ): Promise<void> {
   logger.info(`[Scheduler] Manually running job: ${jobName}`);
 
@@ -237,6 +270,9 @@ export async function runJob(
       break;
     case 'identity-purge':
       await purgeIdentityDocuments(prisma);
+      break;
+    case 'chatbot-spend':
+      await runChatbotSpendCheck();
       break;
     default:
       throw new Error(`Unknown job: ${jobName}`);

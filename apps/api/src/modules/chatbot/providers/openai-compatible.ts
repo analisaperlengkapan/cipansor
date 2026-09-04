@@ -14,12 +14,48 @@
 
 import { config } from '@/config';
 import { logger } from '@/lib/logger';
-import type { LlmCompletionRequest, LlmCompletionResult, LlmProvider } from './types';
+import type { LlmCompletionRequest, LlmCompletionResult, LlmProvider, LlmUsage } from './types';
 
 interface ChatCompletionResponse {
   choices?: { message?: { content?: string } }[];
   model?: string;
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    /** Bentuk OpenAI. */
+    prompt_tokens_details?: { cached_tokens?: number };
+    /** Bentuk asli DeepSeek. */
+    prompt_cache_hit_tokens?: number;
+  };
   error?: { message?: string };
+}
+
+/**
+ * Reads the `usage` block, and returns undefined rather than zeros when it is
+ * missing or unusable.
+ *
+ * The distinction is the whole point: zeros would be recorded as a call that
+ * cost nothing, and a month of those would report a spend of zero while the
+ * invoice said otherwise. Both counters must be present and finite — a body
+ * carrying only `prompt_tokens` tells us as little as one carrying neither.
+ */
+function readUsage(body: ChatCompletionResponse): LlmUsage | undefined {
+  const prompt = body.usage?.prompt_tokens;
+  const completion = body.usage?.completion_tokens;
+  if (!Number.isFinite(prompt) || !Number.isFinite(completion)) return undefined;
+
+  // Dua bentuk, karena dua penyedia menamainya berbeda dan model di balik
+  // endpoint ini boleh berganti tanpa perubahan kode. Yang sedang dipakai
+  // (DeepSeek-V4-Flash-0731 di Azure AI Foundry) tidak melaporkan keduanya —
+  // diperiksa langsung 2026-09-04 — jadi hari ini nilainya selalu undefined.
+  const cached =
+    body.usage?.prompt_tokens_details?.cached_tokens ?? body.usage?.prompt_cache_hit_tokens;
+
+  return {
+    promptTokens: prompt as number,
+    completionTokens: completion as number,
+    cachedPromptTokens: Number.isFinite(cached) ? (cached as number) : undefined,
+  };
 }
 
 export class OpenAiCompatibleProvider implements LlmProvider {
@@ -71,7 +107,7 @@ export class OpenAiCompatibleProvider implements LlmProvider {
         throw new Error('Chatbot provider returned no content');
       }
 
-      return { text, model: body.model ?? this.model };
+      return { text, model: body.model ?? this.model, usage: readUsage(body) };
     } finally {
       clearTimeout(timer);
     }

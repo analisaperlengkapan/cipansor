@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ask, ChatbotUnavailableError, resolveProvider } from '../chatbot.service';
 import { StubProvider } from '../providers/stub';
 import { collectLiveFacts } from '../live-facts';
+import { topicLabels } from '../knowledge-base';
 import { isCacheable, readCached, writeCached } from '../cache';
 import { config } from '@/config';
 import type { LlmProvider } from '../providers/types';
@@ -77,6 +78,26 @@ describe('ask', () => {
     expect(result.answer).toMatch(/\p{Extended_Pictographic}/u);
     expect(result.answer).toContain('0811-110-400');
     expect(result.answer).toMatch(/ada lagi yang ingin/i);
+  });
+
+  it('menutup penolakan itu dengan rambu petunjuk, bukan jalan buntu', async () => {
+    // Versi sebelumnya hanya meminta maaf lalu menyodorkan nomor telepon. Untuk
+    // keluhan yang paling sering memicunya — "ada informasi apa saja?" —
+    // nomor telepon adalah jawaban yang salah: yang dibutuhkan penanya adalah
+    // daftar. Uji ini memerah bila daftar itu hilang lagi.
+    const result = await ask({
+      question: 'ada informasi apa saja',
+      provider: new StubProvider(),
+      retriever: { search: () => [] },
+    });
+
+    expect(result.refused).toBe(true);
+    expect(result.answer).toContain('Yang bisa saya bantu');
+    for (const label of topicLabels()) {
+      expect(result.answer, `topik tidak disebut: ${label}`).toContain(label);
+    }
+    // Telepon tetap ada, tetapi sebagai jalan terakhir — bukan satu-satunya.
+    expect(result.answer).toContain('0811-110-400');
   });
 
   it('does not open that refusal with a salam the visitor never gave', async () => {

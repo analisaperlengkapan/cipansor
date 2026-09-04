@@ -296,6 +296,37 @@ describe('Admissions Service', () => {
     });
   });
 
+  it('should apply unit scoping in getRegistrants for UNIT_ADMIN or STAFF and bypass for SUPER_ADMIN', async () => {
+    vi.mocked(prisma.registrant.findMany as any).mockResolvedValue([]);
+    vi.mocked(prisma.registrant.count).mockResolvedValue(0);
+
+    // UNIT_ADMIN caller with unitId 'unit-sd'
+    await service.getRegistrants(
+      { page: 1, limit: 10 },
+      { id: 'usr-admin', role: 'UNIT_ADMIN', unitId: 'unit-sd' }
+    );
+
+    expect(prisma.registrant.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          admissionPeriod: { unitId: 'unit-sd' },
+        }),
+      })
+    );
+
+    // SUPER_ADMIN caller
+    await service.getRegistrants(
+      { page: 1, limit: 10 },
+      { id: 'usr-super', role: 'SUPER_ADMIN', unitId: null }
+    );
+
+    expect(prisma.registrant.findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        where: {},
+      })
+    );
+  });
+
   it('should leave wave status unchanged when registeredCount remains below quota after increment', async () => {
     const mockPeriod = {
       id: 'p1',

@@ -304,6 +304,14 @@ describe('CBT Service', () => {
           'std-other'
         )
       ).rejects.toThrow('Access denied');
+
+      // Missing student profile rejected
+      await expect(
+        CBTService.recordSecurityLog(
+          { attemptId: 'att-1', eventType: 'TAB_SWITCH' as any },
+          undefined
+        )
+      ).rejects.toThrow('Access denied');
     });
 
     it('should retry gradebook sync if finishExamAttempt is called again on an already COMPLETED attempt', async () => {

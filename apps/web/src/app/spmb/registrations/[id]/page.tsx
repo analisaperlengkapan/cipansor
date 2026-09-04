@@ -459,7 +459,7 @@ export default function RegistrationDetailPage({
                         size="sm"
                         variant={doc.isVerified ? "outline" : "default"}
                         onClick={() => handleVerifyDocument(doc.id, !doc.isVerified)}
-                        disabled={verifyDoc.isPending}
+                        disabled={!canManageDecisions || verifyDoc.isPending}
                       >
                         {doc.isVerified ? <X className="h-4 w-4 mr-1" /> : <Check className="h-4 w-4 mr-1" />}
                         {doc.isVerified ? "Batal" : "Verifikasi"}

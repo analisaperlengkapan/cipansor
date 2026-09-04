@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
-import { Prisma, QuestionType } from '@prisma/client';
-import { SecurityEventType, RecordSecurityLogInput } from '@cipansor/shared';
+import { Prisma, QuestionType, SecurityEventType as PrismaSecurityEventType } from '@prisma/client';
+import { RecordSecurityLogInput } from '@cipansor/shared';
 import { Decimal } from '@prisma/client/runtime/client';
 import { Errors } from '@/middleware/error';
 import type { JwtPayload } from '@/lib/jwt';
@@ -1054,15 +1054,15 @@ export class CBTService {
       where: { id: input.attemptId },
     });
     if (!attempt) throw Errors.notFound('Attempt');
-    if (studentId && attempt.studentId !== studentId) {
+    if (!studentId || attempt.studentId !== studentId) {
       throw Errors.forbidden('Access denied');
     }
 
     return prisma.examSecurityLog.create({
       data: {
         attemptId: input.attemptId,
-        eventType: input.eventType as any,
-        details: input.details ? (input.details as any) : Prisma.JsonNull,
+        eventType: input.eventType as PrismaSecurityEventType,
+        details: input.details ? (input.details as Prisma.InputJsonValue) : Prisma.JsonNull,
       },
     });
   }

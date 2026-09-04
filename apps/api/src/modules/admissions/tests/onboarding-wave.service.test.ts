@@ -38,15 +38,20 @@ vi.mock('@/lib/prisma', () => ({
     studentParent: {
       create: vi.fn(),
     },
+    role: {
+      findFirst: vi.fn(),
+    },
     userRoleAssignment: {
       findFirst: vi.fn(),
       create: vi.fn(),
     },
     medicalRecord: {
       create: vi.fn(),
+      findFirst: vi.fn(),
     },
     santriWallet: {
       create: vi.fn(),
+      findUnique: vi.fn(),
     },
     classEnrollment: {
       create: vi.fn(),
@@ -165,10 +170,14 @@ describe('Student Onboarding & Wave Quota Unit Tests', () => {
       vi.mocked(prisma.admissionPeriod.findUnique).mockResolvedValue(mockPeriod as any);
       vi.mocked(prisma.unit.findUnique).mockResolvedValue({ id: 'unit-1', type: 'SMP_IT' } as any);
       vi.mocked(prisma.user.findUnique).mockResolvedValue(existingUser as any);
+      vi.mocked(prisma.role.findFirst as any).mockResolvedValue({ id: 'role-std-id' });
+      vi.mocked(prisma.userRoleAssignment.findFirst as any).mockResolvedValue(null);
       vi.mocked(prisma.student.findUnique).mockResolvedValue(null as any);
+      vi.mocked(prisma.medicalRecord.findFirst as any).mockResolvedValue({ id: 'med-1' });
+      vi.mocked(prisma.santriWallet.findUnique as any).mockResolvedValue({ id: 'wal-1' });
       (vi.mocked(prisma.student.create) as any).mockResolvedValue({ id: 's-exist', nis: 'NIS-002' });
 
-      await StudentOnboardingOrchestrator.processEnrollment('reg-email', 'unit-1', 'admin-1', {
+      const result = await StudentOnboardingOrchestrator.processEnrollment('reg-email', 'unit-1', 'admin-1', {
         academicYearId: 'ay-2026',
       });
 
@@ -178,6 +187,24 @@ describe('Student Onboarding & Wave Quota Unit Tests', () => {
           data: expect.objectContaining({ email: 'santri.real@gmail.com' }),
         })
       );
+
+      // Student UserRoleAssignment created
+      expect(prisma.userRoleAssignment.create).toHaveBeenCalledWith({
+        data: {
+          userId: 'usr-existing',
+          roleId: 'role-std-id',
+          unitId: 'unit-1',
+          isPrimary: true,
+          isActive: true,
+        },
+      });
+
+      // Reset token is omitted for existing reused user
+      expect(result.resetToken).toBeUndefined();
+
+      // Idempotent: medicalRecord and santriWallet create NOT called again
+      expect(prisma.medicalRecord.create).not.toHaveBeenCalled();
+      expect(prisma.santriWallet.create).not.toHaveBeenCalled();
 
       // Student record attaches to existing user id
       expect(prisma.student.create).toHaveBeenCalledWith(

@@ -41,6 +41,9 @@ export class CBTController {
     try {
       const user = requireUser(req);
       const student = await prisma.student.findUnique({ where: { userId: user.id } });
+      if (user.role === 'STUDENT' && !student) {
+        throw Errors.forbidden('Student profile not found for this account');
+      }
       const studentId = student?.id;
       const attemptId = req.params.attemptId || req.body.attemptId;
       const { eventType, details } = req.body;

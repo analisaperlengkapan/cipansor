@@ -16,6 +16,8 @@ import {
 } from './admissions.schema';
 import { Errors } from '../../middleware/error';
 
+type AuthUser = { id: string; role: string; unitId?: string | null };
+
 // `CreateRegistrantInput` already defines `source` and `campaignId` as
 // optional (see `createRegistrantSchema` in ./schema.ts), so there's no need
 // for a separate "extended" interface here.
@@ -227,14 +229,17 @@ async function generateRegistrationNo(
   return `REG-${year}-${periodSuffix}-${String(count + 1).padStart(5, '0')}`;
 }
 
-export async function getRegistrants(params: {
-  page: number;
-  limit: number;
-  admissionPeriodId?: string;
-  status?: AdmissionStatus;
-  gender?: 'MALE' | 'FEMALE';
-  search?: string;
-}) {
+export async function getRegistrants(
+  params: {
+    page: number;
+    limit: number;
+    admissionPeriodId?: string;
+    status?: AdmissionStatus;
+    gender?: 'MALE' | 'FEMALE';
+    search?: string;
+  },
+  actor?: AuthUser
+) {
   const { page, limit, admissionPeriodId, status, gender, search } = params;
   const skip = (page - 1) * limit;
 
@@ -243,6 +248,11 @@ export async function getRegistrants(params: {
   if (admissionPeriodId) where.admissionPeriodId = admissionPeriodId;
   if (status) where.status = status;
   if (gender) where.gender = gender as Gender;
+
+  // Server-side unit scoping: SUPER_ADMIN sees all; non-SUPER_ADMIN is restricted to their unitId
+  if (actor && actor.role !== 'SUPER_ADMIN' && actor.unitId) {
+    where.admissionPeriod = { ...(where.admissionPeriod as any), unitId: actor.unitId };
+  }
 
   if (search) {
     where.OR = [

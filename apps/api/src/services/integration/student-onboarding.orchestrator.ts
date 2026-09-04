@@ -16,6 +16,22 @@ export interface EnrollmentOptions {
   roomId?: string;
 }
 
+export interface EnrollmentResult {
+  success: boolean;
+  studentId: string;
+  userId: string;
+  nis: string;
+  email: string;
+  unitCode: string;
+  resetToken?: string;
+  parentUserId?: string;
+  parentEmail?: string;
+  parentName?: string;
+  parentResetToken?: string;
+  studentName?: string;
+  effectiveUnitId?: string;
+}
+
 export class StudentOnboardingOrchestrator {
   /**
    * Process a registrant to become a full student
@@ -28,7 +44,7 @@ export class StudentOnboardingOrchestrator {
     processedById: string,
     options?: EnrollmentOptions | string,
     legacyAcademicYearId?: string
-  ) {
+  ): Promise<EnrollmentResult> {
     // Normalise options
     let classId: string | undefined = undefined;
     let academicYearId: string | undefined = legacyAcademicYearId;
@@ -158,9 +174,10 @@ export class StudentOnboardingOrchestrator {
         where: { email },
       });
 
+      const isNewUser = !user;
+
       if (!user) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        user = await (tx.user.create as any)({
+        user = await tx.user.create({
           data: {
             name: registrant.fullName,
             email,
@@ -174,14 +191,39 @@ export class StudentOnboardingOrchestrator {
         });
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let student = await (tx.student.findUnique as any)({
-        where: { userId: user!.id },
+      // Ensure UserRoleAssignment exists for STUDENT role
+      const studentRole = await tx.role.findFirst({ where: { code: 'STUDENT' } });
+      if (studentRole) {
+        const existingUserRole = await tx.userRoleAssignment.findFirst({
+          where: {
+            userId: user.id,
+            roleId: studentRole.id,
+            unitId: effectiveUnitId,
+          },
+        });
+
+        if (!existingUserRole) {
+          const hasPrimary = await tx.userRoleAssignment.findFirst({
+            where: { userId: user.id, isPrimary: true },
+          });
+          await tx.userRoleAssignment.create({
+            data: {
+              userId: user.id,
+              roleId: studentRole.id,
+              unitId: effectiveUnitId,
+              isPrimary: !hasPrimary,
+              isActive: true,
+            },
+          });
+        }
+      }
+
+      let student = await tx.student.findUnique({
+        where: { userId: user.id },
       });
 
       if (student) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        student = await (tx.student.update as any)({
+        student = await tx.student.update({
           where: { id: student.id },
           data: {
             unitId: effectiveUnitId,
@@ -194,10 +236,9 @@ export class StudentOnboardingOrchestrator {
           },
         });
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        student = await (tx.student.create as any)({
+        student = await tx.student.create({
           data: {
-            userId: user!.id,
+            userId: user.id,
             status: 'active',
             unitId: effectiveUnitId,
             nis,
@@ -274,28 +315,37 @@ export class StudentOnboardingOrchestrator {
         );
       }
 
-      // 5. Setup initial Health/UKS record
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (tx.medicalRecord.create as any)({
-        data: {
-          studentId: student.id,
-          type: 'CHECKUP',
-          visitDate: new Date(),
-          complaint: 'Initial Enrollment Checkup',
-          diagnosis: 'Healthy',
-          notes: 'Auto-generated during enrollment',
-          recordedById: processedById,
-          status: 'HEALTHY'
-        }
+      // 5. Setup initial Health/UKS record (idempotent)
+      const existingMedical = await tx.medicalRecord.findFirst({
+        where: { studentId: student.id },
       });
+      if (!existingMedical) {
+        await tx.medicalRecord.create({
+          data: {
+            studentId: student.id,
+            type: 'CHECKUP',
+            visitDate: new Date(),
+            complaint: 'Initial Enrollment Checkup',
+            diagnosis: 'Healthy',
+            notes: 'Auto-generated during enrollment',
+            recordedById: processedById,
+            status: 'HEALTHY',
+          },
+        });
+      }
 
-      // 6. Setup Student Wallet
-      await tx.santriWallet.create({
-        data: {
-          studentId: student.id,
-          balance: 0,
-        }
+      // 6. Setup Student Wallet (idempotent)
+      const existingWallet = await tx.santriWallet.findUnique({
+        where: { studentId: student.id },
       });
+      if (!existingWallet) {
+        await tx.santriWallet.create({
+          data: {
+            studentId: student.id,
+            balance: 0,
+          },
+        });
+      }
 
       // 7. Enroll in specific class if provided
       if (classId) {
@@ -344,11 +394,11 @@ export class StudentOnboardingOrchestrator {
       return {
         success: true,
         studentId: student.id,
-        userId: user!.id,
+        userId: user.id,
         nis,
         email,
         unitCode,
-        resetToken,
+        resetToken: (isNewUser ? resetToken : undefined) as string | undefined,
         parentUserId: parentUser ? parentUser.id : undefined,
         parentEmail: parentUser && parentResetToken ? parentUser.email : undefined,
         parentName: parentUser ? parentUser.name : undefined,
@@ -391,15 +441,17 @@ export class StudentOnboardingOrchestrator {
           userId: r.userId,
         });
 
-        eventBus.emit('email:send_reset_token', {
-          email: r.email,
-          token: r.resetToken,
-          userId: r.userId,
-          name: r.studentName,
-          title: 'Set Your Password',
-          message: 'Please set your password using the link provided.',
-          data: { expiresInHours: 24 },
-        });
+        if (r.resetToken) {
+          eventBus.emit('email:send_reset_token', {
+            email: r.email,
+            token: r.resetToken,
+            userId: r.userId,
+            name: r.studentName,
+            title: 'Set Your Password',
+            message: 'Please set your password using the link provided.',
+            data: { expiresInHours: 24 },
+          });
+        }
 
         if (r.parentUserId && r.parentResetToken) {
           eventBus.emit('notification:send', {
@@ -430,11 +482,6 @@ export class StudentOnboardingOrchestrator {
       }
     });
 
-    return {
-      success: result.success,
-      studentId: result.studentId,
-      userId: result.userId,
-      nis: result.nis
-    };
+    return result;
   }
 }

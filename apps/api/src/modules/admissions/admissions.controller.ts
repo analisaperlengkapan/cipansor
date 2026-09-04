@@ -1,5 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
-import { config } from '../../config';
+import { Request, Response } from 'express';
 import * as service from './admissions.service';
 import {
   createAdmissionPeriodSchema,
@@ -13,7 +12,7 @@ import {
   verifyDocumentSchema,
   trackRegistrantQuerySchema,
 } from './admissions.schema';
-import { Errors } from '../../middleware/error';
+import { Errors, asyncHandler } from '../../middleware/error';
 import { z } from 'zod';
 import { requireUser } from '../../middleware/auth';
 
@@ -21,386 +20,228 @@ import { requireUser } from '../../middleware/auth';
 // ADMISSION PERIOD CONTROLLERS
 // =====================================
 
-export async function getAdmissionPeriods(req: Request, res: Response, next: NextFunction) {
-  try {
-    const query = res.locals.validatedQuery;
-    const result = await service.getAdmissionPeriods(query);
-    res.json({ success: true, ...result });
-  } catch (error) {
-    next(error);
-  }
-}
+export const getAdmissionPeriods = asyncHandler(async (req: Request, res: Response) => {
+  const query = res.locals.validatedQuery;
+  const result = await service.getAdmissionPeriods(query);
+  res.json({ success: true, ...result });
+});
 
 /**
  * Public document OCR & AI cross-matching endpoint (`POST /admissions/public/parse-document`).
  * Parses uploaded document images (KTP, KK, etc.) and cross-checks data against user inputs.
  */
-export async function parsePublicDocument(req: Request, res: Response, next: NextFunction) {
-  try {
-    const { parseAndVerifyDocument } = await import('./document-ocr.service');
-    const result = await parseAndVerifyDocument(req.body);
-    res.json({ success: true, data: result });
-  } catch (error) {
-    next(error);
-  }
-}
+export const parsePublicDocument = asyncHandler(async (req: Request, res: Response) => {
+  const { parseAndVerifyDocument } = await import('./document-ocr.service');
+  const result = await parseAndVerifyDocument(req.body);
+  res.json({ success: true, data: result });
+});
 
-export async function getAdmissionPeriodById(req: Request, res: Response, next: NextFunction) {
-  try {
-    const period = await service.getAdmissionPeriodById(req.params.id);
-    if (!period) {
-      throw Errors.notFound('Admission period');
-    }
-    res.json({ success: true, data: period });
-  } catch (error) {
-    next(error);
+export const getAdmissionPeriodById = asyncHandler(async (req: Request, res: Response) => {
+  const period = await service.getAdmissionPeriodById(req.params.id);
+  if (!period) {
+    throw Errors.notFound('Admission period');
   }
-}
+  res.json({ success: true, data: period });
+});
 
-export async function createAdmissionPeriod(req: Request, res: Response, next: NextFunction) {
-  try {
-    const data = createAdmissionPeriodSchema.parse(req.body);
-    const period = await service.createAdmissionPeriod(data);
-    res.status(201).json({ success: true, data: period });
-  } catch (error) {
-    next(error);
-  }
-}
+export const createAdmissionPeriod = asyncHandler(async (req: Request, res: Response) => {
+  const data = createAdmissionPeriodSchema.parse(req.body);
+  const period = await service.createAdmissionPeriod(data);
+  res.status(201).json({ success: true, data: period });
+});
 
-export async function updateAdmissionPeriod(req: Request, res: Response, next: NextFunction) {
-  try {
-    const data = updateAdmissionPeriodSchema.parse(req.body);
-    const period = await service.updateAdmissionPeriod(req.params.id, data);
-    res.json({ success: true, data: period });
-  } catch (error) {
-    next(error);
-  }
-}
+export const updateAdmissionPeriod = asyncHandler(async (req: Request, res: Response) => {
+  const data = updateAdmissionPeriodSchema.parse(req.body);
+  const period = await service.updateAdmissionPeriod(req.params.id, data);
+  res.json({ success: true, data: period });
+});
 
-export async function deleteAdmissionPeriod(req: Request, res: Response, next: NextFunction) {
-  try {
-    await service.deleteAdmissionPeriod(req.params.id);
-    res.json({ success: true, message: 'Admission period deleted successfully' });
-  } catch (error) {
-    next(error);
-  }
-}
+export const deleteAdmissionPeriod = asyncHandler(async (_req: Request, res: Response) => {
+  await service.deleteAdmissionPeriod(_req.params.id);
+  res.json({ success: true, message: 'Admission period deleted successfully' });
+});
 
-export async function getAdmissionPeriodStats(req: Request, res: Response, next: NextFunction) {
-  try {
-    const stats = await service.getAdmissionPeriodStats(req.params.id);
-    if (!stats) {
-      throw Errors.notFound('Admission period');
-    }
-    res.json({ success: true, data: stats });
-  } catch (error) {
-    next(error);
+export const getAdmissionPeriodStats = asyncHandler(async (req: Request, res: Response) => {
+  const stats = await service.getAdmissionPeriodStats(req.params.id);
+  if (!stats) {
+    throw Errors.notFound('Admission period');
   }
-}
+  res.json({ success: true, data: stats });
+});
 
 // =====================================
 // REGISTRANT CONTROLLERS
 // =====================================
 
-export async function getRegistrants(req: Request, res: Response, next: NextFunction) {
-  try {
-    const query = res.locals.validatedQuery;
-    const result = await service.getRegistrants(query);
-    res.json({ success: true, ...result });
-  } catch (error) {
-    next(error);
-  }
-}
+export const getRegistrants = asyncHandler(async (req: Request, res: Response) => {
+  const user = requireUser(req);
+  const query = res.locals.validatedQuery;
+  const result = await service.getRegistrants(query, user);
+  res.json({ success: true, ...result });
+});
 
-export async function getRegistrantById(req: Request, res: Response, next: NextFunction) {
-  try {
-    const registrant = await service.getRegistrantById(req.params.id);
-    if (!registrant) {
-      throw Errors.notFound('Registrant');
-    }
-    res.json({ success: true, data: registrant });
-  } catch (error) {
-    next(error);
+export const getRegistrantById = asyncHandler(async (req: Request, res: Response) => {
+  const registrant = await service.getRegistrantById(req.params.id);
+  if (!registrant) {
+    throw Errors.notFound('Registrant');
   }
-}
+  res.json({ success: true, data: registrant });
+});
 
-export async function createRegistrant(req: Request, res: Response, next: NextFunction) {
-  try {
-    const data = createRegistrantSchema.parse(req.body);
-    const registrant = await service.createRegistrant(data);
-    res.status(201).json({ success: true, data: registrant });
-  } catch (error) {
-    next(error);
-  }
-}
+export const createRegistrant = asyncHandler(async (req: Request, res: Response) => {
+  const data = createRegistrantSchema.parse(req.body);
+  const registrant = await service.createRegistrant(data);
+  res.status(201).json({ success: true, data: registrant });
+});
 
-export async function updateRegistrant(req: Request, res: Response, next: NextFunction) {
-  try {
-    const data = updateRegistrantSchema.parse(req.body);
-    const registrant = await service.updateRegistrant(req.params.id, data);
-    res.json({ success: true, data: registrant });
-  } catch (error) {
-    next(error);
-  }
-}
+export const updateRegistrant = asyncHandler(async (req: Request, res: Response) => {
+  const data = updateRegistrantSchema.parse(req.body);
+  const registrant = await service.updateRegistrant(req.params.id, data);
+  res.json({ success: true, data: registrant });
+});
 
-export async function updateRegistrantScore(req: Request, res: Response, next: NextFunction) {
-  try {
-    const data = updateRegistrantScoreSchema.parse(req.body);
-    const registrant = await service.updateRegistrantScore(req.params.id, data);
-    res.json({ success: true, data: registrant });
-  } catch (error) {
-    next(error);
-  }
-}
+export const updateRegistrantScore = asyncHandler(async (req: Request, res: Response) => {
+  const data = updateRegistrantScoreSchema.parse(req.body);
+  const registrant = await service.updateRegistrantScore(req.params.id, data);
+  res.json({ success: true, data: registrant });
+});
 
-export async function recordRegistrationFee(req: Request, res: Response, next: NextFunction) {
-  try {
-    const data = recordRegistrationFeeSchema.parse(req.body);
-    const user = requireUser(req);
-    const registrant = await service.recordRegistrationFee(req.params.id, data, user.id);
-    res.json({ success: true, data: registrant });
-  } catch (error) {
-    next(error);
-  }
-}
+export const recordRegistrationFee = asyncHandler(async (req: Request, res: Response) => {
+  const data = recordRegistrationFeeSchema.parse(req.body);
+  const user = requireUser(req);
+  const registrant = await service.recordRegistrationFee(req.params.id, data, user.id);
+  res.json({ success: true, data: registrant });
+});
 
-export async function updateRegistrantStatus(req: Request, res: Response, next: NextFunction) {
-  try {
-    const data = updateRegistrantStatusSchema.parse(req.body);
-    const registrant = await service.updateRegistrantStatus(req.params.id, data);
-    res.json({ success: true, data: registrant });
-  } catch (error) {
-    next(error);
-  }
-}
+export const updateRegistrantStatus = asyncHandler(async (req: Request, res: Response) => {
+  const data = updateRegistrantStatusSchema.parse(req.body);
+  const registrant = await service.updateRegistrantStatus(req.params.id, data);
+  res.json({ success: true, data: registrant });
+});
 
-export async function enrollRegistrant(req: Request, res: Response, next: NextFunction) {
-  try {
-    const schema = z.object({
-      nis: z.string().optional(),
-      nisn: z.string().optional(),
-      classId: z.string().optional(),
-      roomId: z.string().optional(),
-    });
-    const user = requireUser(req);
-    const data = schema.parse(req.body);
-    const result = await service.enrollRegistrant(req.params.id, {
-      nis: data.nis,
-      nisn: data.nisn,
-      classId: data.classId,
-      roomId: data.roomId,
-      processedById: user.id,
-    });
-    res.json({
-      success: true,
-      data: result,
-      message: 'Registrant enrolled successfully',
-    });
-  } catch (error) {
-    next(error);
-  }
-}
+export const enrollRegistrant = asyncHandler(async (req: Request, res: Response) => {
+  const schema = z.object({
+    nis: z.string().optional(),
+    nisn: z.string().optional(),
+    classId: z.string().optional(),
+    roomId: z.string().optional(),
+  });
+  const user = requireUser(req);
+  const data = schema.parse(req.body);
+  const result = await service.enrollRegistrant(req.params.id, {
+    nis: data.nis,
+    nisn: data.nisn,
+    classId: data.classId,
+    roomId: data.roomId,
+    processedById: user.id,
+  });
+  res.json({
+    success: true,
+    data: result,
+    message: 'Registrant enrolled successfully',
+  });
+});
 
-export async function deleteRegistrant(req: Request, res: Response, next: NextFunction) {
-  try {
-    await service.deleteRegistrant(req.params.id);
-    res.json({ success: true, message: 'Registrant deleted successfully' });
-  } catch (error) {
-    next(error);
-  }
-}
+export const deleteRegistrant = asyncHandler(async (req: Request, res: Response) => {
+  await service.deleteRegistrant(req.params.id);
+  res.json({ success: true, message: 'Registrant deleted successfully' });
+});
 
 // =====================================
 // DOCUMENT CONTROLLERS
 // =====================================
 
-export async function getRegistrantDocuments(req: Request, res: Response, next: NextFunction) {
-  try {
-    const documents = await service.getRegistrantDocuments(req.params.registrantId);
-    res.json({ success: true, data: documents });
-  } catch (error) {
-    next(error);
-  }
-}
+export const getRegistrantDocuments = asyncHandler(async (req: Request, res: Response) => {
+  const documents = await service.getRegistrantDocuments(req.params.registrantId);
+  res.json({ success: true, data: documents });
+});
 
-export async function createRegistrantDocument(req: Request, res: Response, next: NextFunction) {
-  try {
-    const data = createRegistrantDocumentSchema.parse({
-      ...req.body,
-      registrantId: req.params.registrantId,
-    });
-    const document = await service.createRegistrantDocument(data);
-    res.status(201).json({ success: true, data: document });
-  } catch (error) {
-    next(error);
-  }
-}
+export const createRegistrantDocument = asyncHandler(async (req: Request, res: Response) => {
+  const data = createRegistrantDocumentSchema.parse({
+    ...req.body,
+    registrantId: req.params.registrantId,
+  });
+  const document = await service.createRegistrantDocument(data);
+  res.status(201).json({ success: true, data: document });
+});
 
-export async function verifyDocument(req: Request, res: Response, next: NextFunction) {
-  try {
-    const data = verifyDocumentSchema.parse(req.body);
-    const document = await service.verifyDocument(req.params.id, data.isVerified, data.notes);
-    res.json({ success: true, data: document });
-  } catch (error) {
-    next(error);
-  }
-}
+export const verifyDocument = asyncHandler(async (req: Request, res: Response) => {
+  const data = verifyDocumentSchema.parse(req.body);
+  const document = await service.verifyDocument(req.params.id, data.isVerified, data.notes);
+  res.json({ success: true, data: document });
+});
 
-export async function deleteRegistrantDocument(req: Request, res: Response, next: NextFunction) {
-  try {
-    await service.deleteRegistrantDocument(req.params.id);
-    res.json({ success: true, message: 'Document deleted successfully' });
-  } catch (error) {
-    next(error);
-  }
-}
+export const deleteRegistrantDocument = asyncHandler(async (req: Request, res: Response) => {
+  await service.deleteRegistrantDocument(req.params.id);
+  res.json({ success: true, message: 'Document deleted successfully' });
+});
 
 // =====================================
 // PUBLIC CONTROLLERS (no authentication)
 // =====================================
 
-/**
- * Return the single most-relevant currently-active admission period for a
- * public landing page / registration form. Exposed WITHOUT authentication so
- * the public PPDB page (`apps/web/src/app/public/spmb/page.tsx`) can bootstrap
- * the registration form. Returns `null` inside `data` when no period is
- * active (the frontend handles this by showing a "pendaftaran belum dibuka"
- * message).
- *
- * Intentionally LEAKS only: id, name, startDate, endDate, registrationFee,
- * requirements, unit name and academic year name — never registrant counts,
- * internal notes, or any PII.
- */
-export async function getPublicActiveAdmissionPeriod(
-  _req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  try {
-    // The projection whitelist and the three-tier "open, then next, then most
-    // recently closed" fallback both live in the service now, because the
-    // public chatbot needs the same answer and a second copy of that fallback
-    // is how the wrong-wave bug comes back. See `findPublicActivePeriod`.
-    const period = await service.findPublicActivePeriod();
+export const getPublicActiveAdmissionPeriod = asyncHandler(async (_req: Request, res: Response) => {
+  const period = await service.findPublicActivePeriod();
+  res.json({ success: true, data: period });
+});
 
-    res.json({ success: true, data: period });
-  } catch (error) {
-    next(error);
+export const getPublicUnits = asyncHandler(async (_req: Request, res: Response) => {
+  const units = await service.getPublicUnitsService();
+  res.json({ success: true, data: units });
+});
+
+export const createPublicRegistrantDocument = asyncHandler(async (req: Request, res: Response) => {
+  const { registrantId } = req.params;
+  const { type, url, base64, fileName, registrationToken } = req.body;
+
+  const document = await service.createPublicRegistrantDocumentService({
+    registrantId,
+    type,
+    url,
+    base64,
+    fileName,
+    registrationToken,
+  });
+
+  res.status(201).json({ success: true, data: document });
+});
+
+export const createPublicRegistrant = asyncHandler(async (req: Request, res: Response) => {
+  const data = createRegistrantSchema.parse(req.body);
+  const result = await service.createPublicRegistrantService(data);
+  res.status(201).json({
+    success: true,
+    data: result,
+  });
+});
+
+export const trackPublicRegistrantStatus = asyncHandler(async (req: Request, res: Response) => {
+  const { registrationNo, birthDate } = trackRegistrantQuerySchema.parse(req.query);
+
+  const registrant = await service.getRegistrantTrackingInfo(registrationNo, birthDate);
+  if (!registrant) {
+    throw Errors.notFound('Registrant with provided details');
   }
-}
 
-/**
- * Public unit list for the unauthenticated SPMB form's "unit tujuan" dropdown.
- *
- * The form previously called the authenticated `GET /units`, which 401s for an
- * anonymous visitor — leaving prospective parents with an empty dropdown on the
- * page the landing hero sends them to.
- *
- * Projection whitelist: id, name, type. Nothing else. Anything added here is
- * exposed to anonymous callers, so do not widen it to include contact details,
- * counts, or the foundation relation.
- */
-export async function getPublicUnits(_req: Request, res: Response, next: NextFunction) {
-  try {
-    const units = await service.getPublicUnitsService();
-    res.json({ success: true, data: units });
-  } catch (error) {
-    next(error);
-  }
-}
+  res.json({ success: true, data: registrant });
+});
 
-/**
- * Public registrant creation endpoint used by the unauthenticated PPDB form.
- * Validates + persists the same way as `createRegistrant`, but the response
- * is trimmed to non-sensitive identification fields so a public caller can't
- * enumerate internal columns (status history, test scores, etc.) by varying
- * payload shape.
- */
-export async function createPublicRegistrantDocument(req: Request, res: Response, next: NextFunction) {
-  try {
-    const { registrantId } = req.params;
-    const { type, url, base64, fileName, registrationToken } = req.body;
+export const getPriorityLeads = asyncHandler(async (req: Request, res: Response) => {
+  const { unitId } = req.query;
+  const user = requireUser(req);
 
-    const document = await service.createPublicRegistrantDocumentService({
-      registrantId,
-      type,
-      url,
-      base64,
-      fileName,
-      registrationToken,
-    });
-
-    res.status(201).json({ success: true, data: document });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function createPublicRegistrant(req: Request, res: Response, next: NextFunction) {
-  try {
-    const data = createRegistrantSchema.parse(req.body);
-    const result = await service.createPublicRegistrantService(data);
-    res.status(201).json({
-      success: true,
-      data: result,
-    });
-  } catch (error) {
-    next(error);
-  }
-}
-
-/**
- * Public PPDB tracking endpoint (`GET /admissions/public/track`). Looks a
- * registrant up by registration number + birth date (two-factor lookup, see
- * `getRegistrantTrackingInfo`) and returns only the whitelisted projection
- * selected there — selection progress, scores, and document verification
- * state. Never expose parent contact data, addresses, or internal notes here:
- * this endpoint is reachable without a session (rate-limited per IP).
- */
-export async function trackPublicRegistrantStatus(req: Request, res: Response, next: NextFunction) {
-  try {
-    const { registrationNo, birthDate } = trackRegistrantQuerySchema.parse(req.query);
-
-    const registrant = await service.getRegistrantTrackingInfo(registrationNo, birthDate);
-    if (!registrant) {
-      throw Errors.notFound('Registrant with provided details');
+  let effectiveUnitId = unitId as string | undefined;
+  if (user && user.role !== 'SUPER_ADMIN') {
+    if (!user.unitId) {
+      throw Errors.forbidden('Access to this unit is not allowed');
     }
-
-    res.json({ success: true, data: registrant });
-  } catch (error) {
-    next(error);
-  }
-}
-
-export async function getPriorityLeads(req: Request, res: Response, next: NextFunction) {
-  try {
-    const { unitId } = req.query;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const user = requireUser(req);
-
-    // Unit-level authorization: a UNIT_ADMIN / STAFF must not be able to
-    // query another unit's priority leads by guessing/knowing its unitId,
-    // nor by omitting `unitId` entirely (which would otherwise return
-    // leads across ALL units — see lead-scoring.service.ts where
-    // `unitId` is only spread when truthy). SUPER_ADMIN can scope to
-    // any (or all) unit(s).
-    let effectiveUnitId = unitId as string | undefined;
-    if (user && user.role !== 'SUPER_ADMIN') {
-      if (!user.unitId) {
-        throw Errors.forbidden('Access to this unit is not allowed');
-      }
-      if (effectiveUnitId && effectiveUnitId !== user.unitId) {
-        throw Errors.forbidden('Access to this unit is not allowed');
-      }
-      // Force-scope to the caller's own unit when none was provided.
-      effectiveUnitId = user.unitId;
+    if (effectiveUnitId && effectiveUnitId !== user.unitId) {
+      throw Errors.forbidden('Access to this unit is not allowed');
     }
-
-    const { getPriorityLeads: getLeads } = await import('./lead-scoring.service');
-    const leads = await getLeads(effectiveUnitId);
-    res.json({ success: true, data: leads });
-  } catch (error) {
-    next(error);
+    effectiveUnitId = user.unitId;
   }
-}
+
+  const { getPriorityLeads: getLeads } = await import('./lead-scoring.service');
+  const leads = await getLeads(effectiveUnitId);
+  res.json({ success: true, data: leads });
+});

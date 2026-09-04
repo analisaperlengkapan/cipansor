@@ -36,6 +36,7 @@ export interface QuestionBank {
   _count?: { questions: number; exams: number };
 }
 
+import { SecurityEventType } from "@cipansor/shared";
 export type { ExamAttempt, ExamSecurityLog } from "@cipansor/shared";
 
 // Hooks
@@ -58,8 +59,8 @@ export const useRecordSecurityLog = () => {
       details,
     }: {
       attemptId: string;
-      eventType: string;
-      details?: string;
+      eventType: SecurityEventType | string;
+      details?: string | null;
     }) => {
       const { data } = await api.post(`/cbt/attempts/${attemptId}/security-log`, {
         eventType,

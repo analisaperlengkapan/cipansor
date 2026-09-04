@@ -690,8 +690,8 @@ describe('CBT Service', () => {
       );
     });
 
-    it('should calculate percentage and letter grade from question bank total points in syncGradeToAcademicGradebook', async () => {
-      vi.mocked(prisma.grade.upsert).mockClear();
+    it('should calculate percentage and letter grade from question bank total points when creating grade', async () => {
+      vi.mocked(prisma.grade.create).mockClear();
 
       const mockAttemptForSync = {
         id: 'attempt-sync-1',
@@ -721,21 +721,39 @@ describe('CBT Service', () => {
         }
         return Promise.resolve(null) as any;
       });
+      vi.mocked(prisma.grade.findFirst).mockResolvedValue(null);
       vi.mocked(prisma.teacher.findUnique).mockResolvedValue({ userId: 'user-t-1' } as any);
-      vi.mocked(prisma.grade.upsert).mockResolvedValue({ id: 'grade-1' } as any);
+      vi.mocked(prisma.grade.create).mockResolvedValue({ id: 'grade-1' } as any);
 
       await CBTService.syncGradeToAcademicGradebook('attempt-sync-1');
 
       // 50 out of 50 total question points = 100% -> Letter grade A!
-      expect(prisma.grade.upsert).toHaveBeenLastCalledWith({
-        where: { studentId_examId: { studentId: 'std-1', examId: 'exam-1' } },
-        create: expect.objectContaining({
-          letterGrade: 'A',
-        }),
-        update: expect.objectContaining({
+      expect(prisma.grade.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
           letterGrade: 'A',
         }),
       });
+    });
+
+    it('should NOT overwrite existing Grade if question bank changes after attempt completion', async () => {
+      const existingGrade = { id: 'grade-existing', score: 50, percentage: 100, letterGrade: 'A' };
+      const mockAttemptForSync = {
+        id: 'attempt-sync-2',
+        studentId: 'std-1',
+        examId: 'exam-1',
+        score: 50,
+        status: 'COMPLETED',
+        exam: { id: 'exam-1', teacherId: 't-1' },
+      };
+
+      vi.mocked(prisma.examAttempt.findUnique).mockResolvedValue(mockAttemptForSync as any);
+      vi.mocked(prisma.grade.findFirst).mockResolvedValue(existingGrade as any);
+
+      const result = await CBTService.syncGradeToAcademicGradebook('attempt-sync-2');
+
+      expect(result).toEqual(existingGrade);
+      expect(prisma.grade.create).not.toHaveBeenCalled();
+      expect(prisma.grade.update).not.toHaveBeenCalled();
     });
 
     it('should calculate distractor analysis for multiple choice questions', async () => {

@@ -1207,6 +1207,18 @@ export class CBTService {
 
     if (!attempt || attempt.score === null || attempt.status !== 'COMPLETED' || !attempt.exam?.teacherId) return null;
 
+    // Idempotent & Historical Grade Protection: If grade already exists for completed attempt, freeze/preserve it
+    const existingGrade = await db.grade.findFirst({
+      where: {
+        studentId: attempt.studentId,
+        examId: attempt.examId,
+      },
+    });
+
+    if (existingGrade) {
+      return existingGrade;
+    }
+
     const teacher = await db.teacher.findUnique({
       where: { id: attempt.exam.teacherId },
       select: { userId: true },
@@ -1222,14 +1234,8 @@ export class CBTService {
     const percentage = denominator > 0 ? Math.min(100, Math.max(0, (numericScore / denominator) * 100)) : 0;
     const letterGrade = calculateLetterGrade(percentage);
 
-    return db.grade.upsert({
-      where: {
-        studentId_examId: {
-          studentId: attempt.studentId,
-          examId: attempt.examId,
-        },
-      },
-      create: {
+    return db.grade.create({
+      data: {
         studentId: attempt.studentId,
         examId: attempt.examId,
         subjectId: attempt.exam.subjectId,
@@ -1241,14 +1247,6 @@ export class CBTService {
         letterGrade,
         notes: `Nilai CBT Ujian Online (${attempt.exam.title})`,
         gradedById: teacher.userId,
-      },
-      update: {
-        score: attempt.score,
-        maxScore: new Decimal(denominator),
-        percentage: new Decimal(percentage),
-        letterGrade,
-        gradedAt: new Date(),
-        notes: `Nilai CBT (${attempt.exam.title}) - Terpelihara Otomatis`,
       },
     });
   }

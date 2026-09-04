@@ -628,7 +628,7 @@ export class CBTService {
           });
 
           if (!hasUngradedEssay) {
-            await CBTService.syncGradeToAcademicGradebook(attemptId, tx);
+            await CBTService.syncGradeToAcademicGradebook(attemptId, { forceUpdate: true }, tx);
           }
 
           return updatedAttempt;
@@ -1188,7 +1188,18 @@ export class CBTService {
   /**
    * Automatically synchronizes CBT attempt scores into the academic Gradebook (`Grade` model).
    */
-  static async syncGradeToAcademicGradebook(attemptId: string, tx?: any) {
+  /**
+   * Automatically synchronizes CBT attempt scores into the academic Gradebook (`Grade` model).
+   *
+   * Thread-safe and atomic: uses `upsert` with compound key `studentId_examId`.
+   * When `forceUpdate` is true (e.g. after teacher grades essay questions), updates the score
+   * and percentage. Otherwise uses `update: {}` (no-op) to preserve historical grades.
+   */
+  static async syncGradeToAcademicGradebook(
+    attemptId: string,
+    options?: { forceUpdate?: boolean },
+    tx?: any
+  ) {
     const db = tx || prisma;
     const attempt = await db.examAttempt.findUnique({
       where: { id: attemptId },
@@ -1207,18 +1218,6 @@ export class CBTService {
 
     if (!attempt || attempt.score === null || attempt.status !== 'COMPLETED' || !attempt.exam?.teacherId) return null;
 
-    // Idempotent & Historical Grade Protection: If grade already exists for completed attempt, freeze/preserve it
-    const existingGrade = await db.grade.findFirst({
-      where: {
-        studentId: attempt.studentId,
-        examId: attempt.examId,
-      },
-    });
-
-    if (existingGrade) {
-      return existingGrade;
-    }
-
     const teacher = await db.teacher.findUnique({
       where: { id: attempt.exam.teacherId },
       select: { userId: true },
@@ -1234,20 +1233,40 @@ export class CBTService {
     const percentage = denominator > 0 ? Math.min(100, Math.max(0, (numericScore / denominator) * 100)) : 0;
     const letterGrade = calculateLetterGrade(percentage);
 
-    return db.grade.create({
-      data: {
-        studentId: attempt.studentId,
-        examId: attempt.examId,
-        subjectId: attempt.exam.subjectId,
-        academicYearId: attempt.exam.academicYearId,
-        type: 'EXAM',
-        score: attempt.score,
-        maxScore: new Decimal(denominator),
-        percentage: new Decimal(percentage),
-        letterGrade,
-        notes: `Nilai CBT Ujian Online (${attempt.exam.title})`,
-        gradedById: teacher.userId,
+    const createPayload = {
+      studentId: attempt.studentId,
+      examId: attempt.examId,
+      subjectId: attempt.exam.subjectId,
+      academicYearId: attempt.exam.academicYearId,
+      type: 'EXAM' as const,
+      score: attempt.score,
+      maxScore: new Decimal(denominator),
+      percentage: new Decimal(percentage),
+      letterGrade,
+      notes: `Nilai CBT Ujian Online (${attempt.exam.title})`,
+      gradedById: teacher.userId,
+    };
+
+    const updatePayload = options?.forceUpdate
+      ? {
+          score: attempt.score,
+          maxScore: new Decimal(denominator),
+          percentage: new Decimal(percentage),
+          letterGrade,
+          gradedAt: new Date(),
+          notes: `Nilai CBT (${attempt.exam.title}) - Diperbarui Pasca Koreksi Esai`,
+        }
+      : {};
+
+    return db.grade.upsert({
+      where: {
+        studentId_examId: {
+          studentId: attempt.studentId,
+          examId: attempt.examId,
+        },
       },
+      create: createPayload,
+      update: updatePayload,
     });
   }
 

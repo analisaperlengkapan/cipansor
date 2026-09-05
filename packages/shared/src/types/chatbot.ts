@@ -198,3 +198,38 @@ export interface ChatbotUsageResponse {
   /** Ke mana peringatan dikirim, supaya layarnya bisa menyebutkannya. */
   alertTo: string;
 }
+
+/**
+ * Penerusan pertanyaan ke tim Cipansor, ketika asisten tidak bisa menjawab.
+ *
+ * Alurnya sengaja bertahap dan berhenti di tangan penanya pada dua titik: ia
+ * harus menyatakan berkenan sebelum satu kolom pun diminta, dan harus
+ * membenarkan ringkasannya sebelum apa pun dikirim. Data di sini diberikan
+ * sukarela dan tersimpan 90 hari — lihat `ChatbotEscalation` di schema.prisma.
+ */
+export interface ChatbotEscalationRequest {
+  name: string;
+  email: string;
+  /** Opsional: surel sudah menjadi jalur balasannya. */
+  phone?: string;
+  whatsapp?: string;
+  question: string;
+  /** Harus `true`. Waktunya dicatat server, bukan dikirim klien. */
+  consent: true;
+  conversationId?: string;
+  turnstileToken?: string;
+  /** Umpan lalat — dibiarkan kosong oleh manusia, disembunyikan lewat CSS. */
+  website?: string;
+}
+
+export interface ChatbotEscalationResponse {
+  /**
+   * Selalu `true` bila permintaannya diterima. TIDAK berarti suratnya sudah
+   * terkirim: pengirimannya terjadi sesudah jawaban ini, dan diulang penjadwal
+   * bila gagal. Menjanjikan "terkirim" di sini akan menjadi janji yang tidak
+   * bisa ditepati saat penyedia surel sedang mati.
+   */
+  accepted: boolean;
+  /** Nomor rujukan singkat, supaya penanya bisa menyebutnya bila menelepon. */
+  reference: string;
+}

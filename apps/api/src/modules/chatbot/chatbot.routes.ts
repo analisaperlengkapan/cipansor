@@ -7,7 +7,7 @@ import { requireTurnstile } from '@/middleware/turnstile';
 import { config } from '@/config';
 import { logger } from '@/lib/logger';
 import * as controller from './chatbot.controller';
-import { publicChatSchema, updatePersonaSchema } from './chatbot.schema';
+import { escalateSchema, publicChatSchema, updatePersonaSchema } from './chatbot.schema';
 
 /**
  * Dedicated limiter, much stricter than `defaultLimiter`.
@@ -35,6 +35,35 @@ const chatbotLimiter = rateLimit({
   },
 });
 
+/**
+ * Jauh lebih ketat daripada `chatbotLimiter`, dan yang dilindunginya berbeda.
+ *
+ * Obrolan menghabiskan uang; penerusan menghabiskan PERHATIAN — setiap
+ * permintaan yang lolos menjadi satu surat di kotak masuk yang dibaca manusia.
+ * Kotak masuk yang tenggelam oleh kiriman skrip berhenti dibaca sama sekali,
+ * dan pertanyaan sungguhan ikut tenggelam bersamanya. Tiga per jam per IP
+ * longgar untuk satu keluarga yang bertanya, dan tidak berguna bagi pengirim
+ * massal.
+ */
+const escalationLimiter = rateLimit({
+  windowMs: config.chatbot.escalation.rateLimit.windowMs,
+  max: config.chatbot.escalation.rateLimit.maxRequests,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message:
+        'Sudah beberapa pertanyaan diteruskan dari perangkat ini. Mohon tunggu sebentar, atau hubungi kami langsung lewat telepon.',
+    },
+  },
+  handler: (req, res, _next, options) => {
+    logger.warn('Chatbot escalation rate limit exceeded', { ip: req.ip });
+    res.status(options.statusCode).json(options.message);
+  },
+});
+
 const router = Router();
 
 // No `authenticate`: this is the PUBLIC assistant. Anything requiring a user
@@ -52,6 +81,18 @@ router.post(
   requireTurnstile('chatbot-ask'),
   validate(publicChatSchema),
   controller.ask
+);
+
+// Penerusan pertanyaan ke tim. Turnstile dipakai di sini dengan alasan yang
+// berbeda dari `/ask`: bukan untuk melindungi tagihan, melainkan untuk
+// melindungi kotak masuk yang dibaca manusia. Umpan lalatnya ada di skema, dan
+// dijawab seolah berhasil — lihat controller.
+router.post(
+  '/public/escalate',
+  escalationLimiter,
+  requireTurnstile('chatbot-escalate'),
+  validate(escalateSchema),
+  controller.escalate
 );
 
 // Admin surface: configure the assistant's persona. Authenticated and locked to

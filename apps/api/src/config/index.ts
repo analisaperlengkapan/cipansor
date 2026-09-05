@@ -326,6 +326,30 @@ export const config = {
      * Coba ulang menolong satu permintaan yang menabrak batas; ini mencegah
      * kita sendiri yang menyebabkan batas itu tersentuh.
      */
+    /**
+     * Penerusan pertanyaan ke tim ketika asisten tidak bisa menjawab.
+     *
+     * `to` sengaja dibiarkan kosong secara bawaan dan diselesaikan di tempat
+     * pemakaiannya menjadi `config.mail.replyTo`: kotak masuk yang sama yang
+     * sudah menerima balasan surat kita adalah tempat yang benar untuk
+     * pertanyaan ini, dan menyalin alamatnya ke sini akan membuat dua sumber
+     * kebenaran yang harus sepakat selamanya.
+     */
+    escalation: {
+      to: process.env.CHATBOT_ESCALATION_TO || '',
+      /**
+       * Jauh lebih ketat daripada 10/menit milik obrolan, dan alasannya
+       * berbeda: yang ini menulis baris basis data DAN mengirim surat ke kotak
+       * masuk yang dibaca manusia. Sebuah skrip yang berhasil menembusnya tidak
+       * menghabiskan uang, ia menghabiskan perhatian petugas — dan perhatian
+       * yang sudah habis tidak pulih dengan menambah kuota.
+       */
+      rateLimit: {
+        windowMs: parseInt(process.env.CHATBOT_ESCALATION_WINDOW_MS || '3600000', 10),
+        maxRequests: parseInt(process.env.CHATBOT_ESCALATION_MAX || '3', 10),
+      },
+    },
+
     throttle: {
       maxConcurrent: parseInt(process.env.CHATBOT_MAX_CONCURRENT || '3', 10),
       maxQueue: parseInt(process.env.CHATBOT_QUEUE_MAX || '20', 10),

@@ -21,6 +21,13 @@ vi.mock('../transcript.service', () => ({
   TRANSCRIPT_RETENTION_DAYS: 90,
 }));
 vi.mock('../persona.service', () => ({}));
+vi.mock('../escalation.service', () => ({
+  createEscalation: vi.fn(),
+  attemptDelivery: vi.fn(),
+}));
+vi.mock('@/lib/prisma', () => ({
+  prisma: { chatbotEscalation: { findUnique: vi.fn() } },
+}));
 vi.mock('../usage.service', () => ({
   monthToDateUsage: vi.fn(),
   estimateCost: vi.fn(),
@@ -30,7 +37,9 @@ import { config } from '@/config';
 import * as chatbotService from '../chatbot.service';
 import { estimateCost, monthToDateUsage } from '../usage.service';
 import * as transcriptService from '../transcript.service';
-import { ask, getUsage } from '../chatbot.controller';
+import { ask, escalate, getUsage } from '../chatbot.controller';
+import * as escalationService from '../escalation.service';
+import { prisma } from '@/lib/prisma';
 
 const askService = vi.mocked(chatbotService.ask);
 const recordTurn = vi.mocked(transcriptService.recordTurn);
@@ -281,5 +290,56 @@ describe('ask ketika asisten sedang ramai', () => {
     await ask(fakeReq({ message: 'halo' }), fakeRes(), vi.fn());
 
     expect(recordTurn).not.toHaveBeenCalled();
+  });
+});
+
+describe('escalate', () => {
+  const createEscalation = vi.mocked(escalationService.createEscalation);
+  const attemptDelivery = vi.mocked(escalationService.attemptDelivery);
+  const db = prisma as unknown as {
+    chatbotEscalation: { findUnique: ReturnType<typeof vi.fn> };
+  };
+
+  const body = {
+    name: 'Ibu Aminah',
+    email: 'aminah@example.test',
+    question: 'Apakah ada beasiswa untuk anak yatim?',
+    consent: true as const,
+  };
+
+  beforeEach(() => {
+    createEscalation.mockResolvedValue({ id: 'id-1', reference: 'ABCD1234' });
+    db.chatbotEscalation.findUnique.mockResolvedValue(null);
+  });
+
+  it('menjawab dengan nomor rujukan, dan mencoba mengirim SESUDAHNYA', async () => {
+    // Urutan sebaliknya membuat pertanyaan yang sudah tersimpan bergantung pada
+    // penyedia surel pihak ketiga: satu gangguan di sana, dan penanya menerima
+    // galat atas pertanyaan yang sebenarnya sudah aman tercatat.
+    const res = fakeRes();
+    await escalate(fakeReq(body), res, vi.fn());
+
+    expect(res.body.data).toMatchObject({ accepted: true, reference: 'ABCD1234' });
+    expect(createEscalation).toHaveBeenCalled();
+  });
+
+  it('tidak pernah menggagalkan permintaan ketika pengirimannya gagal', async () => {
+    db.chatbotEscalation.findUnique.mockRejectedValue(new Error('DB down'));
+
+    const res = fakeRes();
+    await escalate(fakeReq(body), res, vi.fn());
+
+    expect(res.body.data).toMatchObject({ accepted: true });
+  });
+
+  it('menelan umpan lalat tanpa menulis satu baris pun', async () => {
+    // Dijawab seolah berhasil, lengkap dengan nomor rujukan palsu: memberi tahu
+    // sebuah skrip bahwa ia tertangkap hanya membantu penulisnya memperbaiki.
+    const res = fakeRes();
+    await escalate(fakeReq({ ...body, website: 'http://spam.test' }), res, vi.fn());
+
+    expect(res.body.data).toMatchObject({ accepted: true });
+    expect(createEscalation).not.toHaveBeenCalled();
+    expect(attemptDelivery).not.toHaveBeenCalled();
   });
 });

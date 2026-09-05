@@ -307,10 +307,22 @@ of it now goes into every prompt and BM25 has no veto. See
 for the numbers, the four techniques deliberately not adopted, and the trigger
 that would justify revisiting them. **Do not re-open this from taste.**
 
+**Penerusan ke `halo@cipansor.or.id` sudah ada** (2026-09-05): penolakan kini
+menawarkan meneruskan pertanyaan ke tim, dengan persetujuan, dan suratnya
+dikirim dari `noreply@` dengan `Reply-To` diarahkan ke penanyanya. Antrian
+tahan-lama + percobaan ulang tiap 30 menit; retensi 90 hari mengikuti penyapu
+yang sama dengan riwayat percakapan. Lihat §6b di
+[`planning/chatbot-design.md`](./planning/chatbot-design.md).
+
 **Merged 2026-09-04, none of it deployed yet** — one image rebuild is planned to
 carry all of it: #473 (usage/cost panel), #474 (the "ada informasi apa saja"
-refusal and its signpost), #475 (full corpus). A fourth PR adds retry with
-`Retry-After` plus a short concurrency queue in front of the provider.
+refusal and its signpost), #475 (full corpus), #476 (retry with `Retry-After`
+plus a short concurrency queue in front of the provider).
+
+**That deploy now also needs `db push`.** The escalation feature adds one
+additive table, `chatbot_escalations`, plus its enum — no column is dropped or
+retyped, so **no reseed and no `--accept-data-loss`**. See the deploy runbook
+memory for the two commands that decide which of those is required.
 
 What the design asked for and we have not built, in the order it matters:
 

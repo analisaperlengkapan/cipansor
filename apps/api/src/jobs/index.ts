@@ -23,3 +23,7 @@ export {
   TRANSCRIPT_PURGE_AUDIT_ENTITY,
   type TranscriptPurgeSummary,
 } from './chatbot-transcript-purge.job';
+export {
+  runChatbotEscalationRetry,
+  type EscalationRetrySummary,
+} from './chatbot-escalation-retry.job';

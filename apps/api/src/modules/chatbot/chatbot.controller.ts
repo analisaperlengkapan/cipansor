@@ -4,15 +4,18 @@ import { ApiResponse } from '@/utils/response';
 import { logger } from '@/lib/logger';
 import type {
   ChatbotConversationListResponse,
+  ChatbotEscalationResponse,
   ChatbotPersonaResponse,
   ChatbotUsageResponse,
 } from '@cipansor/shared';
 import * as chatbotService from './chatbot.service';
 import * as personaService from './persona.service';
 import * as transcriptService from './transcript.service';
+import * as escalationService from './escalation.service';
 import { estimateCost, monthToDateUsage } from './usage.service';
 import { config } from '@/config';
-import type { PublicChatBody, UpdatePersonaBody } from './chatbot.schema';
+import { prisma } from '@/lib/prisma';
+import type { EscalateBody, PublicChatBody, UpdatePersonaBody } from './chatbot.schema';
 
 /**
  * Ask the public assistant.
@@ -110,6 +113,67 @@ export const ask = asyncHandler(async (req: Request, res: Response) => {
       return;
     }
     throw error;
+  }
+});
+
+/**
+ * Teruskan pertanyaan ke tim Cipansor.
+ * POST /api/chatbot/public/escalate
+ *
+ * Dipanggil hanya setelah penanya menyatakan berkenan dan membenarkan
+ * ringkasannya — dua persetujuan, keduanya di widget. Endpoint ini tidak
+ * memaksakan alurnya (klien mana pun bisa memanggilnya langsung); yang ia
+ * paksakan adalah `consent: true` dan tantangan Turnstile.
+ */
+export const escalate = asyncHandler(async (req: Request, res: Response) => {
+  const body = req.body as EscalateBody;
+
+  // Umpan lalat. Dijawab seolah berhasil, LENGKAP dengan nomor rujukan palsu:
+  // memberi tahu sebuah skrip bahwa ia tertangkap hanya membantu penulisnya
+  // memperbaiki skripnya. Tidak ada baris yang ditulis, tidak ada surat yang
+  // dikirim.
+  if (body.website) {
+    logger.warn('Chatbot escalation honeypot tripped', {
+      conversationId: body.conversationId,
+    });
+    res.json(
+      ApiResponse.success<ChatbotEscalationResponse>({
+        accepted: true,
+        reference: 'AAAAAAAA',
+      })
+    );
+    return;
+  }
+
+  const { reference, id } = await escalationService.createEscalation({
+    name: body.name,
+    email: body.email,
+    phone: body.phone || undefined,
+    whatsapp: body.whatsapp || undefined,
+    question: body.question,
+    conversationId: body.conversationId,
+  });
+
+  // Tidak mencatat nama, surel, nomor, atau pertanyaannya — semuanya data
+  // pribadi, dan log aplikasi adalah tempat yang salah untuk mereka berakhir.
+  // Nomor rujukannya cukup untuk menemukan barisnya bila perlu.
+  logger.info('Chatbot escalation accepted', { reference });
+
+  // Jawabannya dikirim LEBIH DULU, suratnya dicoba sesudahnya — pola yang sama
+  // dengan riwayat percakapan di atas, dan alasannya lebih kuat di sini:
+  // pengiriman surel bergantung pada layanan pihak ketiga, dan barisnya sudah
+  // tersimpan. Kegagalan pengiriman tidak boleh berarti pertanyaan yang hilang,
+  // dan penjadwal akan mencobanya lagi.
+  res.json(ApiResponse.success<ChatbotEscalationResponse>({ accepted: true, reference }));
+
+  try {
+    const row = await prisma.chatbotEscalation.findUnique({ where: { id } });
+    if (row) await escalationService.attemptDelivery(row);
+  } catch (error) {
+    logger.warn('Chatbot escalation first delivery attempt failed to start', {
+      reference,
+      message: error instanceof Error ? error.message : String(error),
+    });
   }
 });
 

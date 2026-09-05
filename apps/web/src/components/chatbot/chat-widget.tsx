@@ -12,6 +12,7 @@ import type { ChatMessage, PublicChatResponse } from "@/hooks/use-chatbot";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AnswerText } from "./answer-text";
+import { EscalationFlow } from "./escalation-flow";
 
 /**
  * Public customer-service assistant, bottom-right of the public site.
@@ -106,6 +107,17 @@ export function ChatWidget() {
    * orangnya mengetik pertanyaan berikutnya.
    */
   const turnstile = useTurnstile();
+  /**
+   * Pertanyaan yang ditolak dan karena itu boleh ditawarkan untuk diteruskan.
+   *
+   * Null berarti tidak ada tawaran di layar — termasuk sesudah penanya menolak
+   * tawarannya. Tawaran yang muncul lagi setelah ditolak bukan kesopanan,
+   * melainkan desakan.
+   */
+  const [escalate, setEscalate] = useState<{
+    question: string;
+    conversationId?: string;
+  } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -135,6 +147,9 @@ export function ChatWidget() {
 
     setTurns((prev) => [...prev, { role: "user", content: trimmed }]);
     setInput("");
+    // Tawaran lama gugur begitu ada pertanyaan baru: yang ditawarkan untuk
+    // diteruskan harus pertanyaan yang barusan gagal, bukan yang sebelumnya.
+    setEscalate(null);
 
     try {
       const result = await chat.mutateAsync({
@@ -147,6 +162,19 @@ export function ChatWidget() {
         ...prev,
         { role: "assistant", content: result.answer, sources: result.sources },
       ]);
+      // Tawarkan meneruskan HANYA pada penolakan sungguhan. Gangguan jaringan
+      // dan asisten yang sedang ramai bukan pertanyaan yang tidak terjawab —
+      // menawarkan penerusan di sana meminta orang mengetik nama dan nomor
+      // teleponnya untuk sesuatu yang akan berhasil pada percobaan berikutnya.
+      // Id percakapannya diambil DI SINI, di dalam penangan peristiwa, bukan
+      // saat render. React Compiler menolak pembacaan ref saat render — dan
+      // menolaknya sebagai galat lint yang tidak terlihat oleh `build`,
+      // `build:strict`, maupun satu pun uji.
+      setEscalate(
+        result.refused
+          ? { question: trimmed, conversationId: conversationId.current || undefined }
+          : null,
+      );
     } catch (error) {
       // Never invent a fallback answer. Point at a human instead — the phone
       // number is the honest answer when the assistant cannot respond.
@@ -251,6 +279,20 @@ export function ChatWidget() {
                 )}
               </Bubble>
             ))}
+
+            {/*
+              Tawaran meneruskan pertanyaan, ditaruh SESUDAH gelembung
+              penolakannya dan bukan di dalamnya: yang dibaca lebih dulu adalah
+              jawaban asisten, dan tawarannya menyusul sebagai langkah
+              berikutnya — bukan sebagai formulir yang menutupi jawabannya.
+            */}
+            {escalate && !chat.isPending && (
+              <EscalationFlow
+                question={escalate.question}
+                conversationId={escalate.conversationId}
+                onDismiss={() => setEscalate(null)}
+              />
+            )}
 
             {chat.isPending && (
               <Bubble role="assistant">

@@ -104,7 +104,7 @@ deploy**, verified against production: `https://cipansor.or.id` is reflected
 singly with `Vary: Origin`, and a foreign origin gets no
 `Access-Control-Allow-Origin` header at all.
 
-## 🟠 3. Migration history — repo fixed 2026-09-05, one command left in production
+## ✅ 3. Migration history — baselined end to end 2026-09-05
 
 **Yang sudah beres (di repo).** Riwayat migrasi diringkas jadi satu baseline
 `0_init`. Ke-27 direktori lama dihapus karena tidak pernah bisa diputar dari
@@ -118,21 +118,31 @@ tetap ada di riwayat git. Empat bukti, semuanya dijalankan bukan diperkirakan:
 | produksi lawan `schema.prisma` | nol drift — syarat baseline terpenuhi |
 | `migrate deploy` dari kosong | `All migrations have been successfully applied` |
 
-**Yang masih tersisa (di produksi).** Satu perintah, dijalankan sesudah PR ini
-digabung:
+**Produksi sudah di-baseline (#480, 2026-09-05).**
+`migrate resolve --applied 0_init` dijalankan terhadap basis data produksi. Ia
+**menandai, tidak menjalankan** — dan itu terbukti dari angkanya, bukan dari
+janji:
 
-```
-prisma migrate resolve --config prisma/prisma.config.ts --applied 0_init
-```
+| | sebelum | sesudah |
+|---|---|---|
+| `_prisma_migrations` | TIDAK ADA | `0_init`, `applied_steps_count = 0` |
+| tabel | 294 | 294 |
+| pengguna / santri | 107 / 14 | 107 / 14 |
+| trigger | 2 | 2 |
 
-Ia **menandai, tidak menjalankan**: sudah digladi-bersih di basis data cermin
-dan tercatat `applied_steps_count = 0`, jadi tidak ada satu pun SQL yang
-menyentuh data. Sesudah itu `_prisma_migrations` ada, `migrate deploy` bisa
-dipakai, dan drift berhenti tak terlihat.
+Sesudahnya `migrate deploy` di produksi menjawab **"No pending migrations to
+apply."** — jadi mekanismenya hidup, bukan sekadar tabelnya ada.
 
-**Sampai itu dijalankan**, penjaga lama tetap berlaku: `migrate diff
---from-config-datasource --to-schema` sebelum setiap penggelaran, dan harus
-kosong.
+**Yang berubah untuk penggelaran berikutnya.** Perubahan skema tidak lagi
+cukup lewat `db push`: buat berkas migrasi, lalu `migrate deploy`. Penjaga lama
+(`migrate diff --from-config-datasource --to-schema` harus kosong) tetap murah
+dan tetap berguna sebagai pemeriksaan silang.
+
+**Satu batas yang perlu diingat:** `migrate diff` hanya melihat yang dimodelkan
+Prisma. Trigger, function, dan view tidak terlihat olehnya — itu sebabnya
+`assert_yayasan_organ_exclusive` nyaris hilang dari baseline dengan diff yang
+tetap kosong. Perubahan yang menyentuh objek semacam itu harus ditulis tangan
+ke dalam berkas migrasi dan diperiksa langsung ke basis data.
 
 ---
 

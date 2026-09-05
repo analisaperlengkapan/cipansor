@@ -50,8 +50,23 @@ Memory lives in `~/.claude/projects/-home-cipansoradm-cipansor/memory/`.
    memory's headline changed, its index line changed too.
 5. **Docs are code.** Plan and ROADMAP edits go on a branch and through a PR
    like anything else; never commit them straight to `main`.
-6. **Say what you did**, briefly, so the user can disagree before the transcript
-   is gone.
+6. **Stamp it, so the pass counts.** Last step, always:
+
+   ```
+   python3 "$CLAUDE_PROJECT_DIR/.claude/hooks/sync_stamp.py"
+   ```
+
+   This is what tells `pre-compact-sync.sh` the records are level. Without it a
+   pass the user asked for directly did nothing to quiet the next `/compact` —
+   which was backwards, and was fixed on 2026-09-05. The stamp measures *work*
+   (git HEAD + working tree), not elapsed time, so it stays valid until
+   something new actually happens.
+
+   Skip it only when the pass found nothing AND wrote nothing.
+
+7. **Say what you did**, briefly, so the user can disagree before the transcript
+   is gone. Then tell them plainly that `/compact` will now go straight
+   through — that sentence is the notification they were promised.
 
 ## What earns a memory
 

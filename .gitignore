@@ -136,3 +136,7 @@ dump.rdb
 # balik autentikasi yang bukan otorisasi. Tidak ada satu pun berkas di sini yang
 # boleh masuk ke dalam riwayat git — ia tidak dapat ditarik kembali dari sana.
 apps/api/private/
+
+# Bytecode dari helper hook — dibuat saat hook mengimpornya, bukan sumber.
+__pycache__/
+*.pyc

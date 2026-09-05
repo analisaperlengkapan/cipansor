@@ -7,9 +7,22 @@
 # every time. This hook asks instead.
 #
 # It blocks a MANUAL /compact (exit 2, message shown to the model), which hands
-# control back so the records can be brought level. The retry that follows —
-# any /compact within the next half hour — goes through unconditionally, so this
-# can nag but can never wedge: the escape is simply to run the command again.
+# control back so the records can be brought level. The retry that follows goes
+# through, so this can nag but can never wedge: the escape is to run the command
+# again.
+#
+# WHAT COUNTS AS "LEVEL" IS WORK, NOT TIME. The first version expired its stamp
+# after thirty minutes, and the flaw showed on 2026-09-05: a pass run at 15:30
+# at the Stop hook's request, and /compact at 17:00 blocked anyway — demanding a
+# second pass over a session that had produced nothing new to record. What
+# decides whether the records are level is not how long ago, but whether
+# anything has happened since. `sync-stamp.py` measures that with git HEAD plus
+# the working tree, and a six-hour ceiling remains as a backstop for findings
+# that never touch git at all.
+#
+# The stamp is written by this hook AND by the `sync-records` skill itself, so a
+# pass the user asked for directly also silences the next compaction — which it
+# did not before, and that was plainly the wrong way round.
 #
 # Auto-compaction is blocked ONLY when there is room to spare, and never
 # otherwise. Left at its default, Claude Code compacts when the conversation
@@ -95,29 +108,20 @@ instructions = (data.get("custom_instructions") or "").lower()
 if "skip-sync" in instructions or "nosync" in instructions:
     sys.exit(0)
 
-# The stamp is what makes this ask once instead of every time — but it has to
-# expire. A session here runs for days and compacts several times, and a stamp
-# that never ages turns "ask once per compaction" into "ask once, ever": the
-# second compaction, a day later, discards an entirely new window of work
-# without ever asking. It did exactly that on 2026-09-04. So the stamp silences
-# only the RETRY the model just asked the user for; anything later asks again.
-RETRY_WINDOW_SECONDS = 30 * 60
-
-session = str(data.get("session_id") or "unknown")
-stamp_dir = os.path.join(tempfile.gettempdir(), "claude-precompact-sync")
-stamp = os.path.join(stamp_dir, session)
+# Sudah level? Lewatkan. `sync-stamp.py` yang memutuskan artinya, dan modul yang
+# sama dipakai skill `sync-records` untuk menuliskannya — satu definisi, bukan
+# dua yang harus sepakat selamanya.
+project_dir = os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()
+sys.path.insert(0, os.path.join(project_dir, ".claude", "hooks"))
 
 try:
-    os.makedirs(stamp_dir, exist_ok=True)
-    if (
-        os.path.exists(stamp)
-        and time.time() - os.path.getmtime(stamp) < RETRY_WINDOW_SECONDS
-    ):
-        sys.exit(0)          # this IS the retry we asked for -> let it through
-    open(stamp, "w").close()
-    os.utime(stamp, None)    # a later compaction must age out of the window
+    import sync_stamp  # type: ignore
+
+    if sync_stamp.is_level(project_dir):
+        sys.exit(0)
+    sync_stamp.write(project_dir)   # percobaan ulang berikutnya lolos
 except Exception:
-    sys.exit(0)              # cannot track state -> never block
+    sys.exit(0)                     # tak bisa melacak keadaan -> jangan pernah menahan
 
 sys.stderr.write(
     f"Compaction paused once ({trigger}), on purpose: the transcript is about "
@@ -125,9 +129,10 @@ sys.stderr.write(
     "Run the `sync-records` skill now and carry out its pass. Correcting a "
     "memory that this session made WRONG matters more than adding a new one — "
     "a stale memory is trusted, a missing one is merely absent.\n\n"
-    "Then tell the user it is level and to run /compact again; the retry is "
-    "never blocked. If nothing changed, say so plainly instead of inventing "
-    "an edit.\n\n"
+    "The pass ends by writing the stamp, so the /compact you then ask the user "
+    "for goes straight through — and so does any later one, until new work "
+    "appears. If nothing changed, say so plainly instead of inventing an "
+    "edit.\n\n"
     "To skip deliberately: /compact skip-sync\n"
 )
 sys.exit(2)

@@ -27,6 +27,26 @@ export type {
   PerformanceConsolidatedReportDTO,
 };
 
+/**
+ * Bentuk galat yang benar-benar dikirim API.
+ *
+ * `middleware/error.ts` menjawab `{ success:false, error:{ code, message } }` —
+ * tidak ada `message` di tingkat atas. Membaca `data.message` selalu
+ * menghasilkan undefined, sehingga SETIAP alasan dari server dibuang dan
+ * pengguna hanya melihat pesan cadangan yang umum: "Only DRAFT performance
+ * agreements can be deleted", "Evaluation already approved", dan
+ * "Tetapkan atasan penilai lebih dahulu" semuanya hilang di jalan.
+ * Konvensi yang dipakai di tempat lain memang `data.error.message`
+ * (lihat stores/auth.ts dan e-office/letter/[id]/page.tsx).
+ */
+export type ApiErrorShape = {
+  response?: { data?: { error?: { message?: string }; message?: string } };
+};
+
+function apiMessage(error: ApiErrorShape): string | undefined {
+  return error?.response?.data?.error?.message ?? error?.response?.data?.message;
+}
+
 // ==========================================
 // PERFORMANCE AGREEMENTS (PK)
 // ==========================================
@@ -53,8 +73,9 @@ export const useDeletePK = () => {
       queryClient.invalidateQueries({ queryKey: ["performance-agreements"] });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Gagal menghapus Perjanjian Kinerja");
+      toast.error(apiMessage(error) || "Gagal menghapus Perjanjian Kinerja");
     },
+
   });
 };
 
@@ -89,8 +110,8 @@ export const useCreatePK = () => {
       toast.success("Perjanjian Kinerja berhasil dibuat");
       queryClient.invalidateQueries({ queryKey: ["performance-agreements"] });
     },
-    onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message || "Gagal membuat Perjanjian Kinerja");
+    onError: (error: ApiErrorShape) => {
+      toast.error(apiMessage(error) || "Gagal membuat Perjanjian Kinerja");
     },
   });
 };
@@ -116,7 +137,7 @@ export const useUpdatePK = () => {
       queryClient.invalidateQueries({ queryKey: ["performance-agreements", "pk", variables.id] });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Gagal memperbarui Perjanjian Kinerja");
+      toast.error(apiMessage(error) || "Gagal memperbarui Perjanjian Kinerja");
     },
   });
 };
@@ -134,7 +155,7 @@ export const useProposePK = () => {
       queryClient.invalidateQueries({ queryKey: ["performance-agreements", "pk", id] });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Gagal mengajukan Perjanjian Kinerja");
+      toast.error(apiMessage(error) || "Gagal mengajukan Perjanjian Kinerja");
     },
   });
 };
@@ -152,7 +173,7 @@ export const useApprovePK = () => {
       queryClient.invalidateQueries({ queryKey: ["performance-agreements", "pk", id] });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Gagal menyetujui Perjanjian Kinerja");
+      toast.error(apiMessage(error) || "Gagal menyetujui Perjanjian Kinerja");
     },
   });
 };
@@ -170,7 +191,7 @@ export const useRejectPK = () => {
       queryClient.invalidateQueries({ queryKey: ["performance-agreements", "pk", variables.id] });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Gagal menolak Perjanjian Kinerja");
+      toast.error(apiMessage(error) || "Gagal menolak Perjanjian Kinerja");
     },
   });
 };
@@ -192,7 +213,7 @@ export const useCreatePKIndicator = () => {
       queryClient.invalidateQueries({ queryKey: ["performance-agreements", "pk", variables.pkId] });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Gagal menambahkan Indikator PK");
+      toast.error(apiMessage(error) || "Gagal menambahkan Indikator PK");
     },
   });
 };
@@ -210,7 +231,7 @@ export const useUpdatePKIndicator = () => {
       queryClient.invalidateQueries({ queryKey: ["performance-agreements", "pk", variables.pkId] });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Gagal memperbarui Indikator PK");
+      toast.error(apiMessage(error) || "Gagal memperbarui Indikator PK");
     },
   });
 };
@@ -228,7 +249,7 @@ export const useDeletePKIndicator = () => {
       queryClient.invalidateQueries({ queryKey: ["performance-agreements", "pk", variables.pkId] });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Gagal menghapus Indikator PK");
+      toast.error(apiMessage(error) || "Gagal menghapus Indikator PK");
     },
   });
 };
@@ -280,8 +301,8 @@ export const useCreateEvaluation = () => {
       queryClient.invalidateQueries({ queryKey: ["performance-agreements"] });
       queryClient.invalidateQueries({ queryKey: ["performance-agreements", "pk", variables.pkId] });
     },
-    onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message || "Gagal membuat evaluasi bulanan");
+    onError: (error: ApiErrorShape) => {
+      toast.error(apiMessage(error) || "Gagal membuat evaluasi bulanan");
     },
   });
 };
@@ -308,8 +329,8 @@ export const useUpdateIndicatorRealization = () => {
       queryClient.invalidateQueries({ queryKey: ["performance-agreements"] });
       queryClient.invalidateQueries({ queryKey: ["performance-agreements", "evaluations", variables.evaluationId] });
     },
-    onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message || "Gagal menyimpan realisasi indikator");
+    onError: (error: ApiErrorShape) => {
+      toast.error(apiMessage(error) || "Gagal menyimpan realisasi indikator");
     },
   });
 };
@@ -336,8 +357,8 @@ export const useUpdateBehaviorScore = () => {
       queryClient.invalidateQueries({ queryKey: ["performance-agreements"] });
       queryClient.invalidateQueries({ queryKey: ["performance-agreements", "evaluations", variables.evaluationId] });
     },
-    onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message || "Gagal menyimpan nilai perilaku");
+    onError: (error: ApiErrorShape) => {
+      toast.error(apiMessage(error) || "Gagal menyimpan nilai perilaku");
     },
   });
 };
@@ -357,7 +378,7 @@ export const useApproveEvaluation = () => {
       queryClient.invalidateQueries({ queryKey: ["performance-agreements", "evaluations", variables.evaluationId] });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Gagal menyetujui evaluasi bulanan");
+      toast.error(apiMessage(error) || "Gagal menyetujui evaluasi bulanan");
     },
   });
 };

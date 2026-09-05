@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { predikatKinerja } from './predikat';
 import { PlanStatus, PerformanceRating, Prisma } from '@prisma/client';
 import { Errors } from '@/middleware/error';
 import { pkService } from './pk.service';
@@ -96,7 +97,7 @@ export class EvaluationService {
   }
 
   async getEvaluationById(id: string) {
-    return prisma.pKEvaluation.findUnique({
+    const evaluation = await prisma.pKEvaluation.findUnique({
       where: { id },
       include: {
         pk: {
@@ -113,6 +114,15 @@ export class EvaluationService {
         },
       },
     });
+
+    if (!evaluation) return evaluation;
+
+    // Predikat diturunkan, bukan disimpan — jadi tidak ada kolom baru, tidak
+    // ada migrasi, dan tidak ada dua sumber kebenaran yang bisa berbeda.
+    return {
+      ...evaluation,
+      predikat: predikatKinerja(evaluation.performanceScore, evaluation.behaviorScore),
+    };
   }
 
   /** Loads an evaluation inside a transaction and locks the parent PerformanceAgreement row. */
@@ -248,6 +258,14 @@ export class EvaluationService {
         : 0;
 
     // Overall: 60% performance, 40% behavior (as per Cipansor SAFTI standard).
+    //
+    // Angka ini dipertahankan untuk pemeringkatan dan rata-rata, TETAPI ia
+    // bukan penilaiannya. PermenPANRB No. 6/2022 tidak menjumlahkan hasil
+    // kerja dan perilaku kerja menjadi satu angka: keduanya dinilai terpisah
+    // terhadap ekspektasi, lalu predikatnya diambil dari kuadran. Bedanya
+    // nyata — dengan penjumlahan berbobot, capaian KPI 100% menutupi perilaku
+    // yang buruk (0,6 mendominasi), dan itu persis yang dicegah kuadran.
+    // Predikatnya diturunkan di `predikat.ts`, tanpa kolom baru.
     const overallScore = performanceScore * 0.6 + behaviorScore * 0.4;
 
     await client.pKEvaluation.update({
@@ -300,6 +318,15 @@ export class EvaluationService {
           behaviorDetails: { include: { behaviorValue: true } },
         },
       });
+    }, {
+      // Di dalam satu transaksi ini ada SELECT ... FOR UPDATE, updateMany,
+      // satu update per indikator secara berurutan, sinkronisasi matriks
+      // talenta, lalu satu findUnique dengan empat include. Batas bawaan
+      // Prisma 5 detik terlampaui pada PK dengan belasan indikator di basis
+      // data yang sedang sibuk: P2028, rollback, penyetuju melihat 500, dan
+      // penguncian baris sempat ditahan selama seluruh jendela itu.
+      timeout: 30_000,
+      maxWait: 10_000,
     });
   }
 

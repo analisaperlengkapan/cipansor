@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { PlanStatus, CascadingCategory, PerformanceAgreement } from '@prisma/client';
 import { Errors } from '@/middleware/error';
 import { seesAllUnits } from '@/utils/resolve-unit-id';
+import { STAFF_ROLE_CODES } from './staff-roles';
 
 /**
  * Perjanjian Kinerja (PK) — performance agreements with cascading
@@ -21,6 +22,15 @@ export class PerformanceAgreementService {
   ) {
     if (isAdmin) return;
     if (opts.supervisorOnly) {
+      // Dibedakan dengan sengaja. Kalau supervisorId null, `!==` di bawah akan
+      // menolak SEMUA orang termasuk pemiliknya, penilaian perilaku tidak
+      // pernah bisa diisi, dan skor akhir mentok di 60 tanpa satu pun pesan
+      // yang menjelaskan mengapa. Itu jalan buntu, bukan penolakan akses.
+      if (!pk.supervisorId) {
+        throw Errors.badRequest(
+          'Perjanjian Kinerja ini belum punya atasan penilai, sehingga penilaian perilaku tidak dapat diisi. Tetapkan atasan penilai lebih dahulu.'
+        );
+      }
       if (pk.supervisorId !== callerId) {
         throw Errors.forbidden('Only the assigned supervisor may perform this action');
       }
@@ -34,6 +44,57 @@ export class PerformanceAgreementService {
     }
     if (pk.userId !== callerId && pk.supervisorId !== callerId) {
       throw Errors.forbidden();
+    }
+  }
+
+  /**
+   * Admin bukan berarti semua unit.
+   *
+   * `isAdminRoleCode()` menjawab "boleh bertindak atas PK milik orang lain",
+   * dan itu benar. Tetapi ia tidak berkata apa pun tentang UNIT — sehingga
+   * tanpa pemeriksaan ini seorang SDIT_ADMIN dapat membaca, menyunting,
+   * menyetujui, dan menolak PK milik SMP IT. Hanya `deletePK` yang dulu
+   * menjaganya, jadi satu rute aman sementara tujuh lainnya terbuka.
+   *
+   * Yang dilepaskan hanyalah peran yang memang bekerja lintas unit — pengurus
+   * yayasan, pengasuh dan direktur pesantren, super admin — lewat predikat
+   * yang sudah dipakai di tempat lain, `seesAllUnits`.
+   */
+  async assertUnitScope(
+    target: { pkId?: string; evaluationId?: string; indicatorId?: string },
+    caller: { roleCode?: string | null; unitId?: string | null }
+  ): Promise<void> {
+    if (seesAllUnits({ roleCode: caller.roleCode })) return;
+
+    if (target.indicatorId) {
+      const indicator = await prisma.pKIndicator.findUnique({
+        where: { id: target.indicatorId },
+        select: { pkId: true },
+      });
+      if (!indicator) return;
+      return this.assertUnitScope({ pkId: indicator.pkId }, caller);
+    }
+
+    const ownerUnitId = target.pkId
+      ? (
+          await prisma.performanceAgreement.findUnique({
+            where: { id: target.pkId },
+            select: { user: { select: { unitId: true } } },
+          })
+        )?.user?.unitId
+      : (
+          await prisma.pKEvaluation.findUnique({
+            where: { id: target.evaluationId },
+            select: { pk: { select: { user: { select: { unitId: true } } } } },
+          })
+        )?.pk?.user?.unitId;
+
+    // Baris tidak ada: biarkan lapisan di bawahnya yang menjawab 404, supaya
+    // pemeriksaan ini tidak berubah menjadi alat penebak id.
+    if (ownerUnitId === undefined) return;
+
+    if (!caller.unitId || ownerUnitId !== caller.unitId) {
+      throw Errors.forbidden('Perjanjian Kinerja ini milik unit lain');
     }
   }
 
@@ -106,63 +167,7 @@ export class PerformanceAgreementService {
             ],
             role: {
               code: {
-                in: [
-                  'SUPER_ADMIN',
-                  'YAYASAN_PEMBINA',
-                  'YAYASAN_KETUA',
-                  'YAYASAN_SEKRETARIS',
-                  'YAYASAN_BENDAHARA',
-                  'YAYASAN_ANGGOTA',
-                  'YAYASAN_PENGAWAS',
-                  'TKQ_ADMIN',
-                  'SDIT_ADMIN',
-                  'SMPIT_ADMIN',
-                  'SMAQ_ADMIN',
-                  'TKQ_GURU',
-                  'SDIT_GURU',
-                  'SMPIT_GURU',
-                  'SMAQ_GURU',
-                  'TKQ_KEPALA_SEKOLAH',
-                  'SDIT_KEPALA_SEKOLAH',
-                  'SMPIT_KEPALA_SEKOLAH',
-                  'SMAQ_KEPALA_SEKOLAH',
-                  'TKQ_WAKASEK',
-                  'SDIT_WAKASEK',
-                  'SMPIT_WAKASEK',
-                  'SMAQ_WAKASEK',
-                  'TKQ_WALI_KELAS',
-                  'SDIT_WALI_KELAS',
-                  'SMPIT_WALI_KELAS',
-                  'SMAQ_WALI_KELAS',
-                  'SMPIT_GURU_BK',
-                  'SMAQ_GURU_BK',
-                  'PESANTREN_PENGASUH',
-                  'PESANTREN_DIREKTUR',
-                  'USTADZ',
-                  'MUSYRIF',
-                  'MUSYRIFAH',
-                  'MUHAFIDZ',
-                  'MUHAFIDZAH',
-                  'MURABBI',
-                  'WALI_KAMAR',
-                  'PT_REKTOR',
-                  'PT_WAKIL_REKTOR',
-                  'PT_DEKAN',
-                  'PT_KAPRODI',
-                  'PT_DOSEN',
-                  'TKQ_TATA_USAHA',
-                  'SDIT_TATA_USAHA',
-                  'SMPIT_TATA_USAHA',
-                  'SMAQ_TATA_USAHA',
-                  'TKQ_BENDAHARA',
-                  'SDIT_BENDAHARA',
-                  'SMPIT_BENDAHARA',
-                  'SMAQ_BENDAHARA',
-                  'PESANTREN_TATA_USAHA',
-                  'PT_TATA_USAHA',
-                  'PT_STAF_AKADEMIK',
-                  'BUSINESS_MANAGER',
-                ],
+                in: [...STAFF_ROLE_CODES],
               },
             },
           },
@@ -306,6 +311,13 @@ export class PerformanceAgreementService {
     }
     if (pk.indicators.length === 0) {
       throw Errors.badRequest('PK must have at least one indicator');
+    }
+    // Perjanjian Kinerja adalah kesepakatan antara pegawai dan atasannya.
+    // Tanpa atasan penilai tidak ada yang bisa menyetujui maupun menilai
+    // perilakunya, jadi PK-nya akan mati di tengah jalan. Ditolak di sini,
+    // saat masih bisa diperbaiki, bukan nanti saat evaluasi.
+    if (!pk.supervisorId) {
+      throw Errors.badRequest('Tetapkan atasan penilai sebelum mengajukan Perjanjian Kinerja');
     }
 
     const totalWeight = pk.indicators.reduce((sum, ind) => sum + ind.weight, 0);

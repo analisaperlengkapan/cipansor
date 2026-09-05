@@ -12,6 +12,9 @@ vi.mock('@/lib/prisma', () => ({
       update: vi.fn(),
       delete: vi.fn(),
     },
+    pKEvaluation: {
+      findUnique: vi.fn(),
+    },
     pKIndicator: {
       findUnique: vi.fn(),
       create: vi.fn(),
@@ -28,6 +31,7 @@ import { pkService } from '../pk.service';
 const mocked = prisma as unknown as {
   user: Record<string, ReturnType<typeof vi.fn>>;
   performanceAgreement: Record<string, ReturnType<typeof vi.fn>>;
+  pKEvaluation: Record<string, ReturnType<typeof vi.fn>>;
   pKIndicator: Record<string, ReturnType<typeof vi.fn>>;
   $transaction: ReturnType<typeof vi.fn>;
 };
@@ -258,12 +262,84 @@ describe('PerformanceAgreementService', () => {
     });
   });
 
+  describe('assertUnitScope', () => {
+    // Lubang yang ditutup: assertAccess mulai dengan `if (isAdmin) return;`,
+    // dan isAdmin benar untuk TKQ/SDIT/SMPIT/SMAQ_ADMIN. Tanpa penjaga ini
+    // seorang SDIT_ADMIN bisa membaca, menyunting, menyetujui, dan menolak PK
+    // milik SMP IT. Dulu hanya deletePK yang memeriksa unit — satu rute aman,
+    // tujuh lainnya terbuka.
+    it('menolak admin unit yang menyentuh PK milik unit lain', async () => {
+      mocked.performanceAgreement.findUnique.mockResolvedValue({
+        user: { unitId: 'unit-smpit' },
+      });
+
+      await expect(
+        pkService.assertUnitScope({ pkId: 'pk-smpit' }, {
+          roleCode: 'SDIT_ADMIN',
+          unitId: 'unit-sdit',
+        })
+      ).rejects.toThrow(/unit lain/i);
+    });
+
+    it('mengizinkan admin unit pada PK di unitnya sendiri', async () => {
+      mocked.performanceAgreement.findUnique.mockResolvedValue({
+        user: { unitId: 'unit-sdit' },
+      });
+
+      await expect(
+        pkService.assertUnitScope({ pkId: 'pk-sdit' }, {
+          roleCode: 'SDIT_ADMIN',
+          unitId: 'unit-sdit',
+        })
+      ).resolves.toBeUndefined();
+    });
+
+    it('melepaskan peran yang memang lintas unit tanpa menyentuh basis data', async () => {
+      // Pengurus yayasan, pengasuh dan direktur pesantren, super admin.
+      // Kalau ini salah, mereka justru terkunci dari unit yang mereka asuh.
+      for (const roleCode of [
+        'SUPER_ADMIN',
+        'YAYASAN_KETUA',
+        'PESANTREN_PENGASUH',
+        'PESANTREN_DIREKTUR',
+      ]) {
+        await expect(
+          pkService.assertUnitScope({ pkId: 'pk-mana-pun' }, { roleCode, unitId: null })
+        ).resolves.toBeUndefined();
+      }
+      expect(mocked.performanceAgreement.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('menolak pemanggil tanpa unit sama sekali', async () => {
+      mocked.performanceAgreement.findUnique.mockResolvedValue({
+        user: { unitId: 'unit-sdit' },
+      });
+
+      await expect(
+        pkService.assertUnitScope({ pkId: 'pk-sdit' }, { roleCode: 'SDIT_GURU', unitId: null })
+      ).rejects.toThrow(/unit lain/i);
+    });
+
+    it('menelusuri evaluasi sampai ke unit pemilik PK-nya', async () => {
+      mocked.pKEvaluation.findUnique.mockResolvedValue({
+        pk: { user: { unitId: 'unit-smpit' } },
+      });
+
+      await expect(
+        pkService.assertUnitScope({ evaluationId: 'ev-1' }, {
+          roleCode: 'SDIT_ADMIN',
+          unitId: 'unit-sdit',
+        })
+      ).rejects.toThrow(/unit lain/i);
+    });
+  });
+
   describe('proposePK', () => {
     it('requires indicator weights to total 100', async () => {
       mocked.performanceAgreement.findUnique.mockResolvedValue({
         id: 'pk-1',
         userId: 'u-1',
-        supervisorId: null,
+        supervisorId: 'u-2',
         status: 'DRAFT',
         indicators: [{ weight: 60 }, { weight: 20 }],
       });
@@ -289,7 +365,7 @@ describe('PerformanceAgreementService', () => {
       mocked.performanceAgreement.findUnique.mockResolvedValue({
         id: 'pk-1',
         userId: 'u-1',
-        supervisorId: null,
+        supervisorId: 'u-2',
         status: 'DRAFT',
         indicators: [{ weight: 70 }, { weight: 30 }],
       });
@@ -297,6 +373,24 @@ describe('PerformanceAgreementService', () => {
 
       const result = await pkService.proposePK('pk-1', 'u-1', false);
       expect(result.status).toBe('PROPOSED');
+    });
+
+    it('menolak pengajuan PK yang belum punya atasan penilai', async () => {
+      // Bukan formalitas. Tanpa atasan penilai, penilaian perilaku (SAFTI)
+      // tidak pernah bisa diisi oleh siapa pun — assertAccess menuntut
+      // supervisorId — sehingga behaviorScore tetap 0 dan skor akhir mentok
+      // di 60 selamanya, tanpa satu pun pesan yang menjelaskan sebabnya.
+      // Ditolak di sini, saat masih bisa diperbaiki.
+      mocked.performanceAgreement.findUnique.mockResolvedValue({
+        id: 'pk-1',
+        userId: 'u-1',
+        supervisorId: null,
+        status: 'DRAFT',
+        indicators: [{ weight: 100 }],
+      });
+
+      await expect(pkService.proposePK('pk-1', 'u-1', false)).rejects.toThrow(/atasan penilai/i);
+      expect(mocked.performanceAgreement.update).not.toHaveBeenCalled();
     });
   });
 

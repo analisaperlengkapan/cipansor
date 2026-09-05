@@ -39,7 +39,9 @@ export const listPKs = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getPK = asyncHandler(async (req: Request, res: Response) => {
-  const { id, isAdmin } = caller(req);
+  const user = caller(req);
+  const { id, isAdmin } = user;
+  await pkService.assertUnitScope({ pkId: req.params.id }, user);
   const pk = await pkService.getPKById(req.params.id);
   if (!pk) throw Errors.notFound('PK');
   pkService.assertAccess(pk, id, isAdmin);
@@ -55,7 +57,9 @@ export const createPK = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const updatePK = asyncHandler(async (req: Request, res: Response) => {
-  const { id, isAdmin } = caller(req);
+  const user = caller(req);
+  const { id, isAdmin } = user;
+  await pkService.assertUnitScope({ pkId: req.params.id }, user);
   const body = updatePKSchema.parse(req.body);
   const pk = await pkService.updatePK(req.params.id, id, isAdmin, body);
   res.json(ApiResponse.success(pk));
@@ -68,19 +72,25 @@ export const deletePK = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const proposePK = asyncHandler(async (req: Request, res: Response) => {
-  const { id, isAdmin } = caller(req);
+  const user = caller(req);
+  const { id, isAdmin } = user;
+  await pkService.assertUnitScope({ pkId: req.params.id }, user);
   const pk = await pkService.proposePK(req.params.id, id, isAdmin);
   res.json(ApiResponse.success(pk));
 });
 
 export const approvePK = asyncHandler(async (req: Request, res: Response) => {
-  const { id, isAdmin } = caller(req);
+  const user = caller(req);
+  const { id, isAdmin } = user;
+  await pkService.assertUnitScope({ pkId: req.params.id }, user);
   const pk = await pkService.approvePK(req.params.id, id, isAdmin);
   res.json(ApiResponse.success(pk));
 });
 
 export const rejectPK = asyncHandler(async (req: Request, res: Response) => {
-  const { id, isAdmin } = caller(req);
+  const user = caller(req);
+  const { id, isAdmin } = user;
+  await pkService.assertUnitScope({ pkId: req.params.id }, user);
   const body = rejectPKSchema.parse(req.body);
   const pk = await pkService.rejectPK(req.params.id, id, isAdmin, body.revisionNotes);
   res.json(ApiResponse.success(pk));
@@ -96,14 +106,18 @@ export const createIndicator = asyncHandler(async (req: Request, res: Response) 
 });
 
 export const updateIndicator = asyncHandler(async (req: Request, res: Response) => {
-  const { id, isAdmin } = caller(req);
+  const user = caller(req);
+  const { id, isAdmin } = user;
+  await pkService.assertUnitScope({ indicatorId: req.params.id }, user);
   const body = updatePKIndicatorSchema.parse(req.body);
   const indicator = await pkService.updateIndicator(req.params.id, id, isAdmin, body);
   res.json(ApiResponse.success(indicator));
 });
 
 export const deleteIndicator = asyncHandler(async (req: Request, res: Response) => {
-  const { id, isAdmin } = caller(req);
+  const user = caller(req);
+  const { id, isAdmin } = user;
+  await pkService.assertUnitScope({ indicatorId: req.params.id }, user);
   await pkService.deleteIndicator(req.params.id, id, isAdmin);
   res.json(ApiResponse.success(null, 'Indicator deleted'));
 });

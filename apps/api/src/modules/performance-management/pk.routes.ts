@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authenticate, authorize } from '@/middleware/auth';
 import { RoleCode, UserRole } from '@prisma/client';
+import { STAFF_ROLE_CODES } from './staff-roles';
 import * as pkController from './pk.controller';
 import * as evalController from './evaluation.controller';
 import * as analyticsController from './analytics.controller';
@@ -42,8 +43,11 @@ router.get('/dashboard', leadership(), analyticsController.getDashboard);
 router.get('/dashboard/drilldown/:unitId', leadership(), analyticsController.getDrilldown);
 router.get('/reports/consolidated', leadership(), analyticsController.getConsolidatedReport);
 
-// Supervisors list for creating PK (authenticated users can fetch candidate supervisors)
-router.get('/supervisors', pkController.listSupervisors);
+// Daftar calon atasan penilai. Dulu hanya `authenticate`, sehingga SIAPA PUN
+// yang login — santri, wali murid, alumni, komite — bisa menarik direktori
+// staf lengkap dengan nama dan unitnya. Yang membutuhkannya hanyalah orang
+// yang memang menyusun PK, jadi dijaga dengan daftar peran yang sama.
+router.get('/supervisors', authorize(...STAFF_ROLE_CODES), pkController.listSupervisors);
 
 // Master data: behavioral values (SAFTI)
 router.get('/settings/behavioral-values', evalController.listBehavioralValues);

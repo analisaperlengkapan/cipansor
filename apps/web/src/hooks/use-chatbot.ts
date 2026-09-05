@@ -1,6 +1,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import type {
+  ChatbotEscalationRequest,
+  ChatbotEscalationResponse,
   ChatbotUsageResponse,
   ChatbotConversationDetail,
   ChatbotConversationListResponse,
@@ -43,6 +45,26 @@ export function usePublicChat() {
       // pendaftaran bukan informasi; ia hanya membuat halaman terasa rusak.
       // Ditemukan dari tangkapan layar, bukan dari uji.
       const response = await api.post("/chatbot/public/ask", request, {
+        skipErrorToast: true,
+      });
+      return response.data.data;
+    },
+  });
+}
+
+/**
+ * Meneruskan pertanyaan ke tim Cipansor.
+ *
+ * `skipErrorToast` dengan alasan yang sama seperti `usePublicChat`: alurnya
+ * menulis pesannya sendiri di dalam percakapan, dan toast global hanya
+ * menduplikasinya sambil menempelkan kode galat teknis di bawahnya.
+ */
+export function useEscalateToTeam() {
+  return useMutation({
+    mutationFn: async (
+      request: ChatbotEscalationRequest,
+    ): Promise<ChatbotEscalationResponse> => {
+      const response = await api.post("/chatbot/public/escalate", request, {
         skipErrorToast: true,
       });
       return response.data.data;

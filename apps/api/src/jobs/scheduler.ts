@@ -11,6 +11,7 @@ import { sendMonthlySppReminders } from './spp-reminder.job';
 import { purgeIdentityDocuments } from './identity-purge.job';
 import { runChatbotSpendCheck } from './chatbot-spend.job';
 import { runChatbotTranscriptPurge } from './chatbot-transcript-purge.job';
+import { runChatbotEscalationRetry } from './chatbot-escalation-retry.job';
 import { prisma } from '@/lib/prisma';
 
 /**
@@ -252,6 +253,33 @@ export function initializeScheduler(): void {
   scheduledTasks.push(chatbotTranscriptTask);
   logger.info('[Scheduler] Chatbot transcript purge scheduled daily at 03:15 WIB');
 
+  /**
+   * Penerusan pertanyaan yang belum terkirim, dicoba lagi tiap 30 menit.
+   *
+   * Percobaan PERTAMA sudah terjadi di dalam permintaan penanya; yang ini
+   * hanya untuk yang gagal. Jadi pada hari yang sehat pekerjaan ini tidak
+   * menemukan apa-apa dan tidak menulis satu baris log pun — sengaja, supaya
+   * ketika ia MENEMUKAN sesuatu, barisnya berarti.
+   *
+   * Tiap 30 menit dengan batas 5 percobaan memberi jendela sekitar dua jam,
+   * cukup untuk melewati gangguan penyedia surel yang lazim.
+   */
+  const chatbotEscalationTask = cron.schedule(
+    '*/30 * * * *',
+    async () => {
+      try {
+        await runChatbotEscalationRetry();
+      } catch (error) {
+        logger.error('[Scheduler] Chatbot escalation retry failed:', error);
+      }
+    },
+    {
+      timezone: 'Asia/Jakarta',
+    }
+  );
+  scheduledTasks.push(chatbotEscalationTask);
+  logger.info('[Scheduler] Chatbot escalation retry scheduled every 30 minutes');
+
   logger.info(`[Scheduler] ${scheduledTasks.length} jobs scheduled successfully`);
 }
 
@@ -278,6 +306,7 @@ export async function runJob(
     | 'identity-purge'
     | 'chatbot-spend'
     | 'chatbot-transcript-purge'
+    | 'chatbot-escalation-retry'
 ): Promise<void> {
   logger.info(`[Scheduler] Manually running job: ${jobName}`);
 
@@ -308,6 +337,9 @@ export async function runJob(
       break;
     case 'chatbot-transcript-purge':
       await runChatbotTranscriptPurge();
+      break;
+    case 'chatbot-escalation-retry':
+      await runChatbotEscalationRetry();
       break;
     default:
       throw new Error(`Unknown job: ${jobName}`);

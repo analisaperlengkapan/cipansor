@@ -23,6 +23,10 @@ import {
   purgeConversationsBefore,
   retentionCutoff,
 } from '@/modules/chatbot/transcript.service';
+import {
+  purgeEscalationsBefore,
+  retentionCutoff as escalationCutoff,
+} from '@/modules/chatbot/escalation.service';
 
 export const TRANSCRIPT_PURGE_AUDIT_ACTION = 'PURGE_CHATBOT_TRANSCRIPTS';
 export const TRANSCRIPT_PURGE_AUDIT_ENTITY = 'ChatbotConversation';
@@ -32,6 +36,14 @@ export interface TranscriptPurgeSummary {
   retentionDays: number;
   conversations: number;
   messages: number;
+  /**
+   * Penerusan pertanyaan ke tim, disapu oleh pekerjaan yang SAMA.
+   *
+   * Janjinya identik — 90 hari, ditegakkan oleh penyapu yang menulis jejaknya
+   * bahkan ketika tidak menghapus apa pun — jadi memberinya pekerjaan sendiri
+   * hanya akan menciptakan penyapu kedua yang bisa mati diam-diam sendirian.
+   */
+  escalations: number;
 }
 
 /**
@@ -48,12 +60,14 @@ export async function runChatbotTranscriptPurge(
 ): Promise<TranscriptPurgeSummary> {
   const cutoff = retentionCutoff(now);
   const deleted = await purgeConversationsBefore(cutoff);
+  const escalations = await purgeEscalationsBefore(escalationCutoff(now));
 
   const summary: TranscriptPurgeSummary = {
     cutoff: cutoff.toISOString(),
     retentionDays: TRANSCRIPT_RETENTION_DAYS,
     conversations: deleted.conversations,
     messages: deleted.messages,
+    escalations,
   };
 
   await recordRun(summary);
@@ -80,6 +94,7 @@ async function recordRun(summary: TranscriptPurgeSummary) {
           retentionDays: summary.retentionDays,
           conversations: summary.conversations,
           messages: summary.messages,
+          escalations: summary.escalations,
         },
       },
     });

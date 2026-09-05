@@ -384,6 +384,57 @@ its benefit is already there for free — when `Retry-After` exceeds the remaini
 budget we fail immediately rather than sleeping, so a genuinely exhausted quota
 already fails fast. Revisit if sustained 429s ever appear in the logs.
 
+## 6b. Handing the question to a human (2026-09-05)
+
+A refusal that ends at a phone number is a dead end for the person who cannot
+call during office hours. So when the assistant declines, it offers to pass the
+question to the team, and — with consent — mails it to `halo@cipansor.or.id`.
+
+**The mail is from `noreply@`, but `Reply-To` is the visitor.** That one header
+is the whole feature: without it, the staff member who hits Reply writes to
+their own inbox and the person who asked never hears back. It required a
+per-message `replyTo` on `deliverEmail()`, which until now always used
+`config.mail.replyTo`.
+
+**The flow stops in the visitor's hands twice**, and both stops are load-bearing:
+
+1. Before a single field is requested. Asking for a name and a phone number
+   from someone who has not said yes is unsolicited collection, not politeness.
+2. After the summary is composed. People are entitled to see exactly what will
+   be sent in their name — and the text they approve is the *same text* the
+   server renders into the mail, not a similar-looking preview.
+
+**Fields are collected in a form, not by conversational turns.** A bot that asks
+for an email and then parses it out of free text sounds cleverer and works
+worse: it mis-reads, it cannot validate, and on a phone it forces five separate
+sends. The *voice* stays conversational — the offer, the summary and the thanks
+are assistant bubbles — while the filling-in uses the control designed for
+filling in.
+
+**The durable queue lives here, not in the chat.** Chat cannot be queued: the
+visitor is watching, and their HTTP request dies inside a minute (§6a). Nobody
+watches an email being sent. So the row is written first, the reference number
+is returned immediately, delivery is attempted after the response, and
+`jobs/chatbot-escalation-retry.job.ts` retries every 30 minutes up to five
+attempts — roughly a two-hour window. **A delivery failure therefore never means
+a lost question.** Rows that exhaust their attempts become `FAILED` with
+`lastError` beside them, for a human to read rather than for a log to swallow.
+
+**Protections, and what each is actually for:**
+
+| Control | Protects |
+| --- | --- |
+| Turnstile (`chatbot-escalate`) | the inbox, not the bill — this is the 8th gated action |
+| 3/hour per IP | staff *attention*; an inbox drowned by scripts stops being read, and real questions drown with it |
+| Honeypot (`website`) | answered as if it succeeded, with a fake reference — telling a script it was caught only helps its author |
+| `consent` as `literal(true)` | a `false` that validates and is then rejected in the service is two places that must agree forever |
+| `consentAt` as a timestamp | UU PDP asks *when* consent was given; a boolean cannot answer that six months later |
+| 90-day retention, same sweep | one promise, one sweeper — a second job is a second thing that can die quietly |
+| HTML escaping | the question is written by the public and read in Gmail |
+
+`FAILED` rows are deleted by the retention sweep too. Holding someone's personal
+data forever because our mail server failed is not a lawful reason to hold it.
+
 ## 7. Risks that are easy to miss
 
 **Prompt injection.** Both retrieved content and tool results (complaint text,

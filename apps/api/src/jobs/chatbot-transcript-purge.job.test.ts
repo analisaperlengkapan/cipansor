@@ -12,9 +12,16 @@ vi.mock('@/modules/chatbot/transcript.service', async () => {
   );
   return { ...actual, purgeConversationsBefore: vi.fn() };
 });
+vi.mock('@/modules/chatbot/escalation.service', async () => {
+  const actual = await vi.importActual<typeof import('@/modules/chatbot/escalation.service')>(
+    '@/modules/chatbot/escalation.service'
+  );
+  return { ...actual, purgeEscalationsBefore: vi.fn() };
+});
 
 import { prisma } from '@/lib/prisma';
 import { purgeConversationsBefore } from '@/modules/chatbot/transcript.service';
+import { purgeEscalationsBefore } from '@/modules/chatbot/escalation.service';
 import {
   TRANSCRIPT_PURGE_AUDIT_ACTION,
   TRANSCRIPT_PURGE_AUDIT_ENTITY,
@@ -23,6 +30,7 @@ import {
 
 const db = prisma as unknown as { auditLog: { create: ReturnType<typeof vi.fn> } };
 const purge = vi.mocked(purgeConversationsBefore);
+const purgeEscalations = vi.mocked(purgeEscalationsBefore);
 
 const NOW = new Date('2026-09-04T20:15:00Z');
 
@@ -30,6 +38,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   db.auditLog.create.mockResolvedValue({});
   purge.mockResolvedValue({ conversations: 0, messages: 0 });
+  purgeEscalations.mockResolvedValue(0);
 });
 
 describe('runChatbotTranscriptPurge', () => {
@@ -55,6 +64,7 @@ describe('runChatbotTranscriptPurge', () => {
       newValues: {
         conversations: 0,
         messages: 0,
+        escalations: 0,
         retentionDays: 90,
         cutoff: '2026-06-06T20:15:00.000Z',
       },
@@ -89,5 +99,28 @@ describe('runChatbotTranscriptPurge', () => {
 
     await expect(runChatbotTranscriptPurge(NOW)).rejects.toThrow('connection refused');
     expect(db.auditLog.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('penerusan pertanyaan ikut disapu pekerjaan yang sama', () => {
+  it('menyapu penerusan pada batas 90 hari yang sama', async () => {
+    // Satu janji, satu penyapu. Memberi penerusan pekerjaannya sendiri hanya
+    // akan menciptakan penyapu kedua yang bisa mati diam-diam sendirian —
+    // persis kegagalan yang baris audit di atas ada untuk mencegahnya.
+    await runChatbotTranscriptPurge(NOW);
+
+    expect(purgeEscalations).toHaveBeenCalledTimes(1);
+    expect(purgeEscalations.mock.calls[0][0].toISOString()).toBe('2026-06-06T20:15:00.000Z');
+  });
+
+  it('melaporkan jumlah penerusan yang terhapus ke baris auditnya', async () => {
+    purgeEscalations.mockResolvedValue(4);
+
+    const result = await runChatbotTranscriptPurge(NOW);
+
+    expect(result.escalations).toBe(4);
+    expect(db.auditLog.create.mock.calls[0][0].data.newValues).toMatchObject({
+      escalations: 4,
+    });
   });
 });

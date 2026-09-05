@@ -6318,6 +6318,72 @@ model ChatbotConversation {
 }
 
 /// ChatbotMessage - satu giliran, entah dari pengunjung atau dari asisten.
+/// Nasib satu penerusan pertanyaan ke halo@cipansor.or.id.
+///
+/// Suratnya TIDAK dikirim di dalam permintaan HTTP penanya. Barisnya ditulis
+/// lebih dulu dan jawabannya dikembalikan seketika; pengirimannya dicoba
+/// sesudah itu, dan diulang oleh penjadwal bila gagal. Inilah antrian tahan
+/// lama yang memang tepat di sini — berbeda dari obrolannya sendiri, penanya
+/// tidak sedang menunggui surat itu terkirim.
+enum ChatbotEscalationStatus {
+  /// Menunggu percobaan pertama, atau menunggu percobaan ulang.
+  PENDING
+  SENT
+  /// Sudah menyerah setelah batas percobaan. Ditinjau manusia, bukan dibuang.
+  FAILED
+}
+
+/// Pertanyaan yang tidak bisa dijawab asisten, diteruskan ke tim atas
+/// persetujuan penanyanya.
+///
+/// Isinya DATA PRIBADI yang diberikan sukarela: nama, telepon, WhatsApp,
+/// surel. Karena itu tiga pagar yang sama seperti riwayat percakapan berlaku —
+/// hanya SUPER_ADMIN yang boleh membacanya lewat API, ia terhapus otomatis
+/// setelah 90 hari, dan tidak ada IP maupun sidik jari peramban yang ikut
+/// disimpan. Persetujuannya sendiri dicatat dengan stempel waktu, karena
+/// "pernah setuju" tanpa kapan bukan catatan persetujuan.
+model ChatbotEscalation {
+  id String @id @default(uuid())
+
+  /// Percakapan asalnya, bila widget-nya mengirimkannya. Sengaja BUKAN relasi:
+  /// percakapan terhapus setelah 90 hari lewat jalurnya sendiri, dan penerusan
+  /// yang belum terkirim tidak boleh ikut terhapus bersamanya.
+  conversationId String? @map("conversation_id")
+
+  name     String
+  email    String
+  /// Keduanya opsional: memaksa dua nomor pada orang yang hanya punya satu
+  /// membuat ia mengarang salah satunya, dan nomor karangan lebih buruk
+  /// daripada kolom kosong.
+  phone    String?
+  whatsapp String?
+
+  /// Pertanyaan yang hendak diteruskan, sebagaimana diketik penanyanya.
+  question String
+
+  /// Kapan penanya menyatakan berkenan diteruskan. Wajib, dan disimpan sebagai
+  /// waktu — bukan boolean — karena UU PDP menuntut bukti kapan persetujuan
+  /// diberikan, bukan sekadar bahwa ia ada.
+  consentAt DateTime @map("consent_at")
+
+  status   ChatbotEscalationStatus @default(PENDING)
+  /// Berapa kali pengiriman sudah dicoba. Membatasi pengulangan, dan menjadi
+  /// petunjuk pertama ketika satu baris tersangkut.
+  attempts Int                     @default(0)
+  /// Alasan kegagalan terakhir, untuk dibaca manusia. Tanpa ini, sebuah baris
+  /// FAILED tidak memberi tahu apa pun tentang cara memperbaikinya.
+  lastError String?                 @map("last_error")
+  sentAt    DateTime?               @map("sent_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  /// Penjadwal memindai baris yang belum terkirim menurut umurnya.
+  @@index([status, createdAt])
+  @@index([createdAt])
+  @@map("chatbot_escalations")
+}
+
 model ChatbotMessage {
   id             String              @id @default(uuid())
   conversationId String              @map("conversation_id")

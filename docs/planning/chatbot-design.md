@@ -171,6 +171,23 @@ caching rewards — billed at 0.028 rather than 0.19, **6.8× cheaper**. On
 served from that cache. `chatbot_usage_daily.cached_prompt_tokens` will show
 whether that share rises after deployment.
 
+**Diukur 2026-09-05, dan hasilnya MEMBANTAH ramalan di atas.** Tiga panggilan
+pertama sesudah penggelaran, ketiganya dengan awalan yang sama persis (~3.300
+token) dan dalam rentang sepuluh menit, dilaporkan **0 token ter-cache** dari
+10.225 token prompt — sementara sehari sebelumnya, dengan prompt yang lebih
+pendek, 21,8% ter-cache. Pembacaannya bukan salah kita: adaptor membaca
+`prompt_tokens_details.cached_tokens` **dan** `prompt_cache_hit_tokens`
+(`providers/openai-compatible.ts`), jadi angka nol itu laporan penyedia.
+
+Dugaan yang paling cocok dengan kedua angka: yang ter-cache kemarin adalah
+prompt yang **identik seluruhnya** (pertanyaan berulang), bukan awalan yang
+dipakai bersama pertanyaan berbeda — artinya penyedia ini tidak memberi diskon
+awalan otomatis pada deployment kita. Tiga panggilan tetap sampel kecil dan
+cache bisa perlu trafik untuk hangat, jadi **periksa ulang setelah ada trafik
+pengunjung sungguhan** sebelum menyimpulkannya permanen. Yang tidak berubah:
+taksiran 0,30 → 0,70 USD per 1.000 pertanyaan sudah dihitung pada harga penuh,
+jadi ia tetap berlaku — yang hilang hanya potongan yang diharapkan.
+
 ## 2. The central decision: RAG for public content, tools for private data
 
 The requirement says the logged-in assistant should reach "data sesuai

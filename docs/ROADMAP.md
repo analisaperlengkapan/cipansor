@@ -314,15 +314,26 @@ tahan-lama + percobaan ulang tiap 30 menit; retensi 90 hari mengikuti penyapu
 yang sama dengan riwayat percakapan. Lihat §6b di
 [`planning/chatbot-design.md`](./planning/chatbot-design.md).
 
-**Merged 2026-09-04, none of it deployed yet** — one image rebuild is planned to
-carry all of it: #473 (usage/cost panel), #474 (the "ada informasi apa saja"
-refusal and its signpost), #475 (full corpus), #476 (retry with `Retry-After`
-plus a short concurrency queue in front of the provider).
+**Digelar ke produksi 2026-09-05**, satu pembangunan ulang image membawa
+kelimanya: #473 (panel pemakaian/biaya), #474 (penolakan "ada informasi apa
+saja" dan rambunya), #475 (seluruh korpus), #476 (coba-ulang `Retry-After` plus
+antrian pendek), #478 (penerusan ke tim). Urutannya: `pg_dump` →
+`prisma db push` **tanpa** `--accept-data-loss` (tabel `chatbot_escalations`
+hanya menambah; `migrate diff` = 70 baris, 0 DROP) → bangun ulang image →
+putar `api` + `web`.
 
-**That deploy now also needs `db push`.** The escalation feature adds one
-additive table, `chatbot_escalations`, plus its enum — no column is dropped or
-retyped, so **no reseed and no `--accept-data-loss`**. See the deploy runbook
-memory for the two commands that decide which of those is required.
+**Dibuktikan hidup di artefak yang tergelar**, bukan hanya di kode: baris
+penjadwal `Chatbot escalation retry scheduled every 30 minutes` (hanya ada di
+kode baru), `POST /api/chatbot/public/escalate` menjawab **400 Turnstile**
+(rutenya ada dan terjaga, bukan 404), dan `ask()` yang dipanggil langsung di
+dalam kontainer menjawab "ada informasi apa saja" dengan `refused:false` +
+daftar topik, menolak "harga emas hari ini" dengan `refused:true`, keduanya
+tanpa membocorkan baris `SUMBER:`.
+
+**Satu mata rantai yang BELUM dibuktikan:** belum ada satu pun penerusan yang
+benar-benar terkirim ke `halo@cipansor.or.id`. Rute, antrian, penjadwal, dan
+transport-nya ada; yang belum diuji adalah surat yang sungguh sampai. Ingat
+`delivered` ≠ `success` (lihat memori surel Gmail API).
 
 What the design asked for and we have not built, in the order it matters:
 

@@ -5407,7 +5407,7 @@ model CanteenCategory {
   businessUnit BusinessUnit? @relation(fields: [businessUnitId], references: [id])
   items        CanteenItem[]
 
-  @@unique([unitId, businessUnitId, name]) // DB enforces NULLS NOT DISTINCT (see migration 2df27db); arg unsupported in Prisma 7 schema syntax
+  @@unique([unitId, businessUnitId, name]) // TIDAK unik saat businessUnitId NULL: Postgres menganggap NULL berbeda, jadi dua baris NULL bernama sama diterima (dibuktikan di prod 2026-09-05). Klaim NULLS NOT DISTINCT sebelumnya keliru.
   @@index([businessUnitId])
   @@index([unitId])
   @@map("canteen_categories")
@@ -5440,7 +5440,7 @@ model CanteenItem {
   transactionItems CanteenTransactionItem[]
   stockMovements   CanteenStockMovement[]
 
-  @@unique([unitId, businessUnitId, code]) // DB enforces NULLS NOT DISTINCT (see migration 2df27db); arg unsupported in Prisma 7 schema syntax
+  @@unique([unitId, businessUnitId, code]) // TIDAK unik saat businessUnitId NULL: Postgres menganggap NULL berbeda, jadi dua baris NULL bernama sama diterima (dibuktikan di prod 2026-09-05). Klaim NULLS NOT DISTINCT sebelumnya keliru.
   @@index([unitId])
   @@index([businessUnitId])
   @@index([categoryId])
@@ -5552,7 +5552,7 @@ model LaundryPricing {
   businessUnit BusinessUnit?        @relation(fields: [businessUnitId], references: [id])
   transactions LaundryTransaction[]
 
-  @@unique([unitId, businessUnitId, name]) // DB enforces NULLS NOT DISTINCT (see migration 2df27db); arg unsupported in Prisma 7 schema syntax
+  @@unique([unitId, businessUnitId, name]) // TIDAK unik saat businessUnitId NULL: Postgres menganggap NULL berbeda, jadi dua baris NULL bernama sama diterima (dibuktikan di prod 2026-09-05). Klaim NULLS NOT DISTINCT sebelumnya keliru.
   @@index([businessUnitId])
   @@index([unitId])
   @@map("laundry_pricings")

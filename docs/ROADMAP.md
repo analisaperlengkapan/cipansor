@@ -104,19 +104,35 @@ deploy**, verified against production: `https://cipansor.or.id` is reflected
 singly with `Vary: Origin`, and a foreign origin gets no
 `Access-Control-Allow-Origin` header at all.
 
-## 🔴 3. Production DB has no Prisma migration history
+## 🟠 3. Migration history — repo fixed 2026-09-05, one command left in production
 
-No `_prisma_migrations` table, so `migrate deploy` cannot be used and drift is
-invisible. Today's safeguard is manual: run
+**Yang sudah beres (di repo).** Riwayat migrasi diringkas jadi satu baseline
+`0_init`. Ke-27 direktori lama dihapus karena tidak pernah bisa diputar dari
+basis data kosong (P3006, `relation "complaints" does not exist`) — SQL-nya
+tetap ada di riwayat git. Empat bukti, semuanya dijalankan bukan diperkirakan:
+
+| yang diuji | hasil |
+|---|---|
+| `0_init` di basis data kosong | 294 tabel, sama dengan produksi |
+| hasilnya di-diff balik ke `schema.prisma` | `-- This is an empty migration.` |
+| produksi lawan `schema.prisma` | nol drift — syarat baseline terpenuhi |
+| `migrate deploy` dari kosong | `All migrations have been successfully applied` |
+
+**Yang masih tersisa (di produksi).** Satu perintah, dijalankan sesudah PR ini
+digabung:
 
 ```
-prisma migrate diff --from-config-datasource prisma/prisma.config.ts \
-  --to-schema prisma/schema.prisma --script
+prisma migrate resolve --config prisma/prisma.config.ts --applied 0_init
 ```
 
-before every deploy and require it to be empty. Proper fix: baseline the
-database (`migrate resolve --applied`) for the existing migrations so future
-deploys are checked automatically.
+Ia **menandai, tidak menjalankan**: sudah digladi-bersih di basis data cermin
+dan tercatat `applied_steps_count = 0`, jadi tidak ada satu pun SQL yang
+menyentuh data. Sesudah itu `_prisma_migrations` ada, `migrate deploy` bisa
+dipakai, dan drift berhenti tak terlihat.
+
+**Sampai itu dijalankan**, penjaga lama tetap berlaku: `migrate diff
+--from-config-datasource --to-schema` sebelum setiap penggelaran, dan harus
+kosong.
 
 ---
 

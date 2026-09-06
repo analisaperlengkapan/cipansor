@@ -32,7 +32,7 @@ test.describe("Integrated Performance Management (/kinerja) E2E Flows", () => {
   test("analytics page displays executive overview and consolidated report", async ({ page }) => {
     await page.goto("/kinerja/analytics");
     await expect(page).toHaveURL(/\/kinerja\/analytics/);
-    await expect(page.locator("h1")).toContainText(/Analytics & Strategy Map/i);
+    await expect(page.locator("h1")).toContainText(/Analitik & Peta Strategi/i);
     await expect(page.locator("text=Total Dokumen PK")).toBeVisible();
     await expect(page.locator("text=Rata-Rata Perilaku SAFTI")).toBeVisible();
   });
@@ -90,8 +90,8 @@ test.describe("Integrated Performance Management (/kinerja) E2E Flows", () => {
 
       // 3. Analytics Unit Drilldown & Report Overview Check
       await page.goto("/kinerja/analytics");
-      await expect(page.locator("h1")).toContainText(/Analytics & Strategy Map/i);
-      await expect(page.locator("text=Drilldown Capaian per Unit Kerja")).toBeVisible();
+      await expect(page.locator("h1")).toContainText(/Analitik & Peta Strategi/i);
+      await expect(page.locator("text=Rincian Capaian per Unit Kerja")).toBeVisible();
       await expect(page.locator("text=Ringkasan Laporan Konsolidasi Kinerja Yayasan")).toBeVisible();
     } finally {
       // Cleanup created PK record via API to prevent DB data pollution

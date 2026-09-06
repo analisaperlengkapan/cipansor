@@ -47,9 +47,16 @@ import {
   Layers,
 } from "lucide-react";
 
+// The consolidated report always covers one year. Offering a window around
+// the current one lets a reader reach the year the data actually lives in
+// instead of staring at an all-zero table with no way to tell why.
+const REPORT_YEARS = Array.from({ length: 7 }, (_, i) => new Date().getFullYear() - 2 + i);
+
 function PerformanceAnalyticsPageContent() {
   const { data: dashboard, isLoading: loadingDash } = usePerformanceDashboard();
-  const { data: consolidated, isLoading: loadingConsolidated } = usePerformanceConsolidatedReport();
+  const [reportYear, setReportYear] = useState<number>(new Date().getFullYear());
+  const { data: consolidated, isLoading: loadingConsolidated } =
+    usePerformanceConsolidatedReport(reportYear);
   const { data: units } = useUnits({ limit: 100 });
 
   const [selectedUnitId, setSelectedUnitId] = useState<string>("");
@@ -84,7 +91,7 @@ function PerformanceAnalyticsPageContent() {
           <CardContent>
             <div className="text-2xl font-bold">{dashboard?.totalAgreements || 0}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {dashboard?.approvedAgreements || 0} telah disetujui (APPROVED)
+              {dashboard?.approvedAgreements || 0} sudah disetujui
             </p>
           </CardContent>
         </Card>
@@ -138,10 +145,10 @@ function PerformanceAnalyticsPageContent() {
         <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-emerald-600" /> Drilldown Capaian per Unit Kerja
+              <Building2 className="w-5 h-5 text-emerald-600" /> Rincian Capaian per Unit Kerja
             </CardTitle>
             <CardDescription>
-              Pilih sekolah atau unit kerja untuk melihat perincian cascading kinerja pegawai
+              Pilih sekolah atau unit kerja untuk melihat rincian kaskade kinerja pegawai
             </CardDescription>
           </div>
           <div className="w-full sm:w-64">
@@ -162,10 +169,10 @@ function PerformanceAnalyticsPageContent() {
         <CardContent>
           {!selectedUnitId ? (
             <div className="py-8 text-center text-sm text-muted-foreground border-2 border-dashed rounded-lg">
-              Silakan pilih unit kerja pada dropdown di atas untuk melihat drilldown laporan kinerja.
+              Silakan pilih unit kerja pada daftar di atas untuk melihat rincian laporan kinerjanya.
             </div>
           ) : loadingDrill ? (
-            <div className="py-8 text-center text-sm text-muted-foreground">Memuat data drilldown unit...</div>
+            <div className="py-8 text-center text-sm text-muted-foreground">Memuat rincian unit…</div>
           ) : (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-lg bg-emerald-50/50 border border-emerald-100 dark:bg-emerald-950/20">
@@ -191,7 +198,7 @@ function PerformanceAnalyticsPageContent() {
                     <TableHead>Indikator PK</TableHead>
                     <TableHead>Skor Kinerja (KPI)</TableHead>
                     <TableHead>Skor Perilaku SAFTI</TableHead>
-                    <TableHead>Overall Score</TableHead>
+                    <TableHead>Nilai Akhir</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -215,12 +222,32 @@ function PerformanceAnalyticsPageContent() {
       {/* Consolidated Report Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Layers className="w-5 h-5 text-emerald-600" /> Ringkasan Laporan Konsolidasi Kinerja Yayasan
-          </CardTitle>
-          <CardDescription>
-            Rekapitulasi progres Perjanjian Kinerja dan Evaluasi bulanan di seluruh unit
-          </CardDescription>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Layers className="w-5 h-5 text-emerald-600" /> Ringkasan Laporan Konsolidasi Kinerja Yayasan
+              </CardTitle>
+              <CardDescription>
+                Rekapitulasi Perjanjian Kinerja dan evaluasi bulanan seluruh unit
+                sepanjang <strong>tahun {reportYear}</strong>
+              </CardDescription>
+            </div>
+            <Select
+              value={String(reportYear)}
+              onValueChange={(v) => setReportYear(Number(v))}
+            >
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {REPORT_YEARS.map((y) => (
+                  <SelectItem key={y} value={String(y)}>
+                    Tahun {y}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
           {loadingConsolidated ? (
@@ -231,7 +258,7 @@ function PerformanceAnalyticsPageContent() {
                 <TableRow>
                   <TableHead>Unit Kerja / Sekolah</TableHead>
                   <TableHead>Total Pegawai PK</TableHead>
-                  <TableHead>PK Disetujui (APPROVED)</TableHead>
+                  <TableHead>PK Disetujui</TableHead>
                   <TableHead>Rata-Rata Skor Kinerja (KPI)</TableHead>
                   <TableHead>Rata-Rata Skor SAFTI</TableHead>
                 </TableRow>
@@ -240,15 +267,39 @@ function PerformanceAnalyticsPageContent() {
                 {consolidated?.units?.map((u: ConsolidatedUnitReportDTO) => (
                   <TableRow key={u.id}>
                     <TableCell className="font-semibold">{u.name}</TableCell>
-                    <TableCell>{u.totalAgreements || 0} Pegawai</TableCell>
                     <TableCell>
-                      <Badge className="bg-emerald-500">{u.approvedAgreements || 0} Approved</Badge>
+                      {u.totalAgreements
+                        ? `${u.totalAgreements} Pegawai`
+                        : "Belum ada PK"}
                     </TableCell>
-                    <TableCell className="font-semibold text-blue-600">
-                      {u.avgPerformanceScore ? `${u.avgPerformanceScore.toFixed(1)}%` : "0%"}
+                    <TableCell>
+                      {u.totalAgreements ? (
+                        <Badge className="bg-emerald-500">
+                          {u.approvedAgreements || 0} disetujui
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </TableCell>
-                    <TableCell className="font-semibold text-purple-600">
-                      {u.avgBehaviorScore ? `${u.avgBehaviorScore.toFixed(1)}` : "0"}
+                    <TableCell
+                      className={
+                        u.avgPerformanceScore
+                          ? "font-semibold text-blue-600"
+                          : "text-muted-foreground"
+                      }
+                    >
+                      {u.avgPerformanceScore
+                        ? `${u.avgPerformanceScore.toFixed(1)}%`
+                        : "—"}
+                    </TableCell>
+                    <TableCell
+                      className={
+                        u.avgBehaviorScore
+                          ? "font-semibold text-purple-600"
+                          : "text-muted-foreground"
+                      }
+                    >
+                      {u.avgBehaviorScore ? u.avgBehaviorScore.toFixed(1) : "—"}
                     </TableCell>
                   </TableRow>
                 ))}

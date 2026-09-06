@@ -15,6 +15,9 @@ vi.mock('@/lib/prisma', () => ({
     pKEvaluation: {
       findUnique: vi.fn(),
     },
+    userRoleAssignment: {
+      findMany: vi.fn(),
+    },
     pKIndicator: {
       findUnique: vi.fn(),
       create: vi.fn(),
@@ -30,6 +33,7 @@ import { pkService } from '../pk.service';
 
 const mocked = prisma as unknown as {
   user: Record<string, ReturnType<typeof vi.fn>>;
+  userRoleAssignment: Record<string, ReturnType<typeof vi.fn>>;
   performanceAgreement: Record<string, ReturnType<typeof vi.fn>>;
   pKEvaluation: Record<string, ReturnType<typeof vi.fn>>;
   pKIndicator: Record<string, ReturnType<typeof vi.fn>>;
@@ -389,8 +393,38 @@ describe('PerformanceAgreementService', () => {
         indicators: [{ weight: 100 }],
       });
 
+      mocked.userRoleAssignment.findMany.mockResolvedValue([
+        { role: { code: 'SMPIT_GURU' } },
+      ]);
+
       await expect(pkService.proposePK('pk-1', 'u-1', false)).rejects.toThrow(/atasan penilai/i);
       expect(mocked.performanceAgreement.update).not.toHaveBeenCalled();
+    });
+
+    it('mengizinkan PK PUNCAK RANTAI diajukan tanpa atasan penilai', async () => {
+      // Tanpa pengecualian ini seluruh modul terkunci, dan tidak ada satu pun
+      // uji yang menangkapnya karena semuanya memalsukan Prisma dan tidak
+      // pernah menyusuri rantainya: PK bawahan menuntut PK atasan yang SUDAH
+      // disetujui, sedangkan approvePK menuntut status PROPOSED. Kalau akar
+      // rantai tidak pernah bisa diajukan, ia tidak pernah bisa disetujui,
+      // sehingga TIDAK SATU PUN PK di bawahnya pernah bisa dibuat.
+      mocked.performanceAgreement.findUnique.mockResolvedValue({
+        id: 'pk-root',
+        userId: 'u-ketua',
+        supervisorId: null,
+        status: 'DRAFT',
+        indicators: [{ weight: 100 }],
+      });
+      mocked.userRoleAssignment.findMany.mockResolvedValue([
+        { role: { code: 'YAYASAN_KETUA' } },
+      ]);
+      mocked.performanceAgreement.update.mockResolvedValue({
+        id: 'pk-root',
+        status: 'PROPOSED',
+      });
+
+      const result = await pkService.proposePK('pk-root', 'u-ketua', false);
+      expect(result.status).toBe('PROPOSED');
     });
   });
 

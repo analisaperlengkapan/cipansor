@@ -8563,12 +8563,16 @@ enum PlanIndicatorLevel {
 
 model StrategicPlan {
   id String @id @default(uuid())
-  /// Null for foundation-wide plans. RPJP and Renstra are yayasan-level
-  /// documents covering every unit, so requiring a unit made the foundation's
-  /// own plans impossible to represent — they had to be filed against an
-  /// arbitrary school. Unit-level plans (a school's own RKA) still set it.
+  /// Null for foundation-wide plans. RPJP, Renstra and the consolidated RKA
+  /// Yayasan are yayasan-level documents covering every unit, so requiring a
+  /// unit made the foundation's own plans impossible to represent — they had
+  /// to be filed against an arbitrary school. Only a school's own RKA sets it.
   unitId       String?    @map("unit_id")
-  parentId     String?    @map("parent_id") // Hierarchy: RPJP -> RENSTRA -> RKA
+  /// Cascade, mirroring the national chain (RPJPD → RPJMD → RKPD → Renja/RKA
+  /// per OPD): the ANNUAL level has two tiers, one consolidated document the
+  /// pengurus approves and the unit slices beneath it.
+  ///   RPJP → RENSTRA → RKA Yayasan (unitId null) → RKA Unit (unitId set)
+  parentId     String?    @map("parent_id")
   title        String
   description  String?    @db.Text
   /// Visi statement (RPJP Visi 2045 / Renstra Visi periode).

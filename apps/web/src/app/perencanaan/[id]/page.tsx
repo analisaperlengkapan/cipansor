@@ -17,6 +17,8 @@ import {
   usePlan,
   useApprovePlan,
   usePlanRealizationTrend,
+  PLAN_STATUS_LABEL,
+  planTierLabel,
 } from "@/hooks/use-perencanaan";
 import { PageHeader } from "@/components/shared/page-header";
 import {
@@ -122,11 +124,18 @@ function PerencanaanDetailPageContent() {
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <PageHeader title={plan.title} description={`Tipe: ${plan.type}`} />
+            <PageHeader
+              title={plan.title}
+              description={
+                plan.parent
+                  ? `${planTierLabel(plan)} · menginduk pada ${plan.parent.title}`
+                  : planTierLabel(plan)
+              }
+            />
             <Badge
               className={`${statusColor} hover:${statusColor} ml-2 mt-[-24px]`}
             >
-              {plan.status}
+              {PLAN_STATUS_LABEL[plan.status] ?? plan.status}
             </Badge>
           </div>
         </div>
@@ -199,7 +208,6 @@ function PerencanaanDetailPageContent() {
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-semibold flex items-center gap-2">
                     <PieChart className="w-4 h-4" /> Realisasi Anggaran
-                    (Financial Realization)
                   </span>
                   <span className="text-sm font-bold text-emerald-600">
                     {Math.round(plan.financialProgress || 0)}%
@@ -264,7 +272,11 @@ function PerencanaanDetailPageContent() {
           <CardContent className="space-y-4 text-sm">
             <div className="flex justify-between border-b pb-2">
               <span className="text-muted-foreground">Unit Terkait</span>
-              <span className="font-medium">Semua Unit (Demo)</span>
+              {/* Hardcoded "Semua Unit (Demo)" until now — a placeholder shipped
+                  as a fact, and wrong for every unit-owned RKA. */}
+              <span className="font-medium">
+                {plan.unit?.name ?? "Yayasan (seluruh unit)"}
+              </span>
             </div>
             <div className="flex justify-between border-b pb-2">
               <span className="text-muted-foreground">Anggaran (Estimasi)</span>

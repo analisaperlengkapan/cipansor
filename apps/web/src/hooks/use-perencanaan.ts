@@ -2,9 +2,62 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 
+/**
+ * The API wraps every failure as `{ success: false, error: { code, message } }`.
+ * Every handler below read `data.message`, one level too shallow, so a precise
+ * server-side refusal ("RKA unit harus menginduk pada RKA Yayasan…") surfaced
+ * as the generic fallback and the user was never told what to change.
+ */
+type ApiErrorShape = {
+  response?: { data?: { error?: { message?: string }; message?: string } };
+};
+
+function apiMessage(error: ApiErrorShape): string | undefined {
+  return error?.response?.data?.error?.message ?? error?.response?.data?.message;
+}
+
+/**
+ * Human labels for the plan enums. These used to live only in the list page's
+ * filter dropdown while the badges rendered the raw enum, so the same document
+ * read "Berjalan" in one control and "IN_PROGRESS" two inches away.
+ */
+export const PLAN_STATUS_LABEL: Record<string, string> = {
+  DRAFT: "Draft",
+  PROPOSED: "Diajukan",
+  APPROVED: "Disetujui",
+  IN_PROGRESS: "Berjalan",
+  COMPLETED: "Selesai",
+  CANCELLED: "Dibatalkan",
+};
+
+export const PLAN_TYPE_LABEL: Record<string, string> = {
+  RPJP: "RPJP",
+  RENSTRA: "Renstra",
+  RKA: "RKA",
+};
+
+/**
+ * The annual document exists at two tiers, and every place that names a plan
+ * must say which — a consolidated "RKA Yayasan" and a school's "RKA SMP IT"
+ * are different documents that both used to render as the bare word "RKA".
+ */
+export function planTierLabel(plan: {
+  type: string;
+  unitId?: string | null;
+  unit?: { name: string } | null;
+}): string {
+  const base = PLAN_TYPE_LABEL[plan.type] ?? plan.type;
+  if (plan.type !== "RKA") return `${base} Yayasan`;
+  return plan.unitId ? `${base} ${plan.unit?.name ?? "Unit"}` : `${base} Yayasan`;
+}
+
 export interface StrategicPlan {
   id: string;
+  /// Null for yayasan-level documents (RPJP, Renstra, RKA Yayasan).
   unitId: string | null;
+  unit?: { id: string; name: string } | null;
+  parentId?: string | null;
+  parent?: { id: string; title: string; type: string } | null;
   title: string;
   description?: string;
   vision?: string | null;
@@ -144,10 +197,10 @@ export const useCreateObjective = () => {
       toast.success("Sasaran strategis berhasil dibuat");
       queryClient.invalidateQueries({ queryKey: ["perencanaan"] });
     },
-    onError: (error: any) => {
+    onError: (error: ApiErrorShape) => {
       toast.error(
         error.response?.data?.error?.message ||
-          error.response?.data?.message ||
+          apiMessage(error) ||
           "Gagal membuat sasaran strategis"
       );
     },
@@ -165,8 +218,8 @@ export const useCreateActivity = () => {
       toast.success("Kegiatan berhasil dibuat");
       queryClient.invalidateQueries({ queryKey: ["perencanaan"] });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Gagal membuat kegiatan");
+    onError: (error: ApiErrorShape) => {
+      toast.error(apiMessage(error) || "Gagal membuat kegiatan");
     },
   });
 };
@@ -182,8 +235,8 @@ export const useUpdateActivity = () => {
       toast.success("Kegiatan berhasil diperbarui");
       queryClient.invalidateQueries({ queryKey: ["perencanaan"] });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Gagal memperbarui kegiatan");
+    onError: (error: ApiErrorShape) => {
+      toast.error(apiMessage(error) || "Gagal memperbarui kegiatan");
     },
   });
 };
@@ -199,8 +252,8 @@ export const useDeleteActivity = () => {
       toast.success("Kegiatan berhasil dihapus");
       queryClient.invalidateQueries({ queryKey: ["perencanaan"] });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Gagal menghapus kegiatan");
+    onError: (error: ApiErrorShape) => {
+      toast.error(apiMessage(error) || "Gagal menghapus kegiatan");
     },
   });
 };
@@ -246,8 +299,8 @@ export const useCreatePlan = () => {
       toast.success("Rencana berhasil dibuat");
       queryClient.invalidateQueries({ queryKey: ["perencanaan"] });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Gagal membuat rencana");
+    onError: (error: ApiErrorShape) => {
+      toast.error(apiMessage(error) || "Gagal membuat rencana");
     },
   });
 };
@@ -263,8 +316,8 @@ export const useUpdatePlan = () => {
       toast.success("Rencana berhasil diperbarui");
       queryClient.invalidateQueries({ queryKey: ["perencanaan"] });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Gagal memperbarui rencana");
+    onError: (error: ApiErrorShape) => {
+      toast.error(apiMessage(error) || "Gagal memperbarui rencana");
     },
   });
 };
@@ -280,8 +333,8 @@ export const useApprovePlan = () => {
       toast.success("Rencana berhasil disetujui");
       queryClient.invalidateQueries({ queryKey: ["perencanaan"] });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Gagal menyetujui rencana");
+    onError: (error: ApiErrorShape) => {
+      toast.error(apiMessage(error) || "Gagal menyetujui rencana");
     },
   });
 };
@@ -297,8 +350,8 @@ export const useDeletePlan = () => {
       toast.success("Rencana berhasil dihapus");
       queryClient.invalidateQueries({ queryKey: ["perencanaan"] });
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Gagal menghapus rencana");
+    onError: (error: ApiErrorShape) => {
+      toast.error(apiMessage(error) || "Gagal menghapus rencana");
     },
   });
 };

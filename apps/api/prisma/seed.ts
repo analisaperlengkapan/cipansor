@@ -7570,7 +7570,7 @@ async function main() {
   //    mock-up planning documents. RPJP/Renstra/RKA are foundation-wide
   //    (unitId null), so they surface to the yayasan board and every unit's
   //    staff via the foundation-scope read path in perencanaan.service.
-  console.log('   Seeding Strategic Plans (RPJP → Renstra → RKA)...');
+  console.log('   Seeding Strategic Plans (RPJP → Renstra → RKA Yayasan → RKA Unit)...');
   const { rpjp, renstra, rka, smpRka } = await seedStrategicPlans(prisma, {
     createdById: superAdminUser.id,
     approvedById: pembinaYayasanUser.id,

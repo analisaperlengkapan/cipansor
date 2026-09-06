@@ -237,7 +237,7 @@ function PeriodicEvaluationListPageContent() {
                         <TableHead>Bulan / Periode</TableHead>
                         <TableHead>Skor Hasil Kerja (KPI)</TableHead>
                         <TableHead>Skor Perilaku SAFTI</TableHead>
-                        <TableHead>Nilai Akhir Combined</TableHead>
+                        <TableHead>Nilai Akhir</TableHead>
                         <TableHead>Status Evaluasi</TableHead>
                         <TableHead className="text-right">Aksi</TableHead>
                       </TableRow>
@@ -259,9 +259,9 @@ function PeriodicEvaluationListPageContent() {
                           </TableCell>
                           <TableCell>
                             {ev.status === "APPROVED" ? (
-                              <Badge className="bg-emerald-500"><CheckCircle2 className="w-3 h-3 mr-1" /> Approved</Badge>
+                              <Badge className="bg-emerald-500"><CheckCircle2 className="w-3 h-3 mr-1" /> Disetujui</Badge>
                             ) : (
-                              <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" /> Draft / Pending</Badge>
+                              <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" /> Draf / Menunggu</Badge>
                             )}
                           </TableCell>
                           <TableCell className="text-right">

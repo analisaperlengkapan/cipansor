@@ -269,7 +269,7 @@ function PerformanceAgreementDetailPageContent() {
           <div>
             <CardTitle className="text-lg">Indikator Kinerja Utama (IKU / KPI)</CardTitle>
             <CardDescription>
-              Detail target hasil kerja dan indikator cascading dari RKA/Renstra unit
+              Rincian target hasil kerja dan indikator yang dikaskadekan dari Renstra/RKA
             </CardDescription>
           </div>
 

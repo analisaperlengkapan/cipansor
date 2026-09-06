@@ -306,7 +306,7 @@ function PeriodicEvaluationDetailPageContent() {
                       <TableHead>Target</TableHead>
                       <TableHead>Bobot</TableHead>
                       <TableHead>Realisasi Bulan Ini</TableHead>
-                      <TableHead>Uraian Kegiatan / Evidence</TableHead>
+                      <TableHead>Uraian Kegiatan / Bukti Dukung</TableHead>
                       <TableHead className="text-right">Aksi Simpan</TableHead>
                     </TableRow>
                   </TableHeader>

@@ -4,9 +4,10 @@ import {
   CascadingCategory,
   PerformanceAgreement,
   IndicatorAggregation,
+  RoleCode,
 } from '@prisma/client';
 import { Errors } from '@/middleware/error';
-import { seesAllUnits } from '@/utils/resolve-unit-id';
+import { seesAllUnits, isFoundationScopedRole } from '@/utils/resolve-unit-id';
 import { STAFF_ROLE_CODES } from './staff-roles';
 
 /**
@@ -327,6 +328,28 @@ export class PerformanceAgreementService {
     });
   }
 
+  /**
+   * True when the PK's owner sits at the top of the organisation and therefore
+   * has no atasan penilai inside the system — the yayasan's organs (Pembina,
+   * Pengurus, Pengawas) and the super admin. Their PK is ratified by an admin
+   * rather than by a superior, which is what lets the cascade have a root at
+   * all.
+   */
+  private async isChainRoot(userId: string): Promise<boolean> {
+    const now = new Date();
+    const assignments = await prisma.userRoleAssignment.findMany({
+      where: {
+        userId,
+        isActive: true,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+      },
+      select: { role: { select: { code: true } } },
+    });
+    return assignments.some(
+      (a) => a.role.code === RoleCode.SUPER_ADMIN || isFoundationScopedRole(a.role.code)
+    );
+  }
+
   async proposePK(id: string, callerId: string, isAdmin: boolean) {
     const pk = await prisma.performanceAgreement.findUnique({
       where: { id },
@@ -345,7 +368,13 @@ export class PerformanceAgreementService {
     // Tanpa atasan penilai tidak ada yang bisa menyetujui maupun menilai
     // perilakunya, jadi PK-nya akan mati di tengah jalan. Ditolak di sini,
     // saat masih bisa diperbaiki, bukan nanti saat evaluasi.
-    if (!pk.supervisorId) {
+    //
+    // KECUALI puncak rantai. Organ yayasan tidak punya atasan DI DALAM sistem
+    // ini, dan PK bawahan menuntut PK atasan yang SUDAH disetujui — jadi
+    // menuntut atasan dari semua orang tanpa kecuali mengunci seluruh modul:
+    // akarnya tak pernah bisa diajukan, sehingga tak satu pun PK di bawahnya
+    // pernah bisa dibuat. PK puncak diajukan tanpa atasan dan disahkan admin.
+    if (!pk.supervisorId && !(await this.isChainRoot(pk.userId))) {
       throw Errors.badRequest('Tetapkan atasan penilai sebelum mengajukan Perjanjian Kinerja');
     }
 

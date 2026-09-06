@@ -83,6 +83,159 @@ describe('Perencanaan Service', () => {
       expect(prisma.strategicPlan.create).not.toHaveBeenCalled();
     });
 
+    /**
+     * The annual tier: one consolidated RKA Yayasan (unitId null) hanging off
+     * the Renstra, and unit RKAs hanging off THAT — not off the Renstra. The
+     * seed's own unit RKA described itself as "turunan unit dari RKA Yayasan"
+     * while its row pointed one level too high, and nothing caught it because
+     * the only rule was "RKA must refer to a RENSTRA parent".
+     */
+    describe('two-tier annual cascade', () => {
+      const base = {
+        startDate: '2027-01-01T00:00:00.000Z',
+        endDate: '2027-12-31T00:00:00.000Z',
+        createdById: 'user-1',
+      };
+
+      it('accepts an RKA Yayasan hanging off the Renstra', async () => {
+        vi.mocked(prisma.strategicPlan.findFirst).mockResolvedValue(null);
+        vi.mocked(prisma.strategicPlan.findUnique).mockResolvedValue({
+          id: 'renstra-1',
+          type: 'RENSTRA',
+          unitId: null,
+        } as any);
+        vi.mocked(prisma.strategicPlan.create).mockResolvedValue({ id: 'rka-y' } as any);
+
+        await perencanaanService.createPlan({
+          ...base,
+          title: 'RKA Yayasan 2027',
+          type: 'RKA' as any,
+          parentId: 'renstra-1',
+        });
+
+        expect(prisma.strategicPlan.create).toHaveBeenCalledWith({
+          // A yayasan document has NO unit — that is what makes it the
+          // foundation's own plan. The unconditional `unit: { connect: … }`
+          // that used to sit here threw on a null id.
+          data: expect.objectContaining({ unit: undefined }),
+          include: expect.any(Object),
+        });
+      });
+
+      it('rejects a unit RKA that hangs off the Renstra directly', async () => {
+        vi.mocked(prisma.strategicPlan.findFirst).mockResolvedValue(null);
+        vi.mocked(prisma.strategicPlan.findUnique).mockResolvedValue({
+          id: 'renstra-1',
+          type: 'RENSTRA',
+          unitId: null,
+        } as any);
+
+        await expect(
+          perencanaanService.createPlan({
+            ...base,
+            title: 'RKA SMP IT 2027',
+            type: 'RKA' as any,
+            unitId: 'unit-smp',
+            parentId: 'renstra-1',
+          })
+        ).rejects.toMatchObject({ statusCode: 400 });
+        expect(prisma.strategicPlan.create).not.toHaveBeenCalled();
+      });
+
+      it('accepts a unit RKA hanging off the consolidated RKA Yayasan', async () => {
+        vi.mocked(prisma.strategicPlan.findFirst).mockResolvedValue(null);
+        vi.mocked(prisma.strategicPlan.findUnique).mockResolvedValue({
+          id: 'rka-y',
+          type: 'RKA',
+          unitId: null,
+        } as any);
+        vi.mocked(prisma.strategicPlan.create).mockResolvedValue({ id: 'rka-u' } as any);
+
+        await perencanaanService.createPlan({
+          ...base,
+          title: 'RKA SMP IT 2027',
+          type: 'RKA' as any,
+          unitId: 'unit-smp',
+          parentId: 'rka-y',
+        });
+
+        expect(prisma.strategicPlan.create).toHaveBeenCalledWith({
+          data: expect.objectContaining({ unit: { connect: { id: 'unit-smp' } } }),
+          include: expect.any(Object),
+        });
+      });
+
+      it('rejects a unit RKA whose parent is another unit RKA', async () => {
+        vi.mocked(prisma.strategicPlan.findFirst).mockResolvedValue(null);
+        vi.mocked(prisma.strategicPlan.findUnique).mockResolvedValue({
+          id: 'rka-sd',
+          type: 'RKA',
+          unitId: 'unit-sd',
+        } as any);
+
+        await expect(
+          perencanaanService.createPlan({
+            ...base,
+            title: 'RKA SMP IT 2027',
+            type: 'RKA' as any,
+            unitId: 'unit-smp',
+            parentId: 'rka-sd',
+          })
+        ).rejects.toMatchObject({ statusCode: 400 });
+        expect(prisma.strategicPlan.create).not.toHaveBeenCalled();
+      });
+
+      it('rejects a unit RKA with no parent at all', async () => {
+        vi.mocked(prisma.strategicPlan.findFirst).mockResolvedValue(null);
+
+        await expect(
+          perencanaanService.createPlan({
+            ...base,
+            title: 'RKA melayang',
+            type: 'RKA' as any,
+            unitId: 'unit-smp',
+          })
+        ).rejects.toMatchObject({ statusCode: 400 });
+        expect(prisma.strategicPlan.create).not.toHaveBeenCalled();
+      });
+
+      it('rejects a second RKA Yayasan in the same year', async () => {
+        // The pengurus approves exactly one consolidated annual budget.
+        vi.mocked(prisma.strategicPlan.findFirst).mockResolvedValue({ id: 'rka-2027' } as any);
+
+        await expect(
+          perencanaanService.createPlan({
+            ...base,
+            title: 'RKA Yayasan 2027 (kedua)',
+            type: 'RKA' as any,
+            parentId: 'renstra-1',
+          })
+        ).rejects.toMatchObject({ statusCode: 400 });
+        expect(prisma.strategicPlan.create).not.toHaveBeenCalled();
+      });
+
+      it('leaves unit RKAs unconstrained — every unit files its own slice', async () => {
+        // findFirst is the year-clash probe; it must never run for a unit RKA.
+        vi.mocked(prisma.strategicPlan.findFirst).mockResolvedValue({ id: 'rka-2027' } as any);
+        vi.mocked(prisma.strategicPlan.findUnique).mockResolvedValue({
+          id: 'rka-y',
+          type: 'RKA',
+          unitId: null,
+        } as any);
+        vi.mocked(prisma.strategicPlan.create).mockResolvedValue({ id: 'rka-u2' } as any);
+
+        await perencanaanService.createPlan({
+          ...base,
+          title: 'RKA SDIT 2027',
+          type: 'RKA' as any,
+          unitId: 'unit-sd',
+          parentId: 'rka-y',
+        });
+
+        expect(prisma.strategicPlan.create).toHaveBeenCalled();
+      });
+    });
+
     it('should approve plan', async () => {
       vi.mocked(prisma.strategicPlan.update).mockResolvedValue({ id: 'plan-1' } as any);
 

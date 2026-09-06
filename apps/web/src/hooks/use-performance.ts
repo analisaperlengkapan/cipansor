@@ -409,11 +409,19 @@ export const usePerformanceDrilldown = (unitId: string) => {
   });
 };
 
-export const usePerformanceConsolidatedReport = () => {
+/**
+ * The consolidated report is always ABOUT a year — the server defaults to the
+ * current one. Calling it without saying which year produced a table of zeros
+ * sitting directly beneath summary cards reading 71%, with nothing on screen
+ * to say the two were answering for different periods.
+ */
+export const usePerformanceConsolidatedReport = (year?: number) => {
   return useQuery({
-    queryKey: ["performance-agreements", "consolidated-report"],
+    queryKey: ["performance-agreements", "consolidated-report", year],
     queryFn: async () => {
-      const res = await api.get("/performance-agreements/reports/consolidated");
+      const res = await api.get("/performance-agreements/reports/consolidated", {
+        params: year ? { year } : undefined,
+      });
       return res.data.data as PerformanceConsolidatedReportDTO;
     },
   });

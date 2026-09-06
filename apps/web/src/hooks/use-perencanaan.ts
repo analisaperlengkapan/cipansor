@@ -117,6 +117,43 @@ export const usePlans = (params?: { type?: string; status?: string }) => {
   });
 };
 
+/**
+ * Membuat Sasaran Strategis.
+ *
+ * Sebelum ini tidak ada sama sekali di frontend: tombol "+ Tambah Sasaran" di
+ * halaman dokumen adalah tombol mati tanpa penangan klik, padahal rute
+ * POST /perencanaan/objectives sudah tersedia. Akibatnya Sasaran — tingkat DI
+ * ATAS Kegiatan dalam kaskade RPJP → Renstra → RKA — hanya bisa lahir dari
+ * seed, dan rantai perencanaannya tidak pernah bisa disusun lewat aplikasi.
+ */
+export const useCreateObjective = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: {
+      planId: string;
+      title: string;
+      description?: string;
+      priority?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+      weight?: number;
+      perspective?: "FINANCIAL" | "CUSTOMER" | "PROCESS" | "LEARNING";
+    }) => {
+      const res = await api.post("/perencanaan/objectives", data);
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success("Sasaran strategis berhasil dibuat");
+      queryClient.invalidateQueries({ queryKey: ["perencanaan"] });
+    },
+    onError: (error: any) => {
+      toast.error(
+        error.response?.data?.error?.message ||
+          error.response?.data?.message ||
+          "Gagal membuat sasaran strategis"
+      );
+    },
+  });
+};
+
 export const useCreateActivity = () => {
   const queryClient = useQueryClient();
   return useMutation({

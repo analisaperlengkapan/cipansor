@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { predikatKinerja } from './predikat';
+import { IndicatorAggregation } from '@prisma/client';
 import { PlanStatus, PerformanceRating, Prisma } from '@prisma/client';
 import { Errors } from '@/middleware/error';
 import { pkService } from './pk.service';
@@ -305,7 +306,7 @@ export class EvaluationService {
       }
 
       await this.syncToPKAndTalentInTx(tx, evaluation.pkId);
-      return tx.pKEvaluation.findUnique({
+      const approved = await tx.pKEvaluation.findUnique({
         where: { id },
         include: {
           pk: {
@@ -318,6 +319,18 @@ export class EvaluationService {
           behaviorDetails: { include: { behaviorValue: true } },
         },
       });
+
+      // Predikat ikut di sini, bukan hanya di getEvaluationById.
+      // Ditemukan saat menjalankan alurnya sungguhan: persetujuan mengembalikan
+      // predikat null sementara GET yang sama mengisinya, sehingga layar
+      // persetujuan menampilkan skor tanpa predikatnya sampai halaman dimuat
+      // ulang — padahal predikat itulah kesimpulan penilaiannya.
+      return approved
+        ? {
+            ...approved,
+            predikat: predikatKinerja(approved.performanceScore, approved.behaviorScore),
+          }
+        : approved;
     }, {
       // Di dalam satu transaksi ini ada SELECT ... FOR UPDATE, updateMany,
       // satu update per indikator secara berurutan, sinkronisasi matriks
@@ -344,6 +357,9 @@ export class EvaluationService {
           include: {
             evaluations: {
               where: { evaluation: { status: PlanStatus.APPROVED } },
+              // Urutan wajib: mode TERAKHIR mengambil entri paling akhir, dan
+              // tanpa orderBy urutan baris tidak dijamin oleh basis data.
+              orderBy: [{ evaluation: { year: 'asc' } }, { evaluation: { month: 'asc' } }],
             },
           },
         },
@@ -355,15 +371,26 @@ export class EvaluationService {
 
     if (!pk) return;
 
-    // 1. YTD realization per indicator (sum of approved monthly entries).
+    // 1. Capaian YTD per indikator, dihitung menurut sifat indikatornya.
+    //
+    // Dulu selalu dijumlahkan. Untuk indikator persentase itu menghasilkan
+    // angka mustahil yang tampil apa adanya di layar: target 85 persen,
+    // dievaluasi 88 lalu 80, tertulis "Realisasi YTD 168 persen".
     for (const indicator of pk.indicators) {
-      const totalRealization = indicator.evaluations.reduce(
-        (sum: number, ev: any) => sum + ev.realization,
-        0
-      );
+      const entries = indicator.evaluations as Array<{ realization: number }>;
+      let realization = 0;
+      if (entries.length > 0) {
+        if (indicator.aggregation === IndicatorAggregation.RATA_RATA) {
+          realization = entries.reduce((sum, ev) => sum + ev.realization, 0) / entries.length;
+        } else if (indicator.aggregation === IndicatorAggregation.TERAKHIR) {
+          realization = entries[entries.length - 1].realization;
+        } else {
+          realization = entries.reduce((sum, ev) => sum + ev.realization, 0);
+        }
+      }
       await tx.pKIndicator.update({
         where: { id: indicator.id },
-        data: { realization: totalRealization },
+        data: { realization },
       });
     }
 

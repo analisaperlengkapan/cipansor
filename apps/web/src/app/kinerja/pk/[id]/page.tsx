@@ -246,7 +246,7 @@ function PerformanceAgreementDetailPageContent() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">Capaian Kinerja YTD</CardTitle>
+            <CardTitle className="text-xs font-medium text-muted-foreground">Capaian Kinerja Tahun Berjalan</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">{pk.totalScore.toFixed(1)}%</div>
@@ -404,7 +404,7 @@ function PerformanceAgreementDetailPageContent() {
                   <TableHead>Tautan RKA Unit</TableHead>
                   <TableHead>Target</TableHead>
                   <TableHead>Bobot</TableHead>
-                  <TableHead>Realisasi YTD</TableHead>
+                  <TableHead>Capaian Tahun Berjalan</TableHead>
                   {isEditable && <TableHead className="text-right">Aksi</TableHead>}
                 </TableRow>
               </TableHeader>

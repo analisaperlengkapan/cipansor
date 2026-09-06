@@ -10165,6 +10165,21 @@ model PerformanceAgreement {
 }
 
 /// PKIndicator - Indikator kinerja dalam sebuah PK
+/// Cara realisasi bulanan dijumlahkan menjadi capaian setahun.
+///
+/// Dulu selalu dijumlahkan, apa pun satuannya. Untuk indikator berbasis
+/// persentase itu menghasilkan angka yang mustahil: dua evaluasi 88% dan 80%
+/// terhadap target 85% terbaca "Realisasi YTD 168 persen". Sifat indikator
+/// harus DINYATAKAN, bukan ditebak dari teks satuannya.
+enum IndicatorAggregation {
+  /// Dijumlahkan — untuk hitungan yang menumpuk (kegiatan, dokumen, juz, orang).
+  KUMULATIF
+  /// Dirata-ratakan — untuk persentase, rasio, indeks, dan nilai.
+  RATA_RATA
+  /// Diambil dari periode terakhir — untuk keadaan akhir, bukan akumulasi.
+  TERAKHIR
+}
+
 model PKIndicator {
   id                      String            @id @default(uuid())
   pkId                    String            @map("pk_id")
@@ -10176,7 +10191,8 @@ model PKIndicator {
   refIndicatorId          String?           @map("ref_indicator_id") // PKIndicator atasan
   refStrategicIndicatorId String?           @map("ref_strategic_indicator_id") // PlanIndicator (RKA/Renstra)
   notes                   String?           @db.Text // Catatan keterkaitan
-  realization             Float             @default(0) // Realisasi akumulatif YTD
+  realization             Float             @default(0) // Capaian YTD, dihitung menurut `aggregation`
+  aggregation             IndicatorAggregation @default(KUMULATIF)
   createdAt               DateTime          @default(now()) @map("created_at")
   updatedAt               DateTime          @updatedAt @map("updated_at")
 

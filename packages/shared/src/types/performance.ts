@@ -47,6 +47,23 @@ export interface PKBehaviorEvaluationDTO {
   behaviorValue?: BehavioralValueDTO;
 }
 
+/**
+ * Predikat kinerja — kesimpulan penilaian menurut PermenPANRB No. 6/2022.
+ *
+ * Diturunkan dari KUADRAN hasil kerja × perilaku kerja, bukan dari angka
+ * gabungan berbobot. Perbedaannya bukan gaya: dengan penjumlahan berbobot,
+ * hasil kerja 100 dan perilaku 50 memberi 80 — terbaca "baik". Kuadran
+ * menyebutnya Butuh Perbaikan.
+ */
+export type EkspektasiDTO = "DI_ATAS" | "SESUAI" | "DI_BAWAH";
+
+export interface PredikatKinerjaDTO {
+  hasilKerja: EkspektasiDTO;
+  perilakuKerja: EkspektasiDTO;
+  predikat: "SANGAT_BAIK" | "BAIK" | "BUTUH_PERBAIKAN" | "KURANG" | "SANGAT_KURANG";
+  label: string;
+}
+
 export interface PKEvaluationDTO {
   id: string;
   pkId: string;
@@ -62,6 +79,7 @@ export interface PKEvaluationDTO {
   pk?: PerformanceAgreementDTO;
   indicatorDetails?: PKIndicatorEvaluationDTO[];
   behaviorDetails?: PKBehaviorEvaluationDTO[];
+  predikat?: PredikatKinerjaDTO | null;
 }
 
 export interface PerformanceAgreementDTO {

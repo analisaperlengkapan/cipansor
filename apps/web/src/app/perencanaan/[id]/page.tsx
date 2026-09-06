@@ -49,6 +49,7 @@ import {
 import { RiskLevelBadge } from "@/components/risk/risk-badges";
 import Link from "next/link";
 import { ActivityDialog } from "./activity-dialog";
+import { ObjectiveDialog } from "./objective-dialog";
 import { MainLayout } from "@/components/layout";
 import {
   IndicatorRow,
@@ -65,6 +66,7 @@ function PerencanaanDetailPageContent() {
   const { data: realizationTrend } = usePlanRealizationTrend(planId);
   const approvePlan = useApprovePlan();
 
+  const [objectiveDialogOpen, setObjectiveDialogOpen] = useState(false);
   const [activityDialogOpen, setActivityDialogOpen] = useState(false);
   const [selectedObjectiveId, setSelectedObjectiveId] = useState<string>("");
   const [editActivityData, setEditActivityData] = useState<any>(null);
@@ -267,7 +269,9 @@ function PerencanaanDetailPageContent() {
             <div className="flex justify-between border-b pb-2">
               <span className="text-muted-foreground">Anggaran (Estimasi)</span>
               <span className="font-medium">
-                Rp {Number(plan.budget || 0).toLocaleString("id-ID")}
+                {plan.budget
+                  ? `Rp ${Number(plan.budget).toLocaleString("id-ID")}`
+                  : "Belum ditetapkan"}
               </span>
             </div>
             <div className="flex justify-between border-b pb-2">
@@ -325,7 +329,7 @@ function PerencanaanDetailPageContent() {
               value="strategy-map"
               className="flex items-center gap-2 text-indigo-600 data-[state=active]:text-indigo-700"
             >
-              <LayoutDashboard className="w-4 h-4" /> Strategy Map
+              <LayoutDashboard className="w-4 h-4" /> Peta Strategi
             </TabsTrigger>
           </TabsList>
         </div>
@@ -336,7 +340,7 @@ function PerencanaanDetailPageContent() {
               <CardTitle className="text-lg">
                 Daftar Sasaran Strategis
               </CardTitle>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" onClick={() => setObjectiveDialogOpen(true)}>
                 + Tambah Sasaran
               </Button>
             </CardHeader>
@@ -553,7 +557,7 @@ function PerencanaanDetailPageContent() {
             <CardHeader className="bg-indigo-50/50 border-b pb-4">
               <CardTitle className="text-lg flex items-center gap-2 text-indigo-800">
                 <LayoutDashboard className="w-5 h-5" /> Balanced Scorecard
-                Strategy Map
+                Peta Strategi
               </CardTitle>
               <CardDescription>
                 Visualisasi aliran strategi dari pembelajaran hingga hasil
@@ -692,6 +696,14 @@ function PerencanaanDetailPageContent() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {objectiveDialogOpen && (
+        <ObjectiveDialog
+          open={objectiveDialogOpen}
+          onOpenChange={setObjectiveDialogOpen}
+          planId={plan.id}
+        />
+      )}
 
       {activityDialogOpen && (
         <ActivityDialog

@@ -1,5 +1,10 @@
 import { prisma } from '@/lib/prisma';
-import { PlanStatus, CascadingCategory, PerformanceAgreement } from '@prisma/client';
+import {
+  PlanStatus,
+  CascadingCategory,
+  PerformanceAgreement,
+  IndicatorAggregation,
+} from '@prisma/client';
 import { Errors } from '@/middleware/error';
 import { seesAllUnits } from '@/utils/resolve-unit-id';
 import { STAFF_ROLE_CODES } from './staff-roles';
@@ -12,6 +17,30 @@ import { STAFF_ROLE_CODES } from './staff-roles';
  *           PROPOSED → APPROVED (supervisor/admin)
  *           PROPOSED → DRAFT with revision notes (supervisor/admin reject)
  */
+
+/**
+ * Tebakan awal sifat indikator dari satuannya — hanya sebagai bawaan.
+ *
+ * Penyusun PK tetap dapat menyatakannya sendiri; ini sekadar menghindarkan
+ * kekeliruan yang paling sering: menjumlahkan persentase bulanan sehingga
+ * capaian setahun terbaca 168 persen terhadap target 85 persen.
+ */
+const SATUAN_RATA_RATA = new Set([
+  'persen',
+  '%',
+  'persentase',
+  'rasio',
+  'indeks',
+  'nilai',
+  'skor',
+]);
+
+export function aggregationForUnit(unit: string): IndicatorAggregation {
+  return SATUAN_RATA_RATA.has(unit.trim().toLowerCase())
+    ? IndicatorAggregation.RATA_RATA
+    : IndicatorAggregation.KUMULATIF;
+}
+
 export class PerformanceAgreementService {
   /** Throws unless the caller owns the PK, supervises it, or is an admin. */
   assertAccess(
@@ -387,6 +416,7 @@ export class PerformanceAgreementService {
       refIndicatorId?: string;
       refStrategicIndicatorId?: string;
       notes?: string;
+      aggregation?: IndicatorAggregation;
     }
   ) {
     await this.loadEditablePK(data.pkId, callerId, isAdmin);
@@ -414,6 +444,7 @@ export class PerformanceAgreementService {
         refIndicatorId: data.refIndicatorId,
         refStrategicIndicatorId: data.refStrategicIndicatorId,
         notes: data.notes,
+        aggregation: data.aggregation ?? aggregationForUnit(data.unit),
       },
     });
   }

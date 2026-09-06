@@ -96,7 +96,7 @@ function KinerjaHubPageContent() {
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
             <Layers className="h-5 w-5 text-emerald-600" />
-            Alur Proses Bisnis Manajemen Kinerja (Indonesian Best Practice)
+            Alur Proses Bisnis Manajemen Kinerja
           </CardTitle>
           <CardDescription>
             Menjamin keselarasan (*cascading*) dari Visi Yayasan hingga ke target individu pegawai
@@ -160,15 +160,20 @@ function KinerjaHubPageContent() {
 
         <Card className="hover:shadow-md transition-all">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Capaian Kinerja YTD</CardTitle>
+            <CardTitle className="text-sm font-medium">Capaian Kinerja Tahun Berjalan</CardTitle>
             <TrendingUp className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
+            {/*
+              "0%" dan "belum ada data" adalah dua hal yang berbeda, dan
+              menampilkan keduanya dengan cara yang sama membuat pembacanya
+              menyimpulkan capaian nol padahal PK-nya belum disusun.
+            */}
             <div className="text-2xl font-bold">
-              {myPk ? `${myPk.totalScore?.toFixed(1) || 0}%` : "0%"}
+              {myPk ? `${(myPk.totalScore ?? 0).toFixed(1)}%` : "—"}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Rata-rata realisasi indikator kinerja
+              {myPk ? "Rata-rata realisasi indikator kinerja" : "Belum ada Perjanjian Kinerja"}
             </p>
           </CardContent>
         </Card>
@@ -180,10 +185,12 @@ function KinerjaHubPageContent() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {myPk ? `${myPk.behaviorScore?.toFixed(1) || 0}` : "0"} / 100
+              {myPk ? `${(myPk.behaviorScore ?? 0).toFixed(1)} / 100` : "—"}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Siddiq, Amanah, Fathonah, Tabligh, Istiqomah
+              {myPk
+                ? "Siddiq, Amanah, Fathonah, Tabligh, Istiqomah"
+                : "Belum ada penilaian perilaku"}
             </p>
           </CardContent>
         </Card>
@@ -250,7 +257,7 @@ function KinerjaHubPageContent() {
               <div className="p-3 w-fit rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 mb-2">
                 <BarChart3 className="h-6 w-6" />
               </div>
-              <CardTitle>Analytics & Strategy Map</CardTitle>
+              <CardTitle>Analitik & Peta Strategi</CardTitle>
               <CardDescription>
                 Visualisasi matriks korelasi alur RPJP &rarr; Renstra &rarr; RKA &rarr; PK & Laporan Konsolidasi.
               </CardDescription>

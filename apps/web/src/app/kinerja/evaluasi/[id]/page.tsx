@@ -146,6 +146,47 @@ function PeriodicEvaluationDetailPageContent() {
     });
   };
 
+  // Warna predikat menyampaikan arti, bukan sekadar hiasan: "Butuh Perbaikan"
+  // yang tampil hijau seperti "Sangat Baik" menghapus seluruh gunanya kuadran.
+  const predikatStyle =
+    {
+      SANGAT_BAIK: {
+        card: "border-emerald-200 bg-emerald-50/40",
+        title: "text-emerald-900",
+        value: "text-emerald-700",
+      },
+      BAIK: {
+        card: "border-teal-200 bg-teal-50/40",
+        title: "text-teal-900",
+        value: "text-teal-700",
+      },
+      BUTUH_PERBAIKAN: {
+        card: "border-amber-200 bg-amber-50/40",
+        title: "text-amber-900",
+        value: "text-amber-700",
+      },
+      KURANG: {
+        card: "border-orange-200 bg-orange-50/40",
+        title: "text-orange-900",
+        value: "text-orange-700",
+      },
+      SANGAT_KURANG: {
+        card: "border-rose-200 bg-rose-50/40",
+        title: "text-rose-900",
+        value: "text-rose-700",
+      },
+    }[evaluation.predikat?.predikat ?? "BAIK"] ?? {
+      card: "border-slate-200 bg-slate-50/40",
+      title: "text-slate-900",
+      value: "text-slate-700",
+    };
+
+  const ekspektasiLabel: Record<string, string> = {
+    DI_ATAS: "di atas ekspektasi",
+    SESUAI: "sesuai ekspektasi",
+    DI_BAWAH: "di bawah ekspektasi",
+  };
+
   return (
     <div className="container mx-auto space-y-6 p-6">
       {/* Top Header */}
@@ -166,7 +207,9 @@ function PeriodicEvaluationDetailPageContent() {
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Nilai Akhir Evaluasi: <b>{evaluation.overallScore.toFixed(1)}%</b> (KPI: {evaluation.performanceScore.toFixed(1)}% | SAFTI: {evaluation.behaviorScore.toFixed(1)})
+              Hasil Kerja {evaluation.performanceScore.toFixed(1)}% &middot; Perilaku SAFTI{" "}
+              {evaluation.behaviorScore.toFixed(1)} &middot; Indeks gabungan{" "}
+              {evaluation.overallScore.toFixed(1)}%
             </p>
           </div>
         </div>
@@ -204,13 +247,29 @@ function PeriodicEvaluationDetailPageContent() {
           </CardContent>
         </Card>
 
-        <Card className="border-emerald-200 bg-emerald-50/40">
+        {/*
+          Predikat, bukan angka gabungan, adalah kesimpulan penilaiannya.
+          PermenPANRB No. 6/2022 menetapkannya dari KUADRAN hasil kerja ×
+          perilaku kerja. Angka berbobot tetap ditampilkan, tetapi sebagai
+          indeks pendukung — dengan rumus itu saja, hasil kerja 100 dan
+          perilaku 50 memberi 80 dan terbaca "baik", padahal kuadran
+          menyebutnya Butuh Perbaikan.
+        */}
+        <Card className={predikatStyle.card}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-emerald-900">Nilai Akhir Kinerja Combined</CardTitle>
+            <CardTitle className={`text-xs font-medium ${predikatStyle.title}`}>
+              Predikat Kinerja
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-emerald-700">{evaluation.overallScore.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground mt-1">Indeks prestasi kinerja bulanan</p>
+            <div className={`text-3xl font-bold ${predikatStyle.value}`}>
+              {evaluation.predikat?.label ?? "Belum dinilai"}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {evaluation.predikat
+                ? `Hasil kerja ${ekspektasiLabel[evaluation.predikat.hasilKerja]} × perilaku ${ekspektasiLabel[evaluation.predikat.perilakuKerja]} · indeks ${evaluation.overallScore.toFixed(1)}%`
+                : "Menunggu realisasi indikator dan penilaian perilaku"}
+            </p>
           </CardContent>
         </Card>
       </div>

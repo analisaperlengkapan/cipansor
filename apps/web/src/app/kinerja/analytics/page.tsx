@@ -66,7 +66,7 @@ function PerformanceAnalyticsPageContent() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Analytics & Strategy Map Kinerja</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Analitik & Peta Strategi Kinerja</h1>
             <p className="text-muted-foreground text-sm">
               Laporan eksekutif matriks capaian kinerja terintegrasi seluruh unit Yayasan Pesantren Cipansor
             </p>

@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { prisma } from '../../lib/prisma';
-import { perencanaanService } from './perencanaan.service';
+import { prisma } from '@/lib/prisma';
+import { perencanaanService } from '../perencanaan.service';
 
 // Mock external dependencies
-vi.mock('../../lib/prisma', () => ({
+vi.mock('@/lib/prisma', () => ({
   prisma: {
     strategicPlan: {
       create: vi.fn(),

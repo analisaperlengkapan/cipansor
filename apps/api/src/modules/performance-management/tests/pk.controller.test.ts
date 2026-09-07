@@ -56,7 +56,9 @@ describe('pkController.listSupervisors', () => {
 
     await run(pkController.listSupervisors, req, res);
 
-    expect(pkService.getSupervisors).toHaveBeenCalledWith(userObj);
+    // Id pemanggil ikut dikirim: dari peran ORANG ITU-lah saran atasan
+    // penilai dihitung, jadi konteks peran saja tidak cukup.
+    expect(pkService.getSupervisors).toHaveBeenCalledWith(userObj, 'user-123');
     expect(res.statusCode).toBe(200);
     expect(res.jsonPayload.data).toEqual(mockSupervisors);
   });

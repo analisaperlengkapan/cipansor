@@ -28,7 +28,7 @@ function caller(req: Request): {
 }
 
 export const listSupervisors = asyncHandler(async (req: Request, res: Response) => {
-  const supervisors = await pkService.getSupervisors(req.user);
+  const supervisors = await pkService.getSupervisors(req.user, req.user?.sub);
   res.json(ApiResponse.success(supervisors));
 });
 

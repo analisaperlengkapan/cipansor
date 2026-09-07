@@ -16,6 +16,24 @@ import {
 } from "@/config/navigation";
 import { DEMO_ACCOUNTS } from "@cipansor/shared";
 
+/**
+ * Semua href dalam menu sebuah peran, TERMASUK submenu.
+ *
+ * Tiap pemeriksaan di berkas ini dulu hanya membaca `group.items`. Begitu
+ * entri bersubmenu diperkenalkan, seluruh anaknya berada di luar jangkauan
+ * penjaga ini — halaman mati, izin yang tak cocok, dan tautan ganda pada
+ * submenu tidak akan tertangkap satu pun.
+ */
+function hrefsOf(groups: NavGroup[]): string[] {
+  const walk = (items: NavGroup["items"]): string[] =>
+    items.flatMap((i) => [i.href, ...walk(i.children ?? [])]);
+  return groups.flatMap((g) => walk(g.items));
+}
+
+function navHrefs(roleCode: string): string[] {
+  return hrefsOf(getNavigationForRoleCode(roleCode));
+}
+
 /** All 81 RoleCodes, taken from the demo-account catalogue (one per role). */
 const ALL_ROLE_CODES = DEMO_ACCOUNTS.map((a) => a.roleCode);
 
@@ -216,9 +234,9 @@ describe("rbac — navigation and route access stay in sync", () => {
   it.each(navToBucket)(
     "every rendered sidebar link is reachable by its bucket",
     (nav, bucket) => {
-      const unreachable = nav
-        .flatMap((group) => group.items.map((item) => item.href))
-        .filter((href) => !canAccessRoute(bucket, href));
+      const unreachable = hrefsOf(nav).filter(
+        (href) => !canAccessRoute(bucket, href),
+      );
       expect(unreachable).toEqual([]);
     },
   );
@@ -279,16 +297,12 @@ describe("navigation — every menu link points at a page that exists", () => {
   ];
 
   it.each(ROLE_SAMPLE)("%s has no dead menu links", (roleCode) => {
-    const dead = getNavigationForRoleCode(roleCode)
-      .flatMap((group) => group.items.map((item) => item.href))
-      .filter((href) => !routeExists(href));
+    const dead = navHrefs(roleCode).filter((href) => !routeExists(href));
     expect(dead).toEqual([]);
   });
 
   it.each(ROLE_SAMPLE)("%s lists no route twice", (roleCode) => {
-    const hrefs = getNavigationForRoleCode(roleCode).flatMap((group) =>
-      group.items.map((item) => item.href),
-    );
+    const hrefs = navHrefs(roleCode);
     const duplicated = [...new Set(hrefs)].filter(
       (href) => hrefs.filter((h) => h === href).length > 1,
     );
@@ -319,9 +333,7 @@ describe("navigation — every menu link is one its own role may open", () => {
 
     const unopenable = [
       ...new Set(
-        getNavigationForRoleCode(roleCode)
-          .flatMap((group) => group.items.map((item) => item.href))
-          .filter((href) => !canAccessRoute(legacy, href)),
+        navHrefs(roleCode).filter((href) => !canAccessRoute(legacy, href)),
       ),
     ];
 
@@ -390,9 +402,7 @@ describe("navigation — every app page is reachable from some menu", () => {
 
   const menuHrefs = new Set(
     ALL_ROLE_CODES.flatMap((roleCode) =>
-      getNavigationForRoleCode(roleCode).flatMap((group) =>
-        group.items.map((item) => item.href),
-      ),
+      navHrefs(roleCode),
     ),
   );
 
@@ -770,7 +780,7 @@ describe("e2e selectors — no loose text= selector can collide with the sidebar
   const navTitles = ALL_ROLE_CODES.flatMap((rc) =>
     getNavigationForRoleCode(rc).flatMap((g) => [
       g.title,
-      ...g.items.map((i) => i.title),
+      ...g.items.flatMap((i) => [i.title, ...(i.children ?? []).map((c) => c.title)]),
     ]),
   )
     .filter((t): t is string => Boolean(t))

@@ -7,7 +7,7 @@ import {
   RoleCode,
 } from '@prisma/client';
 import { Errors } from '@/middleware/error';
-import { seesAllUnits, isFoundationScopedRole } from '@/utils/resolve-unit-id';
+import { seesAllUnits } from '@/utils/resolve-unit-id';
 import { STAFF_ROLE_CODES } from './staff-roles';
 
 /**
@@ -41,6 +41,39 @@ export function aggregationForUnit(unit: string): IndicatorAggregation {
     ? IndicatorAggregation.RATA_RATA
     : IndicatorAggregation.KUMULATIF;
 }
+
+/**
+ * Kedudukan organ yayasan yang tidak menyusun Perjanjian Kinerja individu.
+ *
+ * Bukan pilihan gaya, melainkan bacaan UU 16/2001 jo. UU 28/2004 dan definisi
+ * PK itu sendiri (PermenPANRB 53/2014: "penugasan dari pimpinan instansi yang
+ * lebih tinggi kepada pimpinan instansi di bawahnya"). Keputusan yayasan
+ * 2026-09-06.
+ */
+const PENGURUS_KOLEKTIF =
+  'Pengurus bertanggung jawab secara kolektif kolegial — ketua, sekretaris, dan ' +
+  'bendahara bukan atasan-bawahan. Kontrak kinerjanya SUDAH ada dan hanya satu: ' +
+  'RKA Yayasan yang disahkan Pembina. Menerbitkan PK lagi berisi sasaran yang ' +
+  'sama hanya menggandakan dokumen yang sama. PK unit di bawahnya menginduk ' +
+  'langsung pada RKA Yayasan itu. (Pengurus yang fulltime dan digaji lewat ' +
+  'pengecualian Pasal 5 UU 28/2004 adalah perkara lain, dan belum dimodelkan.)';
+
+const ORGAN_TANPA_PK: Partial<Record<string, string>> = {
+  [RoleCode.YAYASAN_KETUA]: PENGURUS_KOLEKTIF,
+  [RoleCode.YAYASAN_PEMBINA]:
+    'Pembina adalah organ yang MENGESAHKAN program kerja dan RKA tahunan — ia ' +
+    'menerima pertanggungjawaban, bukan memberikannya, dan tidak ada pihak di ' +
+    'atasnya untuk menugaskan. Akuntabilitasnya berupa penilaian mandiri organ, ' +
+    'bukan Perjanjian Kinerja.',
+  [RoleCode.YAYASAN_PENGAWAS]:
+    'Pengawas mengawasi Pengurus. Menilainya lewat PK berarti pihak yang diawasi ' +
+    'menilai pengawasnya, dan itu meruntuhkan independensi yang justru dijaga UU ' +
+    'lewat larangan rangkap jabatan. Akuntabilitasnya berupa laporan pengawasan ' +
+    'kepada rapat Pembina.',
+  [RoleCode.YAYASAN_SEKRETARIS]: PENGURUS_KOLEKTIF,
+  [RoleCode.YAYASAN_BENDAHARA]: PENGURUS_KOLEKTIF,
+  [RoleCode.YAYASAN_ANGGOTA]: PENGURUS_KOLEKTIF,
+};
 
 export class PerformanceAgreementService {
   /** Throws unless the caller owns the PK, supervises it, or is an admin. */
@@ -137,26 +170,73 @@ export class PerformanceAgreementService {
     periodEnd: string;
     notes?: string;
   }) {
+    // Ditolak di titik PALING AWAL — sebelum satu indikator pun disusun —
+    // supaya orangnya tidak mengisi seluruh formulir untuk dokumen yang memang
+    // tidak seharusnya ada.
+    const alasan = await this.alasanOrganTanpaPK(data.userId);
+    if (alasan) throw Errors.badRequest(alasan);
+
     let supervisorPkId = data.supervisorPkId;
 
-    // Cascading rule: a PK that names a supervisor links to that
-    // supervisor's APPROVED PK covering the same period.
     if (data.supervisorId) {
-      const supervisorPk = await prisma.performanceAgreement.findFirst({
-        where: {
-          userId: data.supervisorId,
-          status: PlanStatus.APPROVED,
-          periodStart: { lte: new Date(data.periodStart) },
-          periodEnd: { gte: new Date(data.periodEnd) },
-        },
-      });
+      // Atasan yang berupa organ yayasan (Ketua Pengurus dan seterusnya)
+      // MEMANG tidak punya PK, dan itu bukan kekurangan yang harus ditambal
+      // dengan menerbitkan satu. Kontrak kinerja mereka adalah RKA Yayasan.
+      // Jadi PK di bawahnya berjangkar pada DOKUMEN RKA-nya, bukan pada PK
+      // cerminan — supaya sasaran yang sama tidak hidup di dua tempat dan
+      // berselisih.
+      if (await this.isOrganTanpaPK(data.supervisorId)) {
+        if (!data.strategicPlanId) {
+          throw Errors.badRequest(
+            'PK yang atasan penilainya organ yayasan harus menyebut dokumen RKA/Renstra ' +
+              'yang menjadi induknya — di situlah kontrak kinerja yayasan berada.'
+          );
+        }
+        const rencana = await prisma.strategicPlan.findUnique({
+          where: { id: data.strategicPlanId },
+          select: { id: true, status: true },
+        });
+        if (!rencana) throw Errors.notFound('Dokumen rencana');
+        if (rencana.status === PlanStatus.DRAFT) {
+          throw Errors.badRequest(
+            'Dokumen rencana induknya masih berstatus Draft — sahkan lebih dahulu ' +
+              'sebelum PK diturunkan darinya.'
+          );
+        }
 
-      if (!supervisorPk) {
-        throw Errors.badRequest(
-          'Supervisor must have an approved PK covering the same period before subordinate PKs can be created'
-        );
+        // RKA unit itu OPSIONAL. Tetapi begitu sebuah unit punya RKA-nya
+        // sendiri, PK kepala unit itu harus menginduk padanya — bukan
+        // melompat ke RKA Yayasan. Kalau melompat, RKA unitnya jadi yatim:
+        // disusun, disahkan, lalu tidak ada satu pun PK yang menurunkannya,
+        // dan capaiannya tidak pernah terhubung ke siapa pun.
+        const rkaUnit = await this.rkaUnitBerlaku(data.userId, data.periodStart, data.periodEnd);
+        if (rkaUnit && rkaUnit.id !== rencana.id) {
+          throw Errors.badRequest(
+            `Unit ini sudah punya RKA sendiri untuk periode tersebut ("${rkaUnit.title}"). ` +
+              'PK-nya harus menginduk pada RKA unit itu, bukan langsung pada RKA Yayasan.'
+          );
+        }
+
+        supervisorPkId = undefined;
+      } else {
+        // Cascading rule: a PK that names a supervisor links to that
+        // supervisor's APPROVED PK covering the same period.
+        const supervisorPk = await prisma.performanceAgreement.findFirst({
+          where: {
+            userId: data.supervisorId,
+            status: PlanStatus.APPROVED,
+            periodStart: { lte: new Date(data.periodStart) },
+            periodEnd: { gte: new Date(data.periodEnd) },
+          },
+        });
+
+        if (!supervisorPk) {
+          throw Errors.badRequest(
+            'Supervisor must have an approved PK covering the same period before subordinate PKs can be created'
+          );
+        }
+        supervisorPkId = supervisorPk.id;
       }
-      supervisorPkId = supervisorPk.id;
     }
 
     return prisma.performanceAgreement.create({
@@ -179,12 +259,53 @@ export class PerformanceAgreementService {
     });
   }
 
-  async getSupervisors(caller?: { roleCode?: string | null; role?: string | null; unitId?: string | null }) {
+  /**
+   * Atasan penilai yang DISARANKAN untuk seorang pegawai.
+   *
+   * Sengaja diturunkan dari peran, bukan dari bagan organisasi: `OrgUnit` /
+   * `OrgPosition` ada di skema tetapi baru terisi dua baris tanpa induk, jadi
+   * default yang dihitung darinya akan kosong untuk hampir semua orang — sebuah
+   * kendali yang tidak melakukan apa-apa. Peran, sebaliknya, terisi lengkap.
+   *
+   * Ini SARAN, bukan kunci: kolomnya tetap bisa diubah, karena plt., pelaksana
+   * harian, dan pelaporan lintas unit tidak pernah muat dalam satu rumus.
+   */
+  private suggestSupervisorRole(roleCodes: string[]): string | null {
+    // Kepala unit menginduk pada Ketua Pengurus.
+    const kepalaUnit = [
+      RoleCode.TKQ_KEPALA_SEKOLAH,
+      RoleCode.SDIT_KEPALA_SEKOLAH,
+      RoleCode.SMPIT_KEPALA_SEKOLAH,
+      RoleCode.SMAQ_KEPALA_SEKOLAH,
+      RoleCode.PESANTREN_PENGASUH,
+      RoleCode.PESANTREN_DIREKTUR,
+      RoleCode.PT_REKTOR,
+    ] as string[];
+    if (roleCodes.some((c) => kepalaUnit.includes(c))) return RoleCode.YAYASAN_KETUA;
+
+    // Selebihnya menginduk pada kepala unitnya masing-masing.
+    const perUnit: Record<string, string> = {
+      TKQ: RoleCode.TKQ_KEPALA_SEKOLAH,
+      SDIT: RoleCode.SDIT_KEPALA_SEKOLAH,
+      SMPIT: RoleCode.SMPIT_KEPALA_SEKOLAH,
+      SMAQ: RoleCode.SMAQ_KEPALA_SEKOLAH,
+    };
+    for (const code of roleCodes) {
+      const prefix = code.split('_')[0];
+      if (perUnit[prefix]) return perUnit[prefix];
+    }
+    return null;
+  }
+
+  async getSupervisors(
+    caller?: { roleCode?: string | null; role?: string | null; unitId?: string | null },
+    callerId?: string
+  ) {
     const now = new Date();
     const canSeeAll = caller ? seesAllUnits(caller) : true;
     const targetUnitId = !canSeeAll ? (caller?.unitId ?? 'none') : undefined;
 
-    return prisma.user.findMany({
+    const rows = await prisma.user.findMany({
       where: {
         isActive: true,
         userRoles: {
@@ -207,9 +328,26 @@ export class PerformanceAgreementService {
         id: true,
         name: true,
         unit: { select: { id: true, name: true } },
+        userRoles: {
+          where: { isActive: true },
+          select: { role: { select: { code: true } } },
+        },
       },
       orderBy: { name: 'asc' },
     });
+
+    const wantedRole = callerId
+      ? this.suggestSupervisorRole(await this.activeRoleCodes(callerId))
+      : null;
+
+    return rows.map(({ userRoles, ...u }) => ({
+      ...u,
+      roleCodes: (userRoles ?? []).map((r) => r.role.code),
+      // Ditandai, bukan dipaksakan — frontend memilihnya lebih dulu dan
+      // pengguna tetap bebas menggantinya.
+      suggested:
+        wantedRole !== null && (userRoles ?? []).some((r) => r.role.code === wantedRole),
+    }));
   }
 
   async getPKs(userId: string, query: { status?: string }) {
@@ -328,14 +466,8 @@ export class PerformanceAgreementService {
     });
   }
 
-  /**
-   * True when the PK's owner sits at the top of the organisation and therefore
-   * has no atasan penilai inside the system — the yayasan's organs (Pembina,
-   * Pengurus, Pengawas) and the super admin. Their PK is ratified by an admin
-   * rather than by a superior, which is what lets the cascade have a root at
-   * all.
-   */
-  private async isChainRoot(userId: string): Promise<boolean> {
+  /** Kode peran aktif milik seorang pengguna (belum kedaluwarsa). */
+  private async activeRoleCodes(userId: string): Promise<string[]> {
     const now = new Date();
     const assignments = await prisma.userRoleAssignment.findMany({
       where: {
@@ -345,9 +477,69 @@ export class PerformanceAgreementService {
       },
       select: { role: { select: { code: true } } },
     });
-    return assignments.some(
-      (a) => a.role.code === RoleCode.SUPER_ADMIN || isFoundationScopedRole(a.role.code)
-    );
+    return assignments.map((a) => a.role.code);
+  }
+
+  /**
+   * Akar rantai PK.
+   *
+   * TIDAK ADA organ yayasan di sini — dan itu disengaja. Kalau Ketua Pengurus
+   * diberi PK tingkat lembaga, isinya persis sasaran RKA Yayasan yang sudah
+   * disahkan Pembina: dua dokumen untuk satu kenyataan, yang cepat atau lambat
+   * akan berselisih. Karena itu PK kepala sekolah menggantung langsung pada
+   * **dokumen RKA**, bukan pada PK milik atasannya — lihat `createPK`.
+   *
+   * Tersisa super admin, murni sebagai jalan operasional.
+   */
+  private async isChainRoot(userId: string): Promise<boolean> {
+    const codes = await this.activeRoleCodes(userId);
+    return codes.some((c) => c === RoleCode.SUPER_ADMIN);
+  }
+
+  /**
+   * RKA milik unit pengguna yang berlaku pada periode PK, bila ada.
+   *
+   * Mengembalikan null ketika unitnya memang tidak menyusun RKA sendiri —
+   * itu keadaan yang sah, bukan kekurangan. RKA unit hanya perlu disusun bila
+   * strukturnya besar atau ada kewajiban pelaporannya.
+   */
+  private async rkaUnitBerlaku(userId: string, periodStart: string, periodEnd: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { unitId: true },
+    });
+    if (!user?.unitId) return null;
+    return prisma.strategicPlan.findFirst({
+      where: {
+        unitId: user.unitId,
+        type: 'RKA',
+        status: { notIn: [PlanStatus.DRAFT, PlanStatus.CANCELLED] },
+        startDate: { lte: new Date(periodEnd) },
+        endDate: { gte: new Date(periodStart) },
+      },
+      select: { id: true, title: true },
+    });
+  }
+
+  /** True bila pengguna ini adalah organ yayasan yang memang tanpa PK. */
+  private async isOrganTanpaPK(userId: string): Promise<boolean> {
+    return (await this.alasanOrganTanpaPK(userId)) !== null;
+  }
+
+  /**
+   * Alasan sebuah kedudukan organ yayasan TIDAK menyusun PK individu, atau
+   * null bila ia memang menyusunnya.
+   *
+   * Yang ditolak adalah PK atas **kedudukan sebagai organ**. Orang yang juga
+   * memegang jabatan kepegawaian (mis. seorang pengawas yayasan yang sekaligus
+   * guru) tetap menyusun PK atas jabatan itu — karena itu penolakan hanya
+   * berlaku bila SELURUH peran aktifnya adalah kedudukan organ.
+   */
+  private async alasanOrganTanpaPK(userId: string): Promise<string | null> {
+    const codes = await this.activeRoleCodes(userId);
+    if (codes.length === 0) return null;
+    if (codes.some((c) => !(c in ORGAN_TANPA_PK))) return null;
+    return ORGAN_TANPA_PK[codes[0] as keyof typeof ORGAN_TANPA_PK] ?? null;
   }
 
   async proposePK(id: string, callerId: string, isAdmin: boolean) {

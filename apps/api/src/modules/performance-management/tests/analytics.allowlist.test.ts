@@ -57,7 +57,12 @@ describe('Performance Management Analytics & Supervisor Allowlist Tests', () => 
 
   it('should query eligible supervisors excluding students, parents, alumni, and komite', async () => {
     vi.mocked(prisma.user.findMany).mockResolvedValue([
-      { id: 'user-sup1', name: 'Ahmad Guru', unit: { id: 'u-1', name: 'SD IT' } },
+      {
+        id: 'user-sup1',
+        name: 'Ahmad Guru',
+        unit: { id: 'u-1', name: 'SD IT' },
+        userRoles: [{ role: { code: 'SDIT_KEPALA_SEKOLAH' } }],
+      },
     ] as any);
 
     const supervisors = await pkService.getSupervisors();
@@ -85,6 +90,10 @@ describe('Performance Management Analytics & Supervisor Allowlist Tests', () => 
     );
     expect(supervisors).toHaveLength(1);
     expect(supervisors[0].name).toBe('Ahmad Guru');
+    // Tanpa id pemanggil tidak ada peran untuk dijadikan dasar saran, jadi
+    // tidak ada satu pun baris yang boleh ditandai "disarankan".
+    expect(supervisors[0].suggested).toBe(false);
+    expect(supervisors[0].roleCodes).toEqual(['SDIT_KEPALA_SEKOLAH']);
   });
 
   it('should aggregate unit performance dashboard metrics correctly', async () => {

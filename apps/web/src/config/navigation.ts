@@ -295,6 +295,18 @@ const teacherNavigation: NavGroup[] = [
         title: "Manajemen Kinerja",
         href: "/kinerja",
         icon: ClipboardPenLine,
+        children: [
+          {
+            title: "Perjanjian Kinerja",
+            href: "/kinerja/pk",
+            icon: ClipboardList,
+          },
+          {
+            title: "Evaluasi Periodik",
+            href: "/kinerja/evaluasi",
+            icon: ClipboardCheck,
+          },
+        ],
       },
     ],
   },
@@ -339,6 +351,18 @@ const staffNavigation: NavGroup[] = [
         title: "Manajemen Kinerja",
         href: "/kinerja",
         icon: ClipboardPenLine,
+        children: [
+          {
+            title: "Perjanjian Kinerja",
+            href: "/kinerja/pk",
+            icon: ClipboardList,
+          },
+          {
+            title: "Evaluasi Periodik",
+            href: "/kinerja/evaluasi",
+            icon: ClipboardCheck,
+          },
+        ],
       },
     ],
   },
@@ -656,6 +680,23 @@ const yayasanNavigation: NavGroup[] = [
         title: "Manajemen Kinerja",
         href: "/kinerja",
         icon: ClipboardPenLine,
+        children: [
+          {
+            title: "Perjanjian Kinerja",
+            href: "/kinerja/pk",
+            icon: ClipboardList,
+          },
+          {
+            title: "Evaluasi Periodik",
+            href: "/kinerja/evaluasi",
+            icon: ClipboardCheck,
+          },
+          {
+            title: "Analitik Kinerja",
+            href: "/kinerja/analytics",
+            icon: BarChart3,
+          },
+        ],
       },
       {
         title: "Penjaminan Mutu",
@@ -865,117 +906,127 @@ const adminNavigation: NavGroup[] = [
         title: "Students",
         href: "/students",
         icon: GraduationCap,
-      },
-      {
-        title: "Student ID Card",
-        href: "/students/id-card",
-        icon: IdCard,
-      },
-      {
-        title: "Certificates",
-        href: "/students/certificates",
-        icon: Award,
-      },
-      {
-        title: "Transcript",
-        href: "/students/transcript",
-        icon: ScrollText,
-      },
-      {
-        title: "Portfolio Siswa",
-        href: "/portfolio",
-        icon: FolderOpen,
+        children: [
+          {
+            title: "Student ID Card",
+            href: "/students/id-card",
+            icon: IdCard,
+          },
+          {
+            title: "Certificates",
+            href: "/students/certificates",
+            icon: Award,
+          },
+          {
+            title: "Transcript",
+            href: "/students/transcript",
+            icon: ScrollText,
+          },
+          {
+            title: "Portfolio Siswa",
+            href: "/portfolio",
+            icon: FolderOpen,
+          },
+        ],
       },
       {
         title: "Classes",
         href: "/classes",
         icon: BookOpen,
-      },
-      {
-        title: "Academic Years",
-        href: "/academic-years",
-        icon: Calendar,
-      },
-      {
-        title: "Curriculum",
-        href: "/curriculum",
-        icon: BookMarked,
-      },
-      {
-        title: "Timetable",
-        href: "/curriculum/schedules/timetable",
-        icon: CalendarDays,
+        children: [
+          {
+            title: "Academic Years",
+            href: "/academic-years",
+            icon: Calendar,
+          },
+          {
+            title: "Curriculum",
+            href: "/curriculum",
+            icon: BookMarked,
+          },
+          {
+            title: "Timetable",
+            href: "/curriculum/schedules/timetable",
+            icon: CalendarDays,
+          },
+        ],
       },
       {
         title: "Assessment",
         href: "/assessment",
         icon: ClipboardCheck,
-      },
-      {
-        title: "Question Banks (CBT)",
-        href: "/cbt/banks",
-        icon: BookCheck,
-      },
-      {
-        title: "Raport Merdeka",
-        href: "/assessment/raport-merdeka",
-        icon: FileSpreadsheet,
-      },
-      {
-        title: "Mutabaah Yaumiyah",
-        href: "/daily-report",
-        icon: Activity,
-        roleCodes: [
-          "TKQ_ADMIN",
-          "SDIT_ADMIN",
-          "TKQ_KEPALA_SEKOLAH",
-          "SDIT_KEPALA_SEKOLAH",
+        children: [
+          {
+            title: "Question Banks (CBT)",
+            href: "/cbt/banks",
+            icon: BookCheck,
+          },
+          {
+            title: "Jadwal Ujian (CBT)",
+            href: "/cbt/exams",
+            icon: BookOpenCheck,
+          },
+          {
+            title: "Raport Merdeka",
+            href: "/assessment/raport-merdeka",
+            icon: FileSpreadsheet,
+          },
         ],
       },
       {
         title: "Attendance",
         href: "/attendance",
         icon: ClipboardCheck,
-      },
-      {
-        title: "Attendance Calendar",
-        href: "/attendance/calendar",
-        icon: CalendarDays,
-      },
-      {
-        title: "Academic Calendar",
-        href: "/calendar",
-        icon: CalendarDays,
+        children: [
+          {
+            title: "Attendance Calendar",
+            href: "/attendance/calendar",
+            icon: CalendarDays,
+          },
+          {
+            title: "Academic Calendar",
+            href: "/calendar",
+            icon: CalendarDays,
+          },
+          {
+            title: "Mutabaah Yaumiyah",
+            href: "/daily-report",
+            icon: Activity,
+            roleCodes: [
+              "TKQ_ADMIN",
+              "SDIT_ADMIN",
+              "TKQ_KEPALA_SEKOLAH",
+              "SDIT_KEPALA_SEKOLAH",
+            ],
+          },
+        ],
       },
       {
         title: "Tahfidz",
         href: "/tahfidz",
         icon: BookMarked,
-      },
-      {
-        title: "E-Simaan",
-        href: "/tahfidz/e-simaan",
-        icon: Mic,
-      },
-      {
-        title: "Peta Al-Quran",
-        href: "/tahfidz/quran-map",
-        icon: BookCheck,
-      },
-      {
-        title: "Analitik Murojaah",
-        href: "/tahfidz/murojaah/analytics",
-        icon: BarChart3,
-      },
-      {
-        title: "Jadwal Simaan",
-        href: "/tahfidz/simaan/schedule",
-        icon: CalendarDays,
-      },
-      {
-        title: "Jadwal Ujian (CBT)",
-        href: "/cbt/exams",
-        icon: BookOpenCheck,
+        children: [
+          {
+            title: "E-Simaan",
+            href: "/tahfidz/e-simaan",
+            icon: Mic,
+          },
+          {
+            title: "Jadwal Simaan",
+            href: "/tahfidz/simaan/schedule",
+            icon: CalendarDays,
+          },
+          {
+            title: "Peta Al-Quran",
+            href: "/tahfidz/quran-map",
+            icon: BookCheck,
+          },
+          {
+            title: "Analitik Murojaah",
+            href: "/tahfidz/murojaah/analytics",
+            icon: BarChart3,
+          },
+        ],
       },
     ],
   },
@@ -1128,26 +1179,35 @@ const adminNavigation: NavGroup[] = [
         title: "Laporan Keuangan",
         href: "/finance/accounting",
         icon: Wallet,
-      },
-      {
-        title: "BOS/BOP",
-        href: "/finance/bos",
-        icon: Wallet,
+        children: [
+          {
+            // Hub for neraca / laba rugi / arus kas / buku besar / neraca saldo.
+            // Those six report pages had no menu path of their own.
+            title: "Laporan Akuntansi",
+            href: "/finance/reports",
+            icon: FileBarChart,
+          },
+          {
+            title: "BOS/BOP",
+            href: "/finance/bos",
+            icon: Wallet,
+          },
+          {
+            title: "Donation/ZIS",
+            href: "/donation",
+            icon: HeartHandshake,
+          },
+          {
+            title: "Scholarships",
+            href: "/finance/scholarships",
+            icon: Award,
+          },
+        ],
       },
       {
         title: "Procurement",
         href: "/procurement",
         icon: ShoppingBag,
-      },
-      {
-        title: "Scholarships",
-        href: "/finance/scholarships",
-        icon: Award,
-      },
-      {
-        title: "Donation/ZIS",
-        href: "/donation",
-        icon: HeartHandshake,
       },
       {
         title: "Admissions",
@@ -1158,48 +1218,33 @@ const adminNavigation: NavGroup[] = [
         title: "HR",
         href: "/hr",
         icon: Clock,
-      },
-      {
-        title: "Staff Attendance",
-        href: "/hr/attendance",
-        icon: ClipboardCheck,
-      },
-      {
-        title: "Penggajian",
-        href: "/payroll",
-        icon: Wallet,
-      },
-      {
-        title: "Komponen Gaji",
-        href: "/hr/payroll/components",
-        icon: CreditCard,
-      },
-      {
-        title: "Periode Penggajian",
-        href: "/hr/payroll/periods",
-        icon: CalendarDays,
-      },
-      {
-        title: "Gaji Pegawai",
-        href: "/hr/payroll/staff-salary",
-        icon: Wallet,
-      },
-      {
-        title: "Manajemen Talenta",
-        href: "/talenta",
-        icon: Sparkles,
-      },
-      {
-        // Hub for neraca / laba rugi / arus kas / buku besar / neraca saldo.
-        // Those six report pages had no menu path of their own.
-        title: "Laporan Akuntansi",
-        href: "/finance/reports",
-        icon: FileBarChart,
-      },
-      {
-        title: "Manajemen Kinerja",
-        href: "/kinerja",
-        icon: ClipboardPenLine,
+        children: [
+          {
+            title: "Staff Attendance",
+            href: "/hr/attendance",
+            icon: ClipboardCheck,
+          },
+          {
+            title: "Penggajian",
+            href: "/payroll",
+            icon: Wallet,
+          },
+          {
+            title: "Komponen Gaji",
+            href: "/hr/payroll/components",
+            icon: CreditCard,
+          },
+          {
+            title: "Periode Penggajian",
+            href: "/hr/payroll/periods",
+            icon: CalendarDays,
+          },
+          {
+            title: "Gaji Pegawai",
+            href: "/hr/payroll/staff-salary",
+            icon: Wallet,
+          },
+        ],
       },
       {
         title: "Penjaminan Mutu",
@@ -1220,6 +1265,13 @@ const adminNavigation: NavGroup[] = [
         title: "Facilities",
         href: "/facilities",
         icon: Building2,
+        children: [
+          {
+            title: "Inventory (Asset)",
+            href: "/inventory",
+            icon: Package,
+          },
+        ],
       },
       {
         title: "E-Office (Persuratan)",
@@ -1227,39 +1279,43 @@ const adminNavigation: NavGroup[] = [
         icon: Mail,
       },
       {
-        title: "Inventory (Asset)",
-        href: "/inventory",
-        icon: Package,
-      },
-      {
         title: "Library",
         href: "/library",
         icon: Library,
-      },
-      {
-        title: "Maktabah Digital",
-        href: "/library/digital",
-        icon: BookOpen,
+        children: [
+          {
+            title: "Maktabah Digital",
+            href: "/library/digital",
+            icon: BookOpen,
+          },
+        ],
       },
       {
         title: "Health (UKS)",
         href: "/health",
         icon: Heart,
-      },
-      {
-        title: "Meals",
-        href: "/meals",
-        icon: UtensilsCrossed,
-      },
-      {
-        title: "Canteen/Koperasi",
-        href: "/canteen",
-        icon: ShoppingCart,
-      },
-      {
-        title: "Laundry",
-        href: "/laundry",
-        icon: WashingMachine,
+        children: [
+          {
+            title: "Meals",
+            href: "/meals",
+            icon: UtensilsCrossed,
+          },
+          {
+            title: "Canteen/Koperasi",
+            href: "/canteen",
+            icon: ShoppingCart,
+          },
+          {
+            title: "Laundry",
+            href: "/laundry",
+            icon: WashingMachine,
+          },
+          {
+            title: "Dompet Santri",
+            href: "/finance/wallet",
+            icon: CreditCard,
+          },
+        ],
       },
       {
         title: "Reception",
@@ -1267,19 +1323,16 @@ const adminNavigation: NavGroup[] = [
         icon: IdCard,
       },
       {
-        title: "Dompet Santri",
-        href: "/finance/wallet",
-        icon: CreditCard,
-      },
-      {
         title: "Notifications",
         href: "/notifications",
         icon: Bell,
-      },
-      {
-        title: "Quick Send",
-        href: "/notifications/quick-send",
-        icon: Send,
+        children: [
+          {
+            title: "Quick Send",
+            href: "/notifications/quick-send",
+            icon: Send,
+          },
+        ],
       },
     ],
   },
@@ -1325,41 +1378,101 @@ const adminNavigation: NavGroup[] = [
         title: "Perencanaan Strategis",
         href: "/perencanaan",
         icon: ClipboardList,
-      },
-      {
-        title: "Peta Strategi",
-        href: "/perencanaan/strategy-map",
-        icon: Globe,
-      },
-      {
-        title: "Manajemen Risiko",
-        href: "/risk-management",
-        icon: Shield,
+        children: [
+          {
+            title: "Peta Strategi",
+            href: "/perencanaan/strategy-map",
+            icon: Globe,
+          },
+        ],
       },
       {
         title: "Dashboard GRC",
         href: "/grc-dashboard",
         icon: ShieldCheck,
+        children: [
+          {
+            title: "Manajemen Risiko",
+            href: "/risk-management",
+            icon: Shield,
+          },
+          {
+            title: "Pengawasan Internal",
+            href: "/pengawasan",
+            icon: ClipboardCheck,
+          },
+          {
+            title: "Kepatuhan Syariah",
+            href: "/syariah",
+            icon: BookCheck,
+          },
+          {
+            title: "Tata Laksana (SOP)",
+            href: "/tata-laksana",
+            icon: ScrollText,
+          },
+          {
+            title: "Struktur Organisasi",
+            href: "/organisasi",
+            icon: UserCog,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    // Rantainya terbaca dari atas ke bawah: dokumen perencanaan di grup di
+    // atas, lalu penurunannya ke orang di sini.
+    //
+    // Sebelumnya "Manajemen Kinerja" terselip di grup "Administration" — di
+    // antara Laporan Akuntansi dan Penjaminan Mutu — sementara tiga halaman di
+    // bawahnya (Perjanjian Kinerja, Evaluasi Periodik, Analitik) TIDAK punya
+    // entri menu sama sekali. Satu-satunya jalan ke sana adalah mengetik URL.
+    title: "Kinerja & Talenta",
+    items: [
+      {
+        title: "Manajemen Kinerja",
+        href: "/kinerja",
+        icon: ClipboardPenLine,
+        children: [
+          {
+            title: "Perjanjian Kinerja",
+            href: "/kinerja/pk",
+            icon: ClipboardList,
+          },
+          {
+            title: "Evaluasi Periodik",
+            href: "/kinerja/evaluasi",
+            icon: ClipboardCheck,
+          },
+          {
+            title: "Analitik Kinerja",
+            href: "/kinerja/analytics",
+            icon: BarChart3,
+          },
+        ],
       },
       {
-        title: "Pengawasan Internal",
-        href: "/pengawasan",
-        icon: ClipboardCheck,
-      },
-      {
-        title: "Kepatuhan Syariah",
-        href: "/syariah",
-        icon: BookCheck,
-      },
-      {
-        title: "Tata Laksana (SOP)",
-        href: "/tata-laksana",
-        icon: ScrollText,
-      },
-      {
-        title: "Struktur Organisasi",
-        href: "/organisasi",
-        icon: UserCog,
+        title: "Manajemen Talenta",
+        href: "/talenta",
+        icon: Sparkles,
+        children: [
+          {
+            title: "Matriks Talenta",
+            href: "/talenta/matrix",
+            icon: LayoutDashboard,
+          },
+          {
+            title: "Rencana Suksesi",
+            href: "/talenta/succession",
+            icon: Trophy,
+          },
+          {
+            title: "Analitik Talenta",
+            href: "/talenta/analytics",
+            icon: BarChart3,
+          },
+        ],
       },
     ],
   },
@@ -1472,6 +1585,23 @@ const kepalaSekolahNavigation: NavGroup[] = [
         title: "Manajemen Kinerja",
         href: "/kinerja",
         icon: ClipboardPenLine,
+        children: [
+          {
+            title: "Perjanjian Kinerja",
+            href: "/kinerja/pk",
+            icon: ClipboardList,
+          },
+          {
+            title: "Evaluasi Periodik",
+            href: "/kinerja/evaluasi",
+            icon: ClipboardCheck,
+          },
+          {
+            title: "Analitik Kinerja",
+            href: "/kinerja/analytics",
+            icon: BarChart3,
+          },
+        ],
       },
     ],
   },
@@ -1832,7 +1962,23 @@ const ptDosenNavigation: NavGroup[] = [
   {
     title: "Kinerja",
     items: [
-      { title: "Manajemen Kinerja", href: "/kinerja", icon: ClipboardPenLine },
+      {
+        title: "Manajemen Kinerja",
+        href: "/kinerja",
+        icon: ClipboardPenLine,
+        children: [
+          {
+            title: "Perjanjian Kinerja",
+            href: "/kinerja/pk",
+            icon: ClipboardList,
+          },
+          {
+            title: "Evaluasi Periodik",
+            href: "/kinerja/evaluasi",
+            icon: ClipboardCheck,
+          },
+        ],
+      },
     ],
   },
   {

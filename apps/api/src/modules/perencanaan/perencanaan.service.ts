@@ -14,7 +14,9 @@ export class PerencanaanService {
     startDate: string;
     endDate: string;
     budget?: number;
-    unitId: string;
+    /// Null for yayasan-level documents (RPJP, Renstra, RKA Yayasan). Only a
+    /// unit's own RKA carries a unit.
+    unitId?: string | null;
     createdById: string;
     parentId?: string;
   }) {
@@ -39,19 +41,64 @@ export class PerencanaanService {
       }
     }
 
+    // The consolidated RKA Yayasan is the document the pengurus actually
+    // approves, so there is exactly one per year. Unit RKAs are unconstrained
+    // — every unit files its own slice of that same year.
+    if (data.type === 'RKA' && !data.unitId) {
+      const year = new Date(data.startDate).getUTCFullYear();
+      const clash = await prisma.strategicPlan.findFirst({
+        where: {
+          type: 'RKA',
+          unitId: null,
+          status: { notIn: ['COMPLETED', 'CANCELLED'] },
+          startDate: {
+            gte: new Date(Date.UTC(year, 0, 1)),
+            lt: new Date(Date.UTC(year + 1, 0, 1)),
+          },
+        },
+        select: { id: true },
+      });
+      if (clash) {
+        throw Errors.badRequest(
+          `Sudah ada RKA Yayasan aktif untuk tahun ${year}.`
+        );
+      }
+    }
+
     if (data.parentId) {
       const parent = await prisma.strategicPlan.findUnique({ where: { id: data.parentId } });
       if (!parent) throw Errors.notFound('Parent plan');
 
-      // Cascading hierarchy: RPJP -> RENSTRA -> RKA. Each level's closing
-      // targets are the next level's contract, so a plan may only hang off
-      // the level directly above it.
-      if (data.type === 'RKA' && parent.type !== 'RENSTRA') {
-        throw Errors.badRequest('RKA must refer to a RENSTRA parent plan');
+      // Cascading hierarchy, mirroring the national planning chain
+      // (RPJPD → RPJMD → RKPD → Renja/RKA-OPD): the annual level has TWO
+      // tiers, a consolidated foundation document and the unit slices that
+      // hang off it. A plan may only hang off the tier directly above it.
+      //
+      //   RPJP  (20 th, yayasan)
+      //     └── RENSTRA  (5 th, yayasan)
+      //           └── RKA Yayasan  (1 th, konsolidasi — unitId null)
+      //                 └── RKA Unit  (1 th, per sekolah — unitId set)
+      if (data.type === 'RKA') {
+        if (data.unitId) {
+          if (parent.type !== 'RKA' || parent.unitId !== null) {
+            throw Errors.badRequest(
+              'RKA unit harus menginduk pada RKA Yayasan (konsolidasi), bukan pada Renstra maupun RKA unit lain.'
+            );
+          }
+        } else if (parent.type !== 'RENSTRA') {
+          throw Errors.badRequest('RKA Yayasan harus menginduk pada Renstra.');
+        }
       }
       if (data.type === 'RENSTRA' && parent.type !== 'RPJP') {
         throw Errors.badRequest('RENSTRA must refer to an RPJP parent plan');
       }
+    } else if (data.type === 'RKA' && data.unitId) {
+      // A unit RKA with no parent would float outside the cascade, which is
+      // precisely the gap that let unit plans claim in prose to be derived
+      // from the RKA Yayasan while pointing at the Renstra.
+      throw Errors.badRequest(
+        'RKA unit harus menyebut RKA Yayasan induknya.'
+      );
     }
 
     return prisma.strategicPlan.create({
@@ -62,7 +109,7 @@ export class PerencanaanService {
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
         budget: data.budget ? (data.budget as any) : undefined,
-        unit: { connect: { id: data.unitId } },
+        unit: data.unitId ? { connect: { id: data.unitId } } : undefined,
         createdBy: { connect: { id: data.createdById } },
         parent: data.parentId ? { connect: { id: data.parentId } } : undefined,
       },

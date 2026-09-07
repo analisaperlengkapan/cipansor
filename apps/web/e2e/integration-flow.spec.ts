@@ -58,7 +58,12 @@ test.describe("Integrated School Management Flow", () => {
     await loginAs(page, "superAdmin");
     await page.goto("/hr/talenta");
 
-    await expect(page.locator("text=Matriks Talenta")).toBeVisible();
+    // Dikurung dan dibatasi ke isi halaman: `text=` tanpa kutip adalah mesin
+    // substring, jadi begitu "Matriks Talenta" juga menjadi label submenu di
+    // bilah sisi, selektor ini cocok pada keduanya.
+    await expect(
+      page.getByRole("main").getByText("Matriks Talenta", { exact: true }).first(),
+    ).toBeVisible();
 
     // Scope to the content landmark and match the initials exactly. `text=UA`
     // is Playwright's unquoted engine — a case-insensitive *substring* — so it

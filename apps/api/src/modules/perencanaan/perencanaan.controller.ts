@@ -116,13 +116,30 @@ export const createPlan = asyncHandler(async (req: Request, res: Response) => {
   if (!userId) throw Errors.unauthorized('User context missing');
 
   const body = createPlanSchema.parse(req.body);
-  let targetUnitId = req.user?.unitId;
+
+  // A yayasan-level document (RPJP, Renstra, RKA Yayasan) has NO unit — that
+  // is what makes it the foundation's own plan rather than a school's. Until
+  // now this branch demanded a unit from everyone, so the three documents at
+  // the top of the cascade could only ever be written by the seed: a super
+  // admin carries no unitId, and the fallback rejected the request outright.
+  let targetUnitId: string | null | undefined = req.user?.unitId ?? null;
 
   if (!targetUnitId) {
-    if (isPrivileged(req.user?.role) && body.unitId) {
+    if (body.unitId) {
+      // Naming someone else's unit is the privileged write that already
+      // existed (SUPER_ADMIN / UNIT_ADMIN).
+      if (!isPrivileged(req.user?.role)) throw Errors.badRequest('Unit ID is required');
       targetUnitId = body.unitId;
     } else {
-      throw Errors.badRequest('Unit ID is required');
+      // Omitting the unit files the plan as the yayasan's own. That takes the
+      // same two-part gate `approvePlan` uses: the admin floor AND foundation
+      // scope. `seesAll` alone is too wide — it is also true for cross-unit
+      // service staff (perawat, pustakawan, laboran), who read every unit but
+      // have no business authoring the yayasan's RPJP.
+      if (!isPrivileged(req.user?.role) || !seesAll(req.user)) {
+        throw Errors.badRequest('Unit ID is required');
+      }
+      targetUnitId = null;
     }
   }
 
